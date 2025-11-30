@@ -28,7 +28,7 @@ export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
       <div className="text-xl font-bold py-4 border-b border-gray-700 mb-6">
         Sistema Académico
       </div>
-      <nav className="flex-grow">
+      <nav className="grow">
         <ul className="space-y-2">
           {docenteNavItems.map((item) => (
             <li key={item.name}>
