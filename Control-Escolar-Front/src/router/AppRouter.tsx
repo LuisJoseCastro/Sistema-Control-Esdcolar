@@ -1,32 +1,38 @@
-// src/router/AppRouter.tsx - CÓDIGO FINAL CON LAYOUT SAAS
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 
-// Importar los componentes principales de Layout y Vistas
+// === Páginas públicas ===
 import { LandingPage } from '../pages/public/LandingPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
-import { LoginPageGeneral } from '../pages/public/LoginPageGeneral'; 
+import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 
-// Importar el Layout Principal que maneja las Sidebars (CREADO EN EL PASO ANTERIOR)
-import { AppLayout } from '../components/layout/AppLayout'; 
+// === Layout principal ===
+import { AppLayout } from '../components/layout/AppLayout';
 
-// Importar los Dashboards reales (Asumiendo que existen)
+// === Dashboards principales ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { DocenteDashboardPage } from '../pages/docente/DocenteDashboardPage';
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 
+// === Vistas adicionales del alumno ===
+import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
+import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
+import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
+import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDetallesPage';
 
-// PrivateRoute: protege rutas por rol
+import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
+import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
+import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
+import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage'
+
+// === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   const { isLoggedIn, role } = useAuth();
 
-  // Si no está logueado, enviar al Login General
-  if (!isLoggedIn) return <Navigate to="/login" replace />; 
+  if (!isLoggedIn) return <Navigate to="/login" replace />;
 
-  // Si está logueado pero el rol no tiene permiso para la ruta
   if (!allowedRoles.includes((role ?? 'ALUMNO') as Role)) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -35,55 +41,56 @@ const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
     );
   }
 
-  return <Outlet />; // Permite que se cargue el contenido dentro del AppLayout
+  return <Outlet />;
 };
 
+// === Configuración principal de rutas ===
 export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        
-        {/* ========================================================= */}
-        {/* === RUTAS PÚBLICAS DE ONBOARDING (SaaS) Y LOGIN ÚNICO === */}
-        {/* ========================================================= */}
-        
-        <Route path="/" element={<LandingPage />} /> 
-        <Route path="/onboarding" element={<OnboardingPage />} /> 
+        {/* PÚBLICAS */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
-        
-        {/* Redirecciones de conveniencia (Limpia URLs antiguas) */}
+
+        {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/docente/login" element={<Navigate to="/login" replace />} />
         <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
-        {/* ========================================================= */}
-        {/* === RUTAS PROTEGIDAS CON LAYOUT DINÁMICO === */}
-        {/* Todas las rutas protegidas se anidan dentro del AppLayout */}
+        {/* RUTAS PROTEGIDAS */}
         <Route element={<AppLayout />}>
-        
-            {/* RUTAS ADMINISTRADOR (Protegidas por PrivateRoute) */}
-            <Route element={<PrivateRoute allowedRoles={[ 'ADMIN' ]} />}>
-              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-              {/* Aquí irán las vistas de gestión de usuarios, reportes, etc. */}
-            </Route>
+          {/* ADMIN */}
+          <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          </Route>
 
-            {/* RUTAS DOCENTE (Protegidas por PrivateRoute) */}
-            <Route element={<PrivateRoute allowedRoles={[ 'DOCENTE' ]} />}>
-              <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
-              {/* Aquí irán las vistas de calificaciones, asistencia, etc. */}
-            </Route>
+          {/* DOCENTE */}
+          <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
+            <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
+          </Route>
 
-            {/* RUTAS ALUMNO (Protegidas por PrivateRoute) */}
-            <Route element={<PrivateRoute allowedRoles={[ 'ALUMNO' ]} />}>
-              <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
-              {/* Aquí irán las vistas de notas, horario, etc. */}
-            </Route>
+          {/* ALUMNO */}
+          <Route element={<PrivateRoute allowedRoles={['ALUMNO']} />}>
+            <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
+            <Route path="/alumno/asignaturas" element={<AlumnoAsignaturasPage />} />
+            <Route path="/alumno/calificaciones" element={<AlumnoCalificacionesPage />} />
+            <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
+            <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
+            
+            <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
+            <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
+            <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
 
+            <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
+
+            
+          </Route>
         </Route>
-        {/* ========================================================= */}
 
-        {/* 404 - Página no encontrada */}
+        {/* 404 */}
         <Route path="*" element={<h1>404 | Página no encontrada</h1>} />
       </Routes>
     </BrowserRouter>

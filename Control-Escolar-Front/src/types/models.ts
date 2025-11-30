@@ -56,3 +56,156 @@ export interface Asignatura {
   docente: string;
   promedio: number;
 }
+
+// --- Nuevos tipos para Historial Académico ---
+
+export interface CalificacionHistorial {
+    asignatura: string;
+    promedio: number;
+    periodo: string; // Ejemplo: '2025-1'
+}
+
+export interface DocumentoAcademico {
+    nombre: string;
+    url: string; // URL simulada de descarga
+}
+
+export interface HistorialAcademico {
+    promedioGeneral: number;
+    asignaturasAprobadas: number;
+    calificacionesDetalle: CalificacionHistorial[];
+    documentosDisponibles: DocumentoAcademico[];
+}
+
+// --- Tipos para el AlumnoDashboardPage ---
+export interface NotificacionDashboard {
+    id: string;
+    mensaje: string;
+    leida: boolean;
+    fecha: string; // Opcional: para mostrar la fecha de la notificación
+}
+
+export interface AlumnoDashboardSummary {
+    promedioGeneral: number;
+    asistenciaPorcentaje: number;
+    notificaciones: NotificacionDashboard[];
+}
+
+// --- Tipos para la Página de Perfil (AlumnoPerfilPage) ---
+
+// 1. Tipo para la sección superior de resumen
+export interface StudentProfileSummary {
+    name: string;
+    id: string; // ID del estudiante (no el ID de usuario del sistema)
+    career: string;
+    semester: string;
+    average: number;
+}
+
+// 2. Tipo para la información personal
+export interface PersonalInfoType {
+    fullName: string;
+    id: string; // ID del estudiante (no editable)
+    birthDate: string;
+    gender: string;
+    email: string;
+    phone: string;
+    address: string;
+}
+
+// 3. Tipo para la información académica
+export interface AcademicInfoType {
+    semester: string;
+    average: number;
+    status: string;
+    approvedSubjects: number;
+    admissionDate: string;
+}
+
+// 4. Tipo de Datos de Pago (para el mock)
+export interface PaymentInfo {
+    balanceDue: number;
+    lastPaymentDate: string;
+}
+
+
+// src/types/models.ts - (AÑADIR AL FINAL)
+
+// 1. Tipo para la sección superior de resumen
+export interface StudentProfileSummary {
+    name: string;
+    id: string; // ID del estudiante (no el ID de usuario del sistema)
+    career: string;
+    semester: string;
+    average: number;
+    profileImageUrl: string;
+}
+
+// 2. Tipo para la información personal
+export interface PersonalInfoType {
+    fullName: string;
+    id: string; // ID del estudiante (no editable)
+    birthDate: string;
+    gender: string;
+    email: string;
+    phone: string;
+    address: string;
+    // Detalle adicional
+    nationality: string;
+    civilStatus: string;
+    bloodType: string;
+    disability: string;
+    curp: string;
+    nss: string;
+}
+
+// 3. Tipo para la información académica
+export interface AcademicInfoType {
+    semester: string;
+    average: number;
+    status: string;
+    approvedSubjects: number;
+    admissionDate: string;
+    // Detalle adicional
+    faculty: string;
+    studyPlan: string;
+    modality: string;
+    turn: string;
+    period: string;
+    credits: number;
+}
+
+// 4. Tipo de Datos de Pago
+export interface PaymentInfo {
+    balanceDue: number;
+    lastPaymentDate: string;
+}
+
+// 5. Tipo principal que junta todos los datos del perfil
+export interface AlumnoProfileData {
+    resumen: StudentProfileSummary;
+    personal: PersonalInfoType;
+    academic: AcademicInfoType;
+    payment: PaymentInfo;
+}
+
+
+
+// src/types/models.ts (Añadir al final)
+
+// --- Tipos para la Página de Documentos y Pagos (AlumnoDocumentosPage) ---
+
+// 1. Historial de documentos YA PAGADOS y finalizados
+export interface DocumentoPagado {
+    fecha: string; // Fecha de pago o finalización
+    concepto: string; // Nombre del documento
+    monto: number;
+    estado: 'Pagado' | 'Pendiente' | 'Cancelado'; // Aquí siempre será Pagado
+}
+
+// 2. Documentos actualmente SOLICITADOS
+export interface DocumentoSolicitado {
+    fecha: string; // Fecha de solicitud
+    concepto: string;
+    pago: number | '---'; // Monto o '---' si aún no se genera el adeudo
+}
