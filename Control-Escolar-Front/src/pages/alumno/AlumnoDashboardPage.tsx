@@ -1,44 +1,26 @@
-//src/pages/alumno/AlumnoDashboardPage.tsx
 import React, { useState, useEffect } from 'react';
+// Importamos Componentes UI
 import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-// Eliminamos la importación directa de Bell y UserIcon ya que vienen de UserHeaderIcons
-import { useAuth } from '../../hooks/useAuth';
-import type { AlumnoDashboardSummary } from '../../types/models';
-// ✅ Importamos el componente reutilizable
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-// Eliminamos la importación directa de Bell, UserIcon
-import { Bell } from 'lucide-react'; // Bell es necesario para renderizar en las notificaciones
-
-// --- MOCK SERVICE (Normalmente iría en src/services/alumno.service.ts) ---
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
-  console.log(`[MOCK] Obteniendo resumen de dashboard para alumno: ${alumnoId}`);
-  await wait(700); // Simular carga
-
-  return {
-    promedioGeneral: 8.5,
-    asistenciaPorcentaje: 90,
-    notificaciones: [
-      { id: 'n1', mensaje: 'Nueva tarea en Matemáticas I', leida: false, fecha: '04/10/24' },
-      { id: 'n2', mensaje: 'Recordatorio: Pago de colegiatura vence pronto', leida: false, fecha: '04/09/24' },
-      { id: 'n3', mensaje: 'Tu calificación de Física ya está disponible', leida: true, fecha: '03/10/24' },
-    ],
-  };
-};
-// --- FIN MOCK SERVICE ---
-
+// Importamos Iconos
+import { Bell } from 'lucide-react';
+// Importamos Hooks y Servicios (Lógica separada)
+import { useAuth } from '../../hooks/useAuth';
+import { getAlumnoDashboardSummary } from '../../services/alumno.service'; // <--- ¡Importamos del servicio!
+import type { AlumnoDashboardSummary } from '../../types/models';
 
 export const AlumnoDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<AlumnoDashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Efecto para cargar datos al montar el componente
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user?.id) return;
       try {
+        // Llamamos al servicio externo (Clean Code)
         const data = await getAlumnoDashboardSummary(user.id);
         setDashboardData(data);
       } catch (error) {
@@ -51,9 +33,8 @@ export const AlumnoDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, [user]);
 
-  // Calculamos el conteo de notificaciones no leídas
+  // Calculamos notificaciones no leídas para el icono de la campana
   const unreadCount = dashboardData?.notificaciones.filter(n => !n.leida).length || 0;
-
 
   if (loading) {
     return (
@@ -65,66 +46,81 @@ export const AlumnoDashboardPage: React.FC = () => {
 
   if (!dashboardData) {
     return (
-      <div className="p-8">
-        <h1 className="text-4xl font-light text-gray-800 mb-6">Mi Inicio</h1>
-        <p className="text-red-500">No se pudieron cargar los datos del panel. Intenta de nuevo.</p>
+      <div className="p-8 text-center text-red-500">
+        Error al cargar los datos. Intenta recargar la página.
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-white min-h-full">
+    <div className="p-8 bg-gray-50 min-h-full">
 
-      {/* Encabezado con título e íconos */}
+      {/* ENCABEZADO */}
       <header className="flex justify-between items-center border-b-2 border-gray-200 pb-4 mb-8">
         <h1 className="text-4xl font-[Kaushan Script] text-gray-800">
           Mi Inicio
         </h1>
-        {/* ✅ REEMPLAZADO por el componente reutilizable */}
         <UserHeaderIcons unreadCount={unreadCount} />
       </header>
 
-      {/* Tarjetas de Resumen */}
-      <div className="flex flex-wrap gap-8 mb-12 justify-start">
+      {/* TARJETAS DE RESUMEN (KPIs) */}
+      <div className="flex flex-wrap gap-8 mb-12">
+        
         {/* Promedio General */}
-        <Card className="p-10 text-center shadow-xl w-72">
-          <p className="text-2xl text-gray-700 font-semibold mb-2">Promedio General</p>
+        <Card className="p-10 text-center shadow-xl w-72 border-t-4 border-blue-500">
+          <p className="text-2xl text-gray-600 font-semibold mb-2">Promedio</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.promedioGeneral.toFixed(1)}
           </span>
         </Card>
 
         {/* Porcentaje de Asistencia */}
-        <Card className="p-10 text-center shadow-xl w-72"> {/* Se mantuvo el borde morado */}
-          <p className="text-2xl text-gray-700 font-semibold mb-2">Asistencia</p>
+        <Card className="p-10 text-center shadow-xl w-72 border-t-4 border-purple-500">
+          <p className="text-2xl text-gray-600 font-semibold mb-2">Asistencia</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.asistenciaPorcentaje}%
           </span>
         </Card>
       </div>
 
-      {/* Sección de Notificaciones */}
-      <div className="bg-white rounded-lg">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-4">Notificaciones</h2>
+      {/* SECCIÓN DE NOTIFICACIONES */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+            <Bell className="text-blue-600"/> Últimas Notificaciones
+        </h2>
+        
         <div className="space-y-4">
           {dashboardData.notificaciones.length > 0 ? (
             dashboardData.notificaciones.map(notif => (
-              <Card
+              <div
                 key={notif.id}
-                className={`p-5 flex items-center shadow-sm ${notif.leida ? 'bg-gray-50 text-gray-500' : 'bg-blue-50 text-blue-800 font-medium'}`}
+                className={`p-4 rounded-lg flex items-start gap-4 transition-all
+                  ${notif.leida 
+                    ? 'bg-gray-50 text-gray-500' 
+                    : 'bg-blue-50 text-blue-900 border-l-4 border-blue-500 shadow-sm'
+                  }`}
               >
-                <Bell size={20} className="mr-3 shrink-0" />
-                <p className="text-base grow">{notif.mensaje}</p>
+                <div className="mt-1">
+                    {/* Punto indicador de estado */}
+                    <div className={`h-3 w-3 rounded-full ${notif.leida ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                </div>
+                <div className="flex-1">
+                    <p className="text-base font-medium">{notif.mensaje}</p>
+                    <p className="text-xs opacity-70 mt-1">{notif.fecha}</p>
+                </div>
                 {!notif.leida && (
-                  <span className="ml-4 text-xs bg-blue-200 text-blue-900 px-2 py-1 rounded-full">Nueva</span>
+                  <span className="text-xs font-bold bg-blue-200 text-blue-800 px-2 py-1 rounded">
+                    NUEVA
+                  </span>
                 )}
-              </Card>
+              </div>
             ))
           ) : (
             <p className="text-gray-500 text-center py-4">No tienes notificaciones nuevas.</p>
           )}
         </div>
       </div>
+
     </div>
   );
 };

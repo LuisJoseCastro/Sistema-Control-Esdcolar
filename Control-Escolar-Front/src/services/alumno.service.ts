@@ -1,6 +1,6 @@
 // src/services/alumno.service.ts
 import type { Asignatura, HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado } from '../types/models';
-
+import type { AlumnoDashboardSummary } from '../types/models';
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // MOCK para la vista de Mis Asignaturas del Alumno
@@ -148,4 +148,23 @@ export const getDocumentosSolicitados = async (alumnoId: string): Promise<Docume
         { fecha: '15/02/2024', concepto: 'Constancia de Estudios', pago: 100.00 },
         { fecha: '---', concepto: '---', pago: '---' },
     ];
+};
+
+/**
+ * MOCK: Obtiene el resumen general para el Dashboard del Alumno.
+ * (Promedio, Asistencia y Notificaciones recientes)
+ */
+export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
+  console.log(`[MOCK] Obteniendo resumen de dashboard para alumno: ${alumnoId}`);
+  await wait(700); // Simulamos carga de red
+
+  return {
+    promedioGeneral: 8.5,
+    asistenciaPorcentaje: 90,
+    notificaciones: [
+      { id: 'n1', mensaje: 'Nueva tarea en Matemáticas I', leida: false, fecha: '04/10/24' },
+      { id: 'n2', mensaje: 'Recordatorio: Pago de colegiatura vence pronto', leida: false, fecha: '04/09/24' },
+      { id: 'n3', mensaje: 'Tu calificación de Física ya está disponible', leida: true, fecha: '03/10/24' },
+    ],
+  };
 };
