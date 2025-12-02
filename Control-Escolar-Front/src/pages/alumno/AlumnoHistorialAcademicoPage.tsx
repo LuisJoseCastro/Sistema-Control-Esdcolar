@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoHistorialAcademicoPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';

@@ -1,7 +1,14 @@
-// src/pages/alumno/AlumnoCalificacionesPage.tsx
 import React from "react";
-import "../../styles/styles.css";
+// 1. YA NO IMPORTAMOS styles.css
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
+import { Card } from "../../components/ui/Card";
+import {
+  TableContainer,
+  TableHeader,
+  TableBody,
+  Th,
+  Td
+} from "../../components/ui/Table";
 
 export const AlumnoCalificacionesPage: React.FC = () => {
   const calificaciones = [
@@ -10,66 +17,73 @@ export const AlumnoCalificacionesPage: React.FC = () => {
     { materia: "Redes de Computadoras", u1: 8, u2: 8, u3: 8, u4: 9, u5: 9, final: 8.5 },
   ];
 
+  // Cálculo del promedio para mostrarlo
+  const promedioNum = calificaciones.reduce((acc, cur) => acc + cur.final, 0) / calificaciones.length;
+  const promedioTexto = promedioNum.toFixed(1);
+
   return (
-    <div className="main-content" style={{ background: "#f8f9fa", minHeight: "100vh", padding: "40px" }}>
-      {/* Encabezado */}
-      <header className="header">
-        <h1 className="title">Mis Calificaciones</h1>
+    // Usamos clases de Tailwind en lugar de 'main-content'
+    <div className="p-8 bg-gray-50 min-h-full">
+      
+      {/* ENCABEZADO (Reemplaza a .header) */}
+      <header className="flex justify-between items-center border-b-2 border-gray-200 pb-4 mb-8">
+        <h1 className="text-4xl font-[Kaushan Script] text-gray-800">
+          Mis Calificaciones
+        </h1>
         <UserHeaderIcons />
       </header>
 
-      {/* Filtro de periodo */}
-      <section className="filter-section" style={{ marginTop: "20px" }}>
-        <select>
-          <option>Periodo</option>
-          <option>2025-1</option>
-          <option>2025-2</option>
+      {/* FILTRO (Reemplaza a .filter-section) */}
+      <section className="flex justify-end mb-6">
+        <select className="border border-gray-300 rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option>Periodo Actual (2025-1)</option>
+          <option>2024-2</option>
+          <option>2024-1</option>
         </select>
       </section>
 
-      {/* Contenedor principal de la tabla y promedio */}
-      <section className="grades-container" style={{ marginTop: "30px" }}>
-        {/* Tabla */}
-        <div className="table-section">
-          <table>
-            <thead>
-              <tr>
-                <th>Materia</th>
-                <th>U1</th>
-                <th>U2</th>
-                <th>U3</th>
-                <th>U4</th>
-                <th>U5</th>
-                <th>Final</th>
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="flex flex-col gap-8">
+        
+        {/* TABLA (Reemplaza a .table-section usando tus componentes) */}
+        <TableContainer>
+          <TableHeader>
+            <Th>Materia</Th>
+            <Th className="text-center">U1</Th>
+            <Th className="text-center">U2</Th>
+            <Th className="text-center">U3</Th>
+            <Th className="text-center">U4</Th>
+            <Th className="text-center">U5</Th>
+            <Th className="text-center text-blue-700 font-bold">Final</Th>
+          </TableHeader>
+          <TableBody>
+            {calificaciones.map((fila, i) => (
+              <tr key={i}>
+                <Td className="font-medium text-gray-700">{fila.materia}</Td>
+                <Td className="text-center">{fila.u1}</Td>
+                <Td className="text-center">{fila.u2}</Td>
+                <Td className="text-center">{fila.u3}</Td>
+                <Td className="text-center">{fila.u4}</Td>
+                <Td className="text-center">{fila.u5}</Td>
+                <Td className="text-center font-bold text-blue-600 bg-blue-50">
+                  {fila.final}
+                </Td>
               </tr>
-            </thead>
-            <tbody>
-              {calificaciones.map((fila, i) => (
-                <tr key={i}>
-                  <td>{fila.materia}</td>
-                  <td>{fila.u1}</td>
-                  <td>{fila.u2}</td>
-                  <td>{fila.u3}</td>
-                  <td>{fila.u4}</td>
-                  <td>{fila.u5}</td>
-                  <td>{fila.final}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))}
+          </TableBody>
+        </TableContainer>
+
+        {/* PROMEDIO (Reemplaza a .average-box usando Card) */}
+        <div className="flex justify-center mt-4">
+            <Card className="w-64 p-8 text-center shadow-xl border-t-4 border-blue-600">
+                <p className="text-lg text-gray-500 font-medium mb-2">Promedio General</p>
+                <h2 className="text-6xl font-extrabold text-blue-700">
+                    {promedioTexto}
+                </h2>
+            </Card>
         </div>
 
-        {/* Promedio */}
-        <div className="average-box">
-          <p>Promedio</p>
-          <h2>
-            {(
-              calificaciones.reduce((acc, cur) => acc + cur.final, 0) /
-              calificaciones.length
-            ).toFixed(1)}
-          </h2>
-        </div>
-      </section>
+      </div>
     </div>
   );
 };

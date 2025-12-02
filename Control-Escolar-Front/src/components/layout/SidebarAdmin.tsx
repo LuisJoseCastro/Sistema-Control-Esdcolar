@@ -28,7 +28,7 @@ export const SidebarAdmin: React.FC<SidebarProps> = ({ user, onLogout }) => {
       <div className="text-xl font-bold py-4 mb-6">M</div>
 
       {/* Menú de Navegación (Solo Iconos) */}
-      <nav className="flex-grow">
+      <nav className="grow">
         <ul className="space-y-4">
           {adminNavItems.map((item) => (
             <li key={item.name}>

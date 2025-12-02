@@ -1,1 +1,35 @@
-@import 'tailwindcss'
+/* src/index.css */
+
+/* 1. Directivas de Tailwind */
+@import "tailwindcss"; 
+/* NOTA: Si usas Tailwind v3, suele ser: 
+   @tailwind base;
+   @tailwind components;
+   @tailwind utilities;
+   Pero si tu configuración actual te funciona con @import, déjalo así.
+*/
+
+/* 2. Estilos Globales Base */
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* Asegura que el fondo ocupe todo */
+  background-color: #f9fafb; /* bg-gray-50 */
+  color: #111827;            /* text-gray-900 */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* 3. Reset para que el Sidebar ocupe el 100% de altura */
+#root {
+  height: 100vh;
+  width: 100%;
+  /* IMPORTANTE: Quitamos el max-width, margin y text-align del default de Vite */
+}

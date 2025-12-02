@@ -1,3 +1,4 @@
+//src/pages/alumno/SidebarContext.tsx
 import React, { createContext, useState, useContext} from 'react';
 import type {ReactNode} from 'react';
 // 1. Definición del tipo de contexto

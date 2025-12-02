@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoDashboardPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
