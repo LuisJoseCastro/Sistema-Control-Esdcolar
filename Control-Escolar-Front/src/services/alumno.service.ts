@@ -1,27 +1,118 @@
 // src/services/alumno.service.ts
-import type { Asignatura, HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado } from '../types/models';
-import type { AlumnoDashboardSummary } from '../types/models';
+
+import type { Asignatura, HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado, AlumnoDashboardSummary } from '../types/models';
+
+// Utilidad para simular tiempo de espera
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// MOCK para la vista de Mis Asignaturas del Alumno
-export const getMisAsignaturas = async (alumnoId: string): Promise<Asignatura[]> => {
-  console.log(`[MOCK] Solicitando asignaturas para alumno: ${alumnoId}`);
-  await wait(400);
+// =========================================================
+// 1. ASIGNATURAS (Actualizado con Horarios)
+// =========================================================
+
+// Interfaz específica para el detalle de la página de asignaturas
+export interface AsignaturaConHorario {
+  id: number | string;
+  materia: string;
+  profesor: string;
+  horarios: { dia: string; hora: string }[];
+}
+
+export const getMisAsignaturas = async (alumnoId: string): Promise<AsignaturaConHorario[]> => {
+  console.log(`[MOCK] Solicitando asignaturas con horario para: ${alumnoId}`);
+  await wait(600);
 
   return [
-    { id: 'm1', nombre: 'Matemáticas I', docente: 'Rodolfo Docente', promedio: 8.5 },
-    { id: 'm2', nombre: 'Física', docente: 'Ana García', promedio: 9.0 },
+    { 
+      id: 1, 
+      materia: 'Matemáticas', 
+      profesor: 'Ing. Pérez',
+      horarios: [
+          { dia: 'Lunes', hora: '08:00 - 10:00' },
+          { dia: 'Miércoles', hora: '10:00 - 12:00' }
+      ]
+    },
+    { 
+      id: 2, 
+      materia: 'Programación Web', 
+      profesor: 'Lic. García',
+      horarios: [
+          { dia: 'Martes', hora: '07:00 - 09:00' },
+          { dia: 'Jueves', hora: '07:00 - 09:00' },
+          { dia: 'Viernes', hora: '08:00 - 10:00' }
+      ]
+    },
+    { 
+      id: 3, 
+      materia: 'Base de Datos', 
+      profesor: 'Ing. López',
+      horarios: [
+          { dia: 'Viernes', hora: '12:00 - 14:00' } 
+      ]
+    },
   ];
 };
 
-/**
- * 2. MOCK: Simula la obtención del historial académico completo del alumno.
- * @param alumnoId El ID del alumno actual.
- * @returns Promesa que resuelve al objeto HistorialAcademico.
- */
+// =========================================================
+// 2. CALIFICACIONES (Nuevo: Boleta Parcial)
+// =========================================================
+
+export interface BoletaCalificacion {
+  materia: string;
+  u1: string;
+  u2: string;
+  u3: string;
+  u4: string;
+  u5: string;
+  final: string;
+}
+
+export const getCalificacionesBoleta = async (alumnoId: string): Promise<BoletaCalificacion[]> => {
+  console.log(`[MOCK] Solicitando boleta parcial para: ${alumnoId}`);
+  await wait(500);
+
+  return [
+    { materia: "Matemáticas", u1: "10", u2: "9", u3: "10", u4: "---", u5: "---", final: "---" },
+    { materia: "Física", u1: "8", u2: "8", u3: "9", u4: "---", u5: "---", final: "---" },
+    { materia: "Química", u1: "9", u2: "9", u3: "9", u4: "---", u5: "---", final: "---" },
+    { materia: "Programación", u1: "10", u2: "10", u3: "10", u4: "---", u5: "---", final: "---" },
+  ];
+};
+
+// =========================================================
+// 3. ASISTENCIA (Nuevo: Calendario y Estadísticas)
+// =========================================================
+
+export interface AsistenciaData {
+  estadisticas: { asistencia: number; faltas: number; retardos: number };
+  fechas: { fecha: string; tipo: 'Falta' | 'Retardo' }[]; // Ej: '2025-08-17'
+  recordatorios: string[];
+}
+
+export const getAsistenciaData = async (alumnoId: string): Promise<AsistenciaData> => {
+  console.log(`[MOCK] Solicitando asistencia para: ${alumnoId}`);
+  await wait(700);
+
+  // NOTA: Para pruebas, asegúrate que las fechas coincidan con el mes que visualizas en el calendario
+  return {
+    estadisticas: { asistencia: 90, faltas: 1, retardos: 2 },
+    fechas: [
+        { fecha: '2025-08-17', tipo: 'Falta' }, 
+        { fecha: '2025-08-05', tipo: 'Retardo' }
+    ],
+    recordatorios: [
+        "Entrega de proyecto de Física el viernes.",
+        "Examen de Matemáticas el lunes 15.",
+    ]
+  };
+};
+
+// =========================================================
+// 4. HISTORIAL ACADÉMICO (Existente)
+// =========================================================
+
 export const getHistorialAcademico = async (alumnoId: string): Promise<HistorialAcademico> => {
     console.log(`[MOCK] Solicitando historial académico para alumno: ${alumnoId}`);
-    await wait(800); // Simular una carga de red (800ms)
+    await wait(800); 
 
     return {
         promedioGeneral: 8.5,
@@ -41,14 +132,13 @@ export const getHistorialAcademico = async (alumnoId: string): Promise<Historial
     };
 };
 
-/**
- * 3. MOCK: Simula la obtención de la lista completa de notificaciones/mensajes.
- * @param alumnoId El ID del alumno actual.
- * @returns Promesa que resuelve a una lista de notificaciones.
- */
+// =========================================================
+// 5. NOTIFICACIONES (Existente)
+// =========================================================
+
 export const getNotificaciones = async (alumnoId: string): Promise<NotificacionDashboard[]> => {
     console.log(`[MOCK] Solicitando notificaciones para alumno: ${alumnoId}`);
-    await wait(600); // Simular una carga de red
+    await wait(600); 
 
     return [
         { id: 'm1', mensaje: 'Tu calificación final de Matemáticas I es 9.5.', leida: false, fecha: '03/09/24' },
@@ -60,29 +150,23 @@ export const getNotificaciones = async (alumnoId: string): Promise<NotificacionD
     ];
 };
 
+// =========================================================
+// 6. PERFIL DEL ALUMNO (Existente)
+// =========================================================
 
-
-/**
- * 4. MOCK: Simula la obtención de los datos completos del perfil del alumno.
- * @param alumnoId El ID del alumno actual.
- * @returns Promesa que resuelve al objeto AlumnoProfileData.
- */
 export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProfileData> => {
     console.log(`[MOCK] Solicitando datos de perfil para alumno: ${alumnoId}`);
-    await wait(800); // Simular una carga de red
+    await wait(800); 
 
-    // Datos basados en tus imágenes de Figma
     return {
-        // Datos del resumen superior
         resumen: {
             name: 'Sofia Rodriguez',
             id: '12345678910',
             career: 'Ingeniería en Sistemas Computacionales',
             semester: 'Quinto Semestre',
             average: 8.5,
-            profileImageUrl: '/images/profile-placeholder.png', // URL de imagen mock
+            profileImageUrl: '/images/profile-placeholder.png', 
         },
-        // Información Personal (Editable/Detalles)
         personal: {
             fullName: 'Sofia Rodriguez',
             id: '12345678910',
@@ -91,7 +175,6 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
             email: 'sofia.rodriguez@email.com',
             phone: '+52 55 1234 5678',
             address: 'Calle Principal #123, Colonia Centro, Ciudad de México, CP 06000',
-            // Información Adicional (del modal de detalles)
             nationality: 'Mexicana',
             civilStatus: 'Soltera',
             bloodType: 'O+',
@@ -99,14 +182,12 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
             curp: 'RORS000315MDDFDFAS',
             nss: '123456789Y1',
         },
-        // Datos Académicos (Detalles)
         academic: {
             semester: 'Quinto Semestre',
             average: 8.5,
             status: 'Activo',
             approvedSubjects: 42,
             admissionDate: 'Agosto 2021',
-            // Información Adicional (del modal de detalles)
             faculty: 'Ingeniería',
             studyPlan: 'ISC 2010',
             modality: 'Escolarizada',
@@ -114,17 +195,17 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
             period: 'Semestral',
             credits: 210,
         },
-        // Datos de Pago (Solo visibles en el área de pagos)
         payment: {
             balanceDue: 1092.00,
-            lastPaymentDate: '2025-11-18', // Fecha actual
+            lastPaymentDate: '2025-11-18', 
         }
     };
 };
 
-/**
- * 5. MOCK: Simula la obtención del historial de documentos pagados y entregados.
- */
+// =========================================================
+// 7. PAGOS Y DOCUMENTOS (Existente)
+// =========================================================
+
 export const getHistorialPagos = async (alumnoId: string): Promise<DocumentoPagado[]> => {
     console.log(`[MOCK] Solicitando historial de pagos para alumno: ${alumnoId}`);
     await wait(500);
@@ -136,9 +217,6 @@ export const getHistorialPagos = async (alumnoId: string): Promise<DocumentoPaga
     ];
 };
 
-/**
- * 6. MOCK: Simula la obtención de documentos actualmente solicitados.
- */
 export const getDocumentosSolicitados = async (alumnoId: string): Promise<DocumentoSolicitado[]> => {
     console.log(`[MOCK] Solicitando documentos pendientes para alumno: ${alumnoId}`);
     await wait(400);
@@ -150,13 +228,13 @@ export const getDocumentosSolicitados = async (alumnoId: string): Promise<Docume
     ];
 };
 
-/**
- * MOCK: Obtiene el resumen general para el Dashboard del Alumno.
- * (Promedio, Asistencia y Notificaciones recientes)
- */
+// =========================================================
+// 8. DASHBOARD (Existente)
+// =========================================================
+
 export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
   console.log(`[MOCK] Obteniendo resumen de dashboard para alumno: ${alumnoId}`);
-  await wait(700); // Simulamos carga de red
+  await wait(700); 
 
   return {
     promedioGeneral: 8.5,
