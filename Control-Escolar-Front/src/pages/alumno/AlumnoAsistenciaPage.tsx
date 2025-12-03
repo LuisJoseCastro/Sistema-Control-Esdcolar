@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoAsistenciaPage.tsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";

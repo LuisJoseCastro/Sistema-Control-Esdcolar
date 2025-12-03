@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoAsignaturasPage.tsx
 import React, { useState } from 'react';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
 import { Search, CalendarDays, Clock, User } from 'lucide-react'; 

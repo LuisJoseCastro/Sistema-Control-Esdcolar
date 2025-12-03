@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoHistorialAcademicoPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { getHistorialAcademico } from '../../services/alumno.service';

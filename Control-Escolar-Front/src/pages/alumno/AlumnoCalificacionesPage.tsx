@@ -1,3 +1,4 @@
+//src/pages/alumno/AlumnoCalificacionesPage.tsx
 import React from "react";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
 
