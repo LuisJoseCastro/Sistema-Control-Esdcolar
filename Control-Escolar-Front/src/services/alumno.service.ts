@@ -1,6 +1,6 @@
 // src/services/alumno.service.ts
 
-import type { Asignatura, HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado, AlumnoDashboardSummary } from '../types/models';
+import type { HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado, AlumnoDashboardSummary } from '../types/models';
 
 // Utilidad para simular tiempo de espera
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -271,4 +271,20 @@ export const getDetalleAsistencias = async (alumnoId: string): Promise<Asistenci
     { fecha: "2025-11-05", materia: "Química", estado: "Retardo" },
     { fecha: "2025-11-08", materia: "Programación", estado: "Falta" },
   ];
+};
+
+
+// --- EN alumno.service.ts ---
+
+// Simula el catálogo de documentos que la escuela ofrece
+export const getCatalogoDocumentos = async (): Promise<string[]> => {
+    // No necesitamos ID de alumno aquí, es un catálogo general
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return [
+        'Historial Académico',
+        'Constancia de Estudios',
+        'Certificado de Terminación',
+        'Boleta de Calificaciones',
+        'Credencial de Biblioteca (Reposición)' // Agregué uno nuevo de ejemplo
+    ];
 };
