@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+//import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getHistorialPagos, getDocumentosSolicitados } from '../../services/alumno.service';
 import type { DocumentoPagado, DocumentoSolicitado } from '../../types/models';
 
 // UI & Iconos
-import { Button } from '../../components/ui/Button';
+//import { Button } from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-import { Download, FileText, Upload, Plus, X, CheckCircle, ChevronDown } from 'lucide-react';
+import { Download, Upload, X, ChevronDown } from 'lucide-react';
 
 // Opciones de documentos
 const DOCUMENTO_OPTIONS = [
@@ -20,7 +20,7 @@ const DOCUMENTO_OPTIONS = [
 
 export const AlumnoDocumentosPage: React.FC = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
+    //const navigate = useNavigate();
     
     // --- ESTADOS Y LÓGICA (Tu código original intacto) ---
     const [loading, setLoading] = useState(true);
