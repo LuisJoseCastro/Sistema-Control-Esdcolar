@@ -1,41 +1,53 @@
-//src/pages/alumno/AlumnoAsignaturasPage.tsx
-import React, { useState } from 'react';
-import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-import { Search, CalendarDays, Clock, User } from 'lucide-react'; 
+// src/pages/alumno/AlumnoAsignaturasPage.tsx
 
-// 1. ESTRUCTURA DE DATOS ACTUALIZADA (Array de horarios)
-const asignaturasMock = [
-  { 
-    id: 1, 
-    materia: 'Matemáticas', 
-    profesor: 'Ing. Pérez',
-    horarios: [
-        { dia: 'Lunes', hora: '08:00 - 10:00' },
-        { dia: 'Miércoles', hora: '10:00 - 12:00' }
-    ]
-  },
-  { 
-    id: 2, 
-    materia: 'Programación Web', 
-    profesor: 'Lic. García',
-    horarios: [
-        { dia: 'Martes', hora: '07:00 - 09:00' },
-        { dia: 'Jueves', hora: '07:00 - 09:00' },
-        { dia: 'Viernes', hora: '08:00 - 10:00' } // Ejemplo con 3 horarios
-    ]
-  },
-  { 
-    id: 3, 
-    materia: 'Base de Datos', 
-    profesor: 'Ing. López',
-    horarios: [
-        { dia: 'Viernes', hora: '12:00 - 14:00' } // Solo 1 horario
-    ]
-  },
-];
+import React, { useState, useEffect } from 'react';
+import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
+import { Search, CalendarDays, Clock, User } from 'lucide-react';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'; // Importamos el spinner
+
+// Importamos el hook de autenticación y el servicio
+import { useAuth } from '../../hooks/useAuth';
+import { getMisAsignaturas } from '../../services/alumno.service';
+import type { AsignaturaConHorario } from '../../services/alumno.service';
 
 export const AlumnoAsignaturasPage: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Estados para datos y carga
+  const [asignaturas, setAsignaturas] = useState<AsignaturaConHorario[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Efecto para cargar los datos desde el servicio
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const data = await getMisAsignaturas(user.id);
+        setAsignaturas(data);
+      } catch (error) {
+        console.error("Error al cargar asignaturas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen bg-white">
+        <LoadingSpinner text="Cargando tus asignaturas..." />
+      </div>
+    );
+  }
+
+  // Filtramos las asignaturas según el buscador
+  const filteredAsignaturas = asignaturas.filter(item => 
+    item.materia.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="p-8 bg-white min-h-full font-sans">
@@ -71,17 +83,18 @@ export const AlumnoAsignaturasPage: React.FC = () => {
 
       <div className="bg-[#eff3f6] p-8 rounded-[3rem] shadow-[0_20px_40px_rgba(0,0,0,0.15)] min-h-[500px]">
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-8 mb-4 text-gray-500 font-bold text-sm uppercase tracking-wider">
+          {/* Encabezados de la tabla (ocultos en móvil) */}
+          <div className="hidden md:grid grid-cols-4 gap-4 px-8 mb-4 text-gray-500 font-bold text-sm uppercase tracking-wider">
               <div className="text-left pl-2">Materia</div>
-              <div className="text-center md:col-span-2">Horario</div>
+              <div className="text-center col-span-2">Horario</div>
               <div className="text-right pr-4">Profesor</div>
           </div>
 
           <div className="space-y-4">
-              {asignaturasMock.map((item) => (
+              {filteredAsignaturas.length > 0 ? (
+                filteredAsignaturas.map((item) => (
                   <div 
                       key={item.id}
-                      // 'items-center' asegura que todo esté centrado verticalmente aunque la fila crezca de alto
                       className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white rounded-4xl py-4 px-8 shadow-sm items-center text-sm md:text-base text-gray-600 hover:shadow-md transition-all hover:-translate-y-1 duration-200"
                   >
                       {/* COLUMNA 1: Materia */}
@@ -91,7 +104,6 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                       
                       {/* COLUMNA 2 y 3: Horarios Multiples */}
                       <div className="md:col-span-2 flex flex-col items-center gap-2">
-                          {/* Mapeamos cada horario de la lista */}
                           {item.horarios.map((horario, index) => (
                               <div key={index} className="flex items-center gap-3 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 w-fit">
                                   {/* Día */}
@@ -120,7 +132,12 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                           </div>
                       </div>
                   </div>
-              ))}
+              ))
+            ) : (
+                <div className="text-center py-10 text-gray-500">
+                    No se encontraron asignaturas.
+                </div>
+            )}
           </div>
 
       </div>
