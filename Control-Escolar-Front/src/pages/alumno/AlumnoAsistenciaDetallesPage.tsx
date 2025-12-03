@@ -1,35 +1,64 @@
-//src/pages/alumno/AlumnoAsistenciaDetallesPage.tsx
-import React from "react";
+// src/pages/alumno/AlumnoAsistenciaDetallesPage.tsx
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
 import { ArrowLeft } from "lucide-react";
+import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+
+// Importamos Hooks y Servicio
+import { useAuth } from "../../hooks/useAuth";
+import { getDetalleAsistencias } from "../../services/alumno.service";
+import type { AsistenciaDetalleItem } from "../../services/alumno.service";
 
 export const AlumnoAsistenciaDetallesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Datos simulados
-  const asistencias = [
-    { fecha: "2025-11-01", materia: "Matemáticas", estado: "Falta" },
-    { fecha: "2025-11-02", materia: "Física", estado: "Retardo" },
-    { fecha: "2025-11-03", materia: "Historia", estado: "Falta" },
-    { fecha: "2025-11-04", materia: "Inglés", estado: "Retardo" },
-    { fecha: "2025-11-05", materia: "Química", estado: "Retardo" },
-    { fecha: "2025-11-08", materia: "Programación", estado: "Falta" },
-  ];
+  // Estados
+  const [asistencias, setAsistencias] = useState<AsistenciaDetalleItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Helper para formato de fecha amigable (Ej: 01 Nov, 2025)
+  // Cargar datos del servicio
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await getDetalleAsistencias(user.id);
+        setAsistencias(data);
+      } catch (error) {
+        console.error("Error cargando detalles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [user]);
+
+  // Helper para formato de fecha amigable (Visual)
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
-    // Nota: Agregamos 'T00:00:00' para evitar problemas de zona horaria al parsear
-    return new Date(`${dateString}T00:00:00`).toLocaleDateString('es-MX', options);
+    // Agregamos T00:00:00 para evitar desajustes de zona horaria
+    const date = new Date(`${dateString}T00:00:00`);
+    // Validamos que sea una fecha válida antes de formatear
+    if (isNaN(date.getTime())) return dateString; 
+    
+    return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  // Helper para estilos de etiqueta según estado
+  // Helper para estilos de etiqueta según estado (Visual)
   const getStatusStyles = (estado: string) => {
     if (estado === 'Falta') return "bg-red-100 text-red-700 border border-red-200";
     if (estado === 'Retardo') return "bg-yellow-100 text-yellow-800 border border-yellow-200";
     return "bg-gray-100 text-gray-700";
   };
+
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-screen bg-white">
+            <LoadingSpinner text="Cargando detalles..." />
+        </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-white min-h-full font-sans">
@@ -73,29 +102,33 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
 
                     {/* LISTA DE ASISTENCIAS */}
                     <div className="space-y-2 min-w-[600px]">
-                        {asistencias.map((item, index) => (
-                            <div 
-                                key={index} 
-                                className="grid grid-cols-3 text-center items-center group hover:bg-white rounded-xl py-3 px-2 transition-all duration-200 border-b border-gray-200/50 last:border-0 hover:shadow-sm"
-                            >
-                                {/* Fecha Formateada */}
-                                <div className="text-base font-medium text-gray-600 capitalize">
-                                    {formatDate(item.fecha)}
-                                </div>
-                                
-                                {/* Materia */}
-                                <div className="text-base font-bold text-gray-700">
-                                    {item.materia}
-                                </div>
+                        {asistencias.length > 0 ? (
+                            asistencias.map((item, index) => (
+                                <div 
+                                    key={index} 
+                                    className="grid grid-cols-3 text-center items-center group hover:bg-white rounded-xl py-3 px-2 transition-all duration-200 border-b border-gray-200/50 last:border-0 hover:shadow-sm"
+                                >
+                                    {/* Fecha Formateada */}
+                                    <div className="text-base font-medium text-gray-600 capitalize">
+                                        {formatDate(item.fecha)}
+                                    </div>
+                                    
+                                    {/* Materia */}
+                                    <div className="text-base font-bold text-gray-700">
+                                        {item.materia}
+                                    </div>
 
-                                {/* Estado (Etiqueta) */}
-                                <div className="flex justify-center">
-                                    <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusStyles(item.estado)}`}>
-                                        {item.estado}
-                                    </span>
+                                    {/* Estado (Etiqueta) */}
+                                    <div className="flex justify-center">
+                                        <span className={`px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${getStatusStyles(item.estado)}`}>
+                                            {item.estado}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p className="text-center text-gray-500 py-4">No tienes faltas ni retardos registrados.</p>
+                        )}
                     </div>
                 </div>
 

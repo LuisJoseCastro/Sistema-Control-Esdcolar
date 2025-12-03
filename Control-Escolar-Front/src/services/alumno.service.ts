@@ -246,3 +246,29 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
     ],
   };
 };
+
+
+// --- EN alumno.service.ts ---
+
+// Interfaz para la tabla de detalles
+export interface AsistenciaDetalleItem {
+  fecha: string;
+  materia: string;
+  estado: 'Falta' | 'Retardo' | 'Asistencia';
+}
+
+// Función para obtener la lista
+export const getDetalleAsistencias = async (alumnoId: string): Promise<AsistenciaDetalleItem[]> => {
+  console.log(`[MOCK] Solicitando detalle de asistencias para: ${alumnoId}`);
+  // Simulamos un pequeño tiempo de carga
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  return [
+    { fecha: "2025-11-01", materia: "Matemáticas", estado: "Falta" },
+    { fecha: "2025-11-02", materia: "Física", estado: "Retardo" },
+    { fecha: "2025-11-03", materia: "Historia", estado: "Falta" },
+    { fecha: "2025-11-04", materia: "Inglés", estado: "Retardo" },
+    { fecha: "2025-11-05", materia: "Química", estado: "Retardo" },
+    { fecha: "2025-11-08", materia: "Programación", estado: "Falta" },
+  ];
+};
