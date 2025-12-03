@@ -1,24 +1,16 @@
-//src/pages/alumno/AlumnoDocumentosPage.tsx
 import React, { useState, useEffect } from 'react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { Input } from '../../components/ui/Input';
-import {
-    TableContainer,
-    TableHeader,
-    TableBody,
-    Th,
-    Td
-} from '../../components/ui/Table';
-import { getHistorialPagos, getDocumentosSolicitados } from '../../services/alumno.service';
-import { useAuth } from '../../hooks/useAuth';
-import type { DocumentoPagado, DocumentoSolicitado } from '../../types/models';
-import { Download, FileText, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { getHistorialPagos, getDocumentosSolicitados } from '../../services/alumno.service';
+import type { DocumentoPagado, DocumentoSolicitado } from '../../types/models';
 
-// Opciones de documentos (simulado)
+// UI & Iconos
+import { Button } from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
+import { Download, FileText, Upload, Plus, X, CheckCircle, ChevronDown } from 'lucide-react';
+
+// Opciones de documentos
 const DOCUMENTO_OPTIONS = [
     'Historial Académico',
     'Constancia de Estudios',
@@ -26,21 +18,15 @@ const DOCUMENTO_OPTIONS = [
     'Boleta de Calificaciones',
 ];
 
-/**
- * Página: AlumnoDocumentosPage
- * Descripción: Muestra el historial de pagos de documentos, permite solicitar nuevos documentos
- * y adjuntar comprobantes.
- */
 export const AlumnoDocumentosPage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     
-    // Estados de carga y datos
+    // --- ESTADOS Y LÓGICA (Tu código original intacto) ---
     const [loading, setLoading] = useState(true);
     const [historialPagos, setHistorialPagos] = useState<DocumentoPagado[]>([]);
     const [solicitados, setSolicitados] = useState<DocumentoSolicitado[]>([]);
 
-    // Estados de formularios
     const [documentoSolicitar, setDocumentoSolicitar] = useState(DOCUMENTO_OPTIONS[0]);
     const [cantidadSolicitar, setCantidadSolicitar] = useState(1);
     const [archivoAdjunto, setArchivoAdjunto] = useState<File | null>(null);
@@ -57,208 +43,205 @@ export const AlumnoDocumentosPage: React.FC = () => {
                 setHistorialPagos(pagos);
                 setSolicitados(docs);
             } catch (error) {
-                console.error("Error al cargar datos de documentos:", error);
+                console.error("Error al cargar datos:", error);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchData();
-        
-        // Si vienes de la página de perfil, te aseguras de que el enlace en 'Mis Pagos' funcione.
-        // Esto redirige a la nueva ruta, que debe ser la misma ruta de esta página.
-        if (window.location.pathname === '/alumno/perfil') {
-             // Esto es solo un placeholder, la navegación real ocurre en AlumnoPerfilPage.tsx
-        } 
+    }, [user]);
 
-    }, [user, navigate]);
-
-
-    // Simulación de acción de descarga
-    const handleDownload = (concepto: string) => {
-        alert(`Simulando descarga de: ${concepto}`);
-    };
-
-    // Simulación de acción de solicitud
-    const handleSolicitar = () => {
-        console.log(`Solicitando ${cantidadSolicitar} de ${documentoSolicitar}`);
-        alert(`¡${documentoSolicitar} solicitado con éxito!`);
-        // Lógica real: Llamar al servicio, actualizar lista 'solicitados'
-    };
-
-    // Simulación de subida de comprobante
+    const handleDownload = (concepto: string) => alert(`Descargando: ${concepto}`);
+    const handleSolicitar = () => alert(`¡${documentoSolicitar} (x${cantidadSolicitar}) solicitado con éxito!`);
     const handleUploadComprobante = () => {
-        if (!archivoAdjunto) {
-            alert("Por favor, selecciona un archivo.");
-            return;
-        }
-        console.log(`Subiendo comprobante para ${documentoAdjuntar}: ${archivoAdjunto.name}`);
+        if (!archivoAdjunto) return alert("Por favor, selecciona un archivo.");
         alert(`Comprobante para ${documentoAdjuntar} subido con éxito.`);
         setArchivoAdjunto(null);
-        // Lógica real: Llamar al servicio de subida, actualizar el estado
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-[500px]">
-                <LoadingSpinner text="Cargando historial de documentos..." />
-            </div>
-        );
-    }
+    if (loading) return <div className="flex justify-center mt-20"><LoadingSpinner /></div>;
+
+    // --- ESTILOS VISUALES (Diseño idéntico a tu imagen) ---
+    const cardStyle = "bg-[#f4f6f8] rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-8 md:p-10";
+    const rowStyle = "bg-white rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between shadow-sm mb-3 text-sm text-gray-600 gap-4";
 
     return (
-        <div className="p-8 bg-gray-50 min-h-full">
+        <div className="p-8 bg-white min-h-full font-sans">
             
-            {/* Encabezado */}
-            <header className="flex justify-between items-center border-b-2 border-gray-200 pb-4 mb-8">
-                <h1 className="text-4xl font-[Kaushan Script] text-gray-800">
+            {/* ENCABEZADO (Estilo Cursiva) */}
+            <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-10">
+                <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     Documentos y Pagos
                 </h1>
-                <UserHeaderIcons /> 
+                <div className="mb-2">
+                   <UserHeaderIcons />
+                </div>
             </header>
 
-            {/* SECCIÓN 1: HISTORIAL GENERAL DE PAGOS */}
-            <Card className="shadow-lg mb-8">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <FileText size={24} className="mr-3 text-blue-600" /> Historial General de Pagos
-                </h2>
-                <p className="text-sm text-gray-500 mb-4">Visualiza los pagos y documentos que has tramitado.</p>
-                
-                <TableContainer>
-                    <TableHeader>
-                        <Th>Fecha</Th>
-                        <Th>Concepto</Th>
-                        <Th className="text-right">Monto</Th>
-                        <Th>Estado</Th>
-                        <Th className="text-center">Descargar</Th>
-                    </TableHeader>
-                    <TableBody>
-                        {historialPagos.map((item, index) => (
-                            <tr key={index}>
-                                <Td>{item.fecha}</Td>
-                                <Td>{item.concepto}</Td>
-                                <Td className="text-right">{`$${item.monto.toFixed(2)}`}</Td>
-                                <Td>
-                                    <span className="text-green-600 font-medium">{item.estado}</span>
-                                </Td>
-                                <Td className="text-center">
-                                    <Button variant="secondary" className="bg-gray-700 hover:bg-gray-800 text-white py-1 px-3" onClick={() => handleDownload(item.concepto)}>
-                                        <Download size={16} />
-                                    </Button>
-                                </Td>
-                            </tr>
+            <div className="flex flex-col gap-10 max-w-7xl mx-auto">
+
+                {/* 1. HISTORIAL GENERAL DE PAGOS */}
+                <div className={cardStyle}>
+                    <div className="mb-6 ml-2">
+                        <h2 className="text-2xl font-bold text-gray-800">Historial General de Pagos</h2>
+                        <p className="text-gray-500 text-sm">Visualiza los pagos de documentos que has tramitado</p>
+                    </div>
+
+                    {/* Encabezados (Grid manual para alinear con las filas) */}
+                    <div className="hidden md:grid grid-cols-5 px-6 mb-2 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <div className="col-span-1">Fecha</div>
+                        <div className="col-span-2">Concepto</div>
+                        <div className="text-right pr-8">Monto</div>
+                        <div className="text-center">Estado</div>
+                        <div className="text-center">Acción</div>
+                    </div>
+
+                    {/* Filas (Cápsulas) */}
+                    <div>
+                        {historialPagos.map((item, i) => (
+                            <div key={i} className={rowStyle}>
+                                <div className="w-full md:w-1/5 font-medium">{item.fecha}</div>
+                                <div className="w-full md:w-2/5 font-bold text-gray-800">{item.concepto}</div>
+                                <div className="w-full md:w-1/5 text-left md:text-right font-mono text-gray-700 font-bold">
+                                    ${item.monto.toFixed(2)}
+                                </div>
+                                <div className="w-full md:w-1/5 flex justify-center">
+                                     <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                        {item.estado}
+                                    </span>
+                                </div>
+                                <div className="w-full md:w-1/5 flex justify-center">
+                                    <button 
+                                        onClick={() => handleDownload(item.concepto)}
+                                        className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors font-bold text-xs"
+                                    >
+                                        <Download size={16}/> Descargar
+                                    </button>
+                                </div>
+                            </div>
                         ))}
-                    </TableBody>
-                </TableContainer>
-            </Card>
-
-            {/* SECCIÓN 2: SOLICITUD DE DOCUMENTOS */}
-            <Card className="shadow-lg mb-8">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <FileText size={24} className="mr-3 text-blue-600" /> Solicitud de Documentos
-                </h2>
-                <p className="text-sm text-gray-500 mb-4">Selecciona y solicita los documentos que requieras tramitar.</p>
-
-                {/* Formulario de Solicitud */}
-                <div className="flex items-end gap-3 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Documento</label>
-                        <select 
-                            value={documentoSolicitar}
-                            onChange={(e) => setDocumentoSolicitar(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            {DOCUMENTO_OPTIONS.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
                     </div>
-                    <div className="w-20">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
-                        <Input 
-                            type="number" 
-                            min="1" 
-                            value={cantidadSolicitar} 
-                            onChange={(e) => setCantidadSolicitar(parseInt(e.target.value))} 
-                        />
-                    </div>
-                    <Button variant="primary" onClick={handleSolicitar} className="py-2 px-4 bg-green-600 hover:bg-green-700">
-                        Agregar
-                    </Button>
                 </div>
 
-                {/* Tabla de Documentos Solicitados */}
-                <TableContainer>
-                    <TableHeader>
-                        <Th>Fecha</Th>
-                        <Th>Concepto</Th>
-                        <Th className="text-right">Pago</Th>
-                        <Th className="text-center">Voucher</Th>
-                    </TableHeader>
-                    <TableBody>
-                        {solicitados.map((item, index) => (
-                            <tr key={index}>
-                                <Td>{item.fecha}</Td>
-                                <Td>{item.concepto}</Td>
-                                <Td className="text-right">
-                                    {item.pago !== '---' ? `$${(item.pago as number).toFixed(2)}` : '---'}
-                                </Td>
-                                <Td className="text-center">
-                                    <Button variant="secondary" className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3" onClick={() => handleDownload("Voucher")}>
-                                        Descargar
-                                    </Button>
-                                </Td>
-                            </tr>
-                        ))}
-                    </TableBody>
-                </TableContainer>
-            </Card>
 
-            {/* SECCIÓN 3: ADJUNTAR COMPROBANTES DE PAGO */}
-            <Card className="shadow-lg">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
-                    <Upload size={24} className="mr-3 text-blue-600" /> Adjuntar Comprobantes de Pago
-                </h2>
-                <p className="text-sm text-gray-500 mb-4">Visualiza tus documentos que solicitaste que están en trámite y finalizados.</p>
-
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    {/* Selector de Documento Pendiente de Pago */}
-                    <div className="w-56">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Documento</label>
-                        <select 
-                            value={documentoAdjuntar}
-                            onChange={(e) => setDocumentoAdjuntar(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            {DOCUMENTO_OPTIONS.map(opt => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </select>
+                {/* 2. SOLICITUD DE DOCUMENTOS */}
+                <div className={cardStyle}>
+                    <div className="mb-8 ml-2">
+                        <h2 className="text-2xl font-bold text-gray-800">Solicitud de Documentos</h2>
+                        <p className="text-gray-500 text-sm">Selecciona y adjunta los documentos que requieras tramitar</p>
                     </div>
 
-                    {/* Selector de Archivo */}
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Seleccionar archivo</label>
-                        <div className="flex items-center border border-gray-300 rounded-md bg-white">
-                            <label className="cursor-pointer bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-3 text-sm rounded-l-md transition">
-                                Seleccionar archivo
-                                <input 
-                                    type="file" 
-                                    hidden 
-                                    onChange={(e) => setArchivoAdjunto(e.target.files ? e.target.files[0] : null)}
-                                />
-                            </label>
-                            <span className="ml-3 text-sm text-gray-500 truncate">
-                                {archivoAdjunto ? archivoAdjunto.name : 'Ningún archivo seleccionado'}
-                            </span>
+                    {/* Formulario */}
+                    <div className="flex flex-col md:flex-row items-end gap-6 mb-10 px-2">
+                        <div className="flex-1 w-full space-y-2">
+                            <label className="text-sm font-bold text-gray-500 ml-1">Selecciona..</label>
+                            <div className="relative">
+                                <select 
+                                    value={documentoSolicitar}
+                                    onChange={(e) => setDocumentoSolicitar(e.target.value)}
+                                    className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-3 px-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
+                                >
+                                    {DOCUMENTO_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-3.5 text-gray-400 pointer-events-none" size={20} />
+                            </div>
                         </div>
+
+                        <div className="w-full md:w-32 space-y-2">
+                             <div className="bg-[#e2e8f0] rounded-lg flex items-center px-3 py-1 h-[50px] relative mt-7">
+                                <input 
+                                    type="number" 
+                                    min="1"
+                                    value={cantidadSolicitar}
+                                    onChange={(e) => setCantidadSolicitar(parseInt(e.target.value))}
+                                    className="bg-transparent w-full text-center font-bold text-gray-700 outline-none text-lg"
+                                />
+                                <X size={16} className="text-gray-500 absolute right-3 cursor-pointer hover:text-red-500"/>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={handleSolicitar}
+                            className="bg-[#344054] hover:bg-[#232b38] text-white font-bold py-3 px-8 rounded-xl shadow-md transition-transform active:scale-95 h-[50px] min-w-[140px] w-full md:w-auto"
+                        >
+                            Agregar
+                        </button>
                     </div>
 
-                    <Button variant="primary" onClick={handleUploadComprobante} disabled={!archivoAdjunto} className="py-2 px-4 bg-blue-600 hover:bg-blue-700">
-                        Subir
-                    </Button>
+                    {/* Tabla de Pendientes */}
+                    <div>
+                        {/* Filas */}
+                        {solicitados.map((item, i) => (
+                            <div key={i} className={rowStyle}>
+                                <div className="w-full md:w-1/4 font-medium text-gray-500">{item.fecha}</div>
+                                <div className="w-full md:w-1/4 font-bold text-gray-800">{item.concepto}</div>
+                                <div className="w-full md:w-1/4 text-left md:text-right font-mono text-gray-700 font-bold">
+                                    {item.pago !== '---' ? `$${(item.pago as number).toFixed(2)}` : '---'}
+                                </div>
+                                <div className="w-full md:w-1/4 flex justify-center">
+                                    <button 
+                                        onClick={() => handleDownload("Voucher")}
+                                        className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors font-bold text-xs uppercase"
+                                    >
+                                        <Download size={16}/> Descargar
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </Card>
+
+
+                {/* 3. ADJUNTAR COMPROBANTES */}
+                <div className={cardStyle}>
+                    <div className="mb-6 ml-2">
+                        <h2 className="text-2xl font-bold text-gray-800">Adjuntar Comprobantes de Pago</h2>
+                        <p className="text-gray-500 text-sm">Visualiza si tus documentos que solicitaste estan en tramite o finalizados</p>
+                    </div>
+
+                    {/* Barra de Subida Horizontal (Idéntica a la imagen) */}
+                    <div className="flex flex-col lg:flex-row items-center gap-4 bg-transparent mt-8">
+                        
+                        {/* 1. Selector (Gris) */}
+                        <div className="flex-1 w-full relative">
+                            <div className="bg-[#e2e8f0] rounded-xl px-6 py-4 flex items-center justify-between cursor-pointer h-[60px]">
+                                <span className="font-bold text-gray-700 truncate mr-2">{documentoAdjuntar}</span>
+                                <ChevronDown className="text-gray-500" size={20} />
+                            </div>
+                            <select 
+                                value={documentoAdjuntar}
+                                onChange={(e) => setDocumentoAdjuntar(e.target.value)}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            >
+                                {DOCUMENTO_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        </div>
+
+                        {/* 2. Botón Archivo (Gris) */}
+                        <label className="flex-1 w-full bg-[#e2e8f0] rounded-xl px-6 py-4 flex items-center justify-center gap-3 cursor-pointer h-[60px] hover:bg-[#d1dbe6] transition-colors relative">
+                            <input 
+                                type="file" 
+                                className="hidden"
+                                onChange={(e) => setArchivoAdjunto(e.target.files ? e.target.files[0] : null)}
+                            />
+                            <Upload size={20} className="text-gray-600"/>
+                            <span className="font-bold text-gray-600 truncate">
+                                {archivoAdjunto ? archivoAdjunto.name : 'Seleccionar documento'}
+                            </span>
+                        </label>
+
+                        {/* 3. Botón Subir (Oscuro) */}
+                        <button 
+                            onClick={handleUploadComprobante}
+                            disabled={!archivoAdjunto}
+                            className="bg-[#344054] hover:bg-[#232b38] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-12 rounded-xl shadow-md h-[60px] w-full lg:w-auto"
+                        >
+                            Subir
+                        </button>
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 };
