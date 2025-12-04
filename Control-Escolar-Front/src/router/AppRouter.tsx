@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 
 // === Páginas públicas ===
-import { LandingPage } from '../pages/public/LandingPage';
+//import { LandingPage } from '../pages/public/LandingPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 
@@ -51,9 +51,10 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Routes>
         {/* PÚBLICAS */}
-        <Route path="/" element={<LandingPage />} />
+        {/* 1. REDIRECCIÓN DE RUTA RAÍZ A LOGIN */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={<LoginPageGeneral />} />
+        <Route path="/login" element={<LoginPageGeneral />} /> // Usamos el login SaaS
 
         {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
@@ -80,14 +81,14 @@ export const AppRouter: React.FC = () => {
             <Route path="/alumno/calificaciones" element={<AlumnoCalificacionesPage />} />
             <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
             <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
-            
+
             <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
             <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
             <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
 
             <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
 
-            
+
           </Route>
         </Route>
 
