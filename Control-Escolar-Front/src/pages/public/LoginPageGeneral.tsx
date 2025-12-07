@@ -4,8 +4,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 // IMPORTACIÓN DE COMPONENTES UI (Asumiendo que existen)
-import { Button } from '../../components/ui/Button'; 
-import { Input } from '../../components/ui/Input'; 
+import Button from '../../components/ui/Button'; 
+import Input from '../../components/ui/Input'; 
 // Si usas un Card para el formulario, también lo importarías:
 // import { Card } from '../../components/ui/Card'; 
 

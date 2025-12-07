@@ -1,27 +1,75 @@
-// src/components/ui/Button.tsx
-import React from 'react';
+import React, { type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Loader2 } from 'lucide-react'; // Usamos Loader2 para simular carga
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  // Define las variantes de estilo que usará tu equipo
-  variant: 'primary' | 'secondary' | 'danger';
+// --- TIPOS Y PROPIEDADES ---
+
+// Define las variantes de color/estilo del botón
+type ButtonVariant = 'gradient' | 'primary' | 'secondary' | 'ghost';
+
+// Extiende las props estándar de un botón HTML para incluir onClick, type, etc.
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+  variant?: ButtonVariant;
+  isLoading?: boolean; // Para deshabilitar y mostrar un spinner
+  icon?: ReactNode; // Icono opcional a mostrar junto al texto
+  className?: string; // Para permitir clases de Tailwind adicionales
 }
 
-export const Button: React.FC<ButtonProps> = ({ variant, children, className = '', ...props }) => {
-  // Clases base para todos los botones
-  const baseClasses = 'px-4 py-2 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2';
-  
-  // Lógica para aplicar los colores según la variante
-  const getClasses = () => {
-    switch (variant) {
-      case 'primary': return 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400';
-      case 'danger': return 'bg-red-500 text-white hover:bg-red-600 disabled:bg-gray-400';
-      default: return 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:bg-gray-400';
-    }
-  };
+// --- LÓGICA DE ESTILOS DE TAILWIND ---
+const getVariantClasses = (variant: ButtonVariant) => {
+  switch (variant) {
+    case 'gradient': // Visto en el botón "Empezar Ahora" y "Guardar Calificaciones"
+      return `bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 
+              text-white shadow-md hover:shadow-lg focus:ring-4 focus:ring-cyan-300 focus:ring-opacity-75`;
+    case 'primary': // Visto en botones "Enviar" y "Iniciar Sesión" (Azul Oscuro)
+      return `bg-blue-600 hover:bg-blue-700 text-white shadow-md focus:ring-4 focus:ring-blue-300`;
+    case 'secondary': // Visto en botón "Limpiar" o acciones menos prioritarias (Gris/Claro)
+      return `bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300`;
+    case 'ghost': // Visto en la barra lateral o botones de texto plano (Transparente)
+      return `bg-transparent hover:bg-gray-100 text-blue-600 border border-transparent`;
+    default:
+      return 'bg-blue-600 hover:bg-blue-700 text-white';
+  }
+};
+
+const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary', // 'primary' es el valor por defecto
+  isLoading = false,
+  icon,
+  className = '',
+  disabled,
+  ...rest
+}) => {
+  const baseClasses = `
+    font-semibold py-2.5 px-6 rounded-lg 
+    transition duration-200 ease-in-out 
+    flex items-center justify-center space-x-2 
+    disabled:opacity-60 disabled:cursor-not-allowed
+  `;
+
+  const finalClasses = `${baseClasses} ${getVariantClasses(variant)} ${className}`;
 
   return (
-    <button className={`${baseClasses} ${getClasses()} ${className}`} {...props}>
-      {children}
+    <button
+      className={finalClasses}
+      disabled={isLoading || disabled}
+      {...rest}
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Cargando...</span>
+        </>
+      ) : (
+        <>
+          {/* Muestra el icono solo si está presente */}
+          {icon && <span>{icon}</span>}
+          {children}
+        </>
+      )}
     </button>
   );
 };
+
+export default Button;

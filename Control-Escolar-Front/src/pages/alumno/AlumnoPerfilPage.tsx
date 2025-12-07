@@ -6,9 +6,9 @@ import { getAlumnoProfileData } from '../../services/alumno.service';
 import type { AlumnoProfileData, PersonalInfoType, AcademicInfoType } from '../../types/models';
 
 // UI & Icons
-//import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
-import { Input } from '../../components/ui/Input';
+//import Button from '../../components/ui/Button';
+import Modal from '../../components/ui/Modal';
+import Input  from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
 import { User as UserIcon, Edit3, ArrowRight } from 'lucide-react';

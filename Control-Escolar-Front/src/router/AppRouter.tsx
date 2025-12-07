@@ -14,7 +14,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 
 // === Dashboards principales ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
-import { DocenteDashboardPage } from '../pages/docente/DocenteDashboardPage';
+import DocenteDashboardPage  from '../pages/docente/DocenteDashboardPage';
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 
 // === Vistas adicionales del alumno ===
@@ -26,7 +26,11 @@ import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDe
 import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
 import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
-import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage'
+import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
+
+import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
+import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
+import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
 
 // === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
@@ -66,12 +70,16 @@ export const AppRouter: React.FC = () => {
         <Route element={<AppLayout />}>
           {/* ADMIN */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
           </Route>
 
           {/* DOCENTE */}
           <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
             <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
+            <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
+            <Route path="/docente/calificaciones" element={<DocenteCalificacionesPage />} />
+            <Route path="/docente/mensajes" element={<DocenteMensajesPage />} />
+
           </Route>
 
           {/* ALUMNO */}
@@ -98,3 +106,4 @@ export const AppRouter: React.FC = () => {
     </BrowserRouter>
   );
 };
+  

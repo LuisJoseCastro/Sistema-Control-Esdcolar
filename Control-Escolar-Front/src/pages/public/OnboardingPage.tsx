@@ -6,8 +6,8 @@ import { registrarNuevaEscuela } from '../../services/onboarding.service';
 // Asegúrate de que registrarNuevaEscuela esté en src/services/onboarding.service.ts
 
 // IMPORTACIÓN DE COMPONENTES UI (Asumiendo que existen)
-import { Button } from '../../components/ui/Button'; 
-import { Input } from '../../components/ui/Input'; 
+import Button  from '../../components/ui/Button'; 
+import Input from '../../components/ui/Input'; 
 // También podrías usar Card si deseas encapsular el formulario
 // import { Card } from '../../components/ui/Card'; 
 

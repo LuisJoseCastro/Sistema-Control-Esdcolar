@@ -1,52 +1,111 @@
-// src/components/ui/Modal.tsx
-import React from 'react';
-import Portal from './Portal'; // ✅ Importado
-import type { ReactNode } from 'react'; // Asegúrate de usar 'type'
+import React, { type HTMLAttributes, type ReactNode, useRef, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 
-interface ModalProps {
+// --- TIPOS Y PROPIEDADES ---
+
+interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
   children: ReactNode;
+  title: string;
+  // Ancho opcional: 'sm', 'md' (default), 'lg'
+  size?: 'sm' | 'md' | 'lg'; 
   className?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className = '' }) => {
-  if (!isOpen) return null;
+// --- LÓGICA DE ESTILOS ---
+const getSizeClasses = (size: ModalProps['size']) => {
+  switch (size) {
+    case 'sm':
+      return 'max-w-md'; // 448px
+    case 'lg':
+      return 'max-w-3xl'; // 768px
+    case 'md':
+    default:
+      return 'max-w-xl'; // 640px
+  }
+};
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  children,
+  title,
+  size = 'md',
+  className = '',
+  ...rest
+}) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Cierra el modal al presionar la tecla ESC
+  const handleEscape = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }, [onClose]);
+
+  // Maneja el clic fuera del modal (backdrop)
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
       onClose();
     }
   };
 
-  return (
-    <Portal> {/* ✅ Usando Portal */}
-      {/* Backdrop oscuro que cubre toda la pantalla */}
-      <div
-        className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-        onClick={handleBackdropClick}
-      >
-        {/* Contenedor principal del Modal */}
-        <div
-          // Añadimos z-50 de nuevo por seguridad, aunque el padre ya es z-50
-          className={`bg-white rounded-xl shadow-2xl z-50 max-w-lg w-full transform transition-all overflow-hidden ${className}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Cabecera del Modal */}
-          <div className="flex justify-between items-center p-5 border-b border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-          </div>
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Opcional: Deshabilita el scroll del body mientras el modal está abierto
+      document.body.style.overflow = 'hidden'; 
+    } else {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    }
+    // Limpieza: asegura que el event listener se elimine y el scroll se restaure
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, handleEscape]);
 
-          {/* Cuerpo del Modal */}
-          <div className="p-6">
-            {children}
-          </div>
+  if (!isOpen) {
+    return null;
+  }
+
+  const sizeClasses = getSizeClasses(size);
+
+  return (
+    <div
+      // Fondo (Backdrop)
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-70 transition-opacity duration-300"
+      onClick={handleBackdropClick}
+      aria-modal="true"
+      role="dialog"
+    >
+      {/* Contenedor del Modal */}
+      <div
+        ref={modalRef}
+        className={`bg-white rounded-xl shadow-2xl w-full mx-4 p-6 transform transition-all duration-300 ${sizeClasses} ${className}`}
+        {...rest}
+      >
+        {/* Encabezado */}
+        <div className="flex justify-between items-center pb-4 border-b border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 p-1 transition"
+            aria-label="Cerrar modal"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Contenido */}
+        <div className="mt-4">
+          {children}
         </div>
       </div>
-    </Portal>
+    </div>
   );
 };
+
+export default Modal;

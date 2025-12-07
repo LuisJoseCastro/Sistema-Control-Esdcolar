@@ -6,8 +6,8 @@ import { type User, type Role } from '../../types/models';
 import { getAllUsersByTenant, addNewUser } from '../../services/admin.service'; 
 
 // Importación de Componentes UI
-import { Button } from '../../components/ui/Button'; 
-import { Input } from '../../components/ui/Input'; 
+import Button from '../../components/ui/Button'; 
+import Input from '../../components/ui/Input'; 
 
 // Tipado para el formulario de nuevo usuario
 type NewUserForm = Omit<User, 'id' | 'tenantId'>;
