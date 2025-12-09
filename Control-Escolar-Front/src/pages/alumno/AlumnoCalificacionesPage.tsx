@@ -1,9 +1,14 @@
 // src/pages/alumno/AlumnoCalificacionesPage.tsx
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"; // <-- Importamos useMemo y useCallback
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { ChevronDown } from 'lucide-react'; // <-- Importamos icono
+import { ChevronDown } from 'lucide-react';
+
+// 🛑 IMPORTACIONES DE UI UNIFICADA
+import { Card } from '../../components/ui/Card'; // Nombrada
+// Importamos Table por defecto, y los subcomponentes nombrados
+import Table, { TableHead, TableRow, TableCell } from '../../components/ui/Table';
 
 // Importamos Hooks y Servicio
 import { useAuth } from "../../hooks/useAuth";
@@ -14,15 +19,15 @@ export const AlumnoCalificacionesPage: React.FC = () => {
   const { user } = useAuth();
 
   // Estados
-  const periodosDisponibles = useMemo(() => ['2025-1', '2024-2', '2024-1'], []); // Opciones disponibles
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(periodosDisponibles[0]); // Estado para el dropdown
+  const periodosDisponibles = useMemo(() => ['2025-1', '2024-2', '2024-1'], []);
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(periodosDisponibles[0]);
   const [calificaciones, setCalificaciones] = useState<BoletaCalificacion[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Función para cargar datos (se envuelve en useCallback)
   const fetchData = useCallback(async (periodo: string) => {
     if (!user?.id) return;
-    setLoading(true); // Se inicia la carga
+    setLoading(true);
     try {
       // **IMPORTANTE:** Pasamos el periodo a la función de servicio
       const data = await getCalificacionesBoleta(user.id, periodo);
@@ -32,12 +37,12 @@ export const AlumnoCalificacionesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]); // Depende solo de user
+  }, [user]);
 
   // useEffect inicial y para cambio de periodo
   useEffect(() => {
     fetchData(periodoSeleccionado);
-  }, [periodoSeleccionado, fetchData]); // Se dispara cuando el periodo cambia o al inicio
+  }, [periodoSeleccionado, fetchData]);
 
   // Handler para el cambio en el dropdown
   const handlePeriodoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -48,7 +53,7 @@ export const AlumnoCalificacionesPage: React.FC = () => {
   const promedioCalculado = useMemo(() => {
     const notasFinales = calificaciones
       .map(c => parseFloat(c.final))
-      .filter(n => !isNaN(n)); // Filtra las notas que no son "---"
+      .filter(n => !isNaN(n));
 
     if (notasFinales.length === 0) return '---';
 
@@ -103,57 +108,67 @@ export const AlumnoCalificacionesPage: React.FC = () => {
           </div>
 
           {/* CONTENEDOR GRIS CON SOMBRA FUERTE */}
-          <div className="bg-[#eff3f6] p-8 rounded-4xl shadow-[0_15px_35px_rgba(0,0,0,0.2)] overflow-x-auto">
-
+          <Card
+            className="bg-[#eff3f6] p-8 rounded-[3rem] shadow-[0_15px_35px_rgba(0,0,0,0.2)] overflow-x-auto"
+            variant="default" // Usamos default para la sombra y redondeo general
+          >
             <div className="min-w-[700px]">
 
-              {/* ENCABEZADOS DE LA TABLA */}
-              <div className="grid grid-cols-8 gap-4 px-6 mb-4 text-gray-600 font-semibold text-sm">
-                <div className="col-span-2 text-left pl-4">Materia</div>
-                <div className="text-center">U1</div>
-                <div className="text-center">U2</div>
-                <div className="text-center">U3</div>
-                <div className="text-center">U4</div>
-                <div className="text-center">U5</div>
-                <div className="text-center">Final</div>
-              </div>
+              {/* 🛑 APLICACIÓN DEL COMPONENTE TABLE */}
+              <Table className="min-w-full">
 
-              {/* FILAS DE DATOS DESDE EL SERVICIO */}
-              <div className="space-y-3">
-                {calificaciones.length > 0 ? (
-                  calificaciones.map((fila, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-8 gap-4 bg-white rounded-full py-4 px-6 shadow-sm items-center text-sm text-gray-600 whitespace-nowrap hover:shadow-md transition-shadow"
-                    >
-                      {/* Materia ocupa 2 columnas */}
-                      <div className="col-span-2 font-bold text-gray-800 pl-4 truncate">
-                        {fila.materia}
-                      </div>
-                      <div className="text-center">{fila.u1}</div>
-                      <div className="text-center">{fila.u2}</div>
-                      <div className="text-center">{fila.u3}</div>
-                      <div className="text-center">{fila.u4}</div>
-                      <div className="text-center">{fila.u5}</div>
-                      <div className="text-center font-bold text-black">{fila.final}</div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-400 font-medium">No hay calificaciones registradas para el periodo **{periodoSeleccionado}**.</p>
-                  </div>
-                )}
-              </div>
+                {/* ENCABEZADOS DE LA TABLA */}
+                <Table.Header>
+                  <TableHead colSpan={2} className="text-left pl-4 w-2/5">Materia</TableHead>
+                  <TableHead className="text-center">U1</TableHead>
+                  <TableHead className="text-center">U2</TableHead>
+                  <TableHead className="text-center">U3</TableHead>
+                  <TableHead className="text-center">U4</TableHead>
+                  <TableHead className="text-center">U5</TableHead>
+                  <TableHead className="text-center">Final</TableHead>
+                </Table.Header>
+
+                {/* FILAS DE DATOS DESDE EL SERVICIO */}
+                <Table.Body>
+                  {calificaciones.length > 0 ? (
+                    calificaciones.map((fila, index) => (
+                      <Table.Row
+                        key={index}
+                        className="bg-white hover:bg-gray-50"
+                      >
+                        {/* Materia ocupa 2 columnas */}
+                        <TableCell colSpan={2} className="font-bold text-gray-800 pl-4 truncate w-2/5">
+                          {fila.materia}
+                        </TableCell>
+                        <TableCell className="text-center">{fila.u1}</TableCell>
+                        <TableCell className="text-center">{fila.u2}</TableCell>
+                        <TableCell className="text-center">{fila.u3}</TableCell>
+                        <TableCell className="text-center">{fila.u4}</TableCell>
+                        <TableCell className="text-center">{fila.u5}</TableCell>
+                        {/* Celda Final con color negrita */}
+                        <TableCell className="text-center font-bold text-black">{fila.final}</TableCell>
+                      </Table.Row>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <p className="text-gray-400 font-medium">No hay calificaciones registradas para el periodo **{periodoSeleccionado}**.</p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </Table.Body>
+              </Table>
 
             </div>
-          </div>
+          </Card> {/* Cierre del Card */}
         </div>
 
-        {/* LADO DERECHO: PROMEDIO (Texto flotante) */}
-        <div className="lg:w-48 flex flex-col items-center justify-center pt-8">
+        {/* LADO DERECHO: PROMEDIO (Tarjeta) */}
+        {/* 🛑 REFACTORIZADO: Usamos Card para el promedio flotante */}
+        <Card className="lg:w-48 flex flex-col items-center justify-center pt-8 bg-[#f4f6f8]" variant="elevated">
           <h2 className="text-2xl font-bold text-gray-700 mb-1">Promedio</h2>
           <span className="text-7xl font-black text-black tracking-tighter">{promedioCalculado}</span>
-        </div>
+        </Card>
 
       </div>
     </div>
