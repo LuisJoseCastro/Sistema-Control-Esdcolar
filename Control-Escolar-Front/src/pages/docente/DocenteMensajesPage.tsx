@@ -1,9 +1,13 @@
 // src/pages/docente/DocenteMensajesPage.tsx
 
 import React, { useState, useCallback } from 'react';
-import { Mail, Send, Search, User, Plus, ArrowLeft } from 'lucide-react';
+import { Mail, Send, Search, User, Plus, ArrowLeft, Paperclip } from 'lucide-react';
 // 🛑 NUEVO: Importamos useNavigate de react-router-dom para la navegación
 import { useNavigate } from 'react-router-dom';
+// Componentes atómicos reutilizables
+import Modal from '../../components/ui/Modal';
+import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
 
 // 🛑 ELIMINADA LA LÍNEA: import { type DocenteView } from '../../App'; 
 
@@ -95,6 +99,11 @@ export const DocenteMensajesPage: React.FC = () => {
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     // Estado para el término de búsqueda
     const [searchTerm, setSearchTerm] = useState<string>('');
+    // Estado para la modal de Nuevo Mensaje
+    const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+    // Campos del formulario de nuevo mensaje
+    const [to, setTo] = useState<string>('');
+    const [messageBody, setMessageBody] = useState<string>('');
 
     // Función para cambiar el mensaje seleccionado
     const handleMessageClick = useCallback((id: string) => {
@@ -124,7 +133,7 @@ export const DocenteMensajesPage: React.FC = () => {
                 {/* Botón de Nuevo Mensaje */}
                 <button
                     className="flex items-center space-x-2 py-2 px-4 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
-                    onClick={() => console.log('Abrir Modal/Página para Nuevo Mensaje')}
+                    onClick={() => setIsNewMessageOpen(true)}
                 >
                     <Plus className="w-5 h-5" />
                     <span>Nuevo Mensaje</span>
@@ -187,6 +196,75 @@ export const DocenteMensajesPage: React.FC = () => {
                 </div>
 
             </div>
+
+            {/* Modal: Nuevo Mensaje */}
+            <Modal
+                isOpen={isNewMessageOpen}
+                onClose={() => setIsNewMessageOpen(false)}
+                title="Nuevo Mensaje"
+                size="sm"
+            >
+                <div className="space-y-4">
+                    {/* Campo Para: */}
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-2">Para:</label>
+                        <Input
+                            placeholder="Destinatario"
+                            value={to}
+                            onChange={(e) => setTo(e.target.value)}
+                            className="bg-gray-100"
+                        />
+                    </div>
+
+                    {/* Área de texto grande con ícono de clip */}
+                    <div className="relative">
+                        <textarea
+                            placeholder="Escribe tu mensaje aquí..."
+                            value={messageBody}
+                            onChange={(e) => setMessageBody(e.target.value)}
+                            className="w-full h-40 p-4 bg-gray-100 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500"
+                        />
+                        <div className="absolute right-3 top-3 text-gray-500">
+                            <button type="button" className="p-1 rounded-md hover:bg-gray-200 transition">
+                                <Paperclip className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Botones: Limpiar y Enviar */}
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <Button
+                                variant="secondary"
+                                onClick={() => { setTo(''); setMessageBody(''); }}
+                                className="px-4 py-2 rounded-full"
+                            >
+                                Limpiar
+                            </Button>
+                        </div>
+
+                        <div className="flex items-center space-x-3">
+                            <span className="text-sm text-gray-500">Adjuntar archivos (opcional)</span>
+                            <Button
+                                variant="primary"
+                                onClick={() => {
+                                    // Simulación de envío
+                                    console.log('Enviando mensaje a', to, messageBody);
+                                    // En una implementación real se llamaría al servicio API
+                                    setIsNewMessageOpen(false);
+                                    setTo('');
+                                    setMessageBody('');
+                                    alert('Mensaje enviado (simulación)');
+                                }}
+                                icon={<Send className="w-4 h-4" />}
+                                className="px-4 py-2 rounded-full"
+                            >
+                                Enviar
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
 
         </div>
     );
