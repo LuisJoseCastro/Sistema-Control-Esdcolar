@@ -60,8 +60,8 @@ export const AlumnoDashboardPage: React.FC = () => {
 
       {/* ENCABEZADO */}
       <header className="flex justify-between items-center border-b-2 border-gray-200 pb-4 mb-8">
-        <h1 className="text-4xl font-[Kaushan Script] text-gray-800">
-          Mi Inicio
+        <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
+          Bienvenido
         </h1>
         <UserHeaderIcons unreadCount={unreadCount} />
       </header>
@@ -71,7 +71,7 @@ export const AlumnoDashboardPage: React.FC = () => {
 
         {/* Promedio General */}
         {/* 🛑 CORRECCIÓN: Añadir bg-white ya que la nueva Card no tiene fondo fijo */}
-        <Card className="bg-white p-10 text-center shadow-xl w-72 border-t-4 border-blue-500">
+        <Card className="bg-gray-100! p-10 text-center shadow-xl w-72 border-t-4 ">
           <p className="text-2xl text-gray-600 font-semibold mb-2">Promedio</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.promedioGeneral.toFixed(1)}
@@ -80,7 +80,7 @@ export const AlumnoDashboardPage: React.FC = () => {
 
         {/* Porcentaje de Asistencia */}
         {/* 🛑 CORRECCIÓN: Añadir bg-white ya que la nueva Card no tiene fondo fijo */}
-        <Card className="bg-white p-10 text-center shadow-xl w-72 border-t-4 border-purple-500">
+        <Card className="bg-gray-100! p-10 text-center shadow-xl w-72 border-t-4 ">
           <p className="text-2xl text-gray-600 font-semibold mb-2">Asistencia</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.asistenciaPorcentaje}%
@@ -90,7 +90,7 @@ export const AlumnoDashboardPage: React.FC = () => {
 
       {/* SECCIÓN DE NOTIFICACIONES */}
       {/* Este contenedor no usa Card, pero se ve afectado por la Card del Docente si se cambia a la versión "flat" */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-gray-100! rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
           <Bell className="text-blue-600" /> Últimas Notificaciones
         </h2>
@@ -102,7 +102,7 @@ export const AlumnoDashboardPage: React.FC = () => {
                 key={notif.id}
                 // Este DIV debe ser blanco si no está leído.
                 className={`p-4 rounded-lg flex items-start gap-4 transition-all
-                  ${notif.leida
+                  ${notif.leida
                     ? 'bg-gray-50 text-gray-500'
                     : 'bg-white text-blue-900 border-l-4 border-blue-500 shadow-sm'
                   }`}

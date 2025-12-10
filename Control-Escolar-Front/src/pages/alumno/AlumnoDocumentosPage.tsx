@@ -6,10 +6,16 @@ import { useAuth } from '../../hooks/useAuth';
 import { getHistorialPagos, getDocumentosSolicitados, getCatalogoDocumentos } from '../../services/alumno.service';
 import type { DocumentoPagado, DocumentoSolicitado } from '../../types/models';
 
-// UI & Iconos
+// 🛑 IMPORTACIONES DE UI UNIFICADA
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-import { Download, Upload, X, ChevronDown } from 'lucide-react';
+import { Card } from '../../components/ui/Card';        // Nombrada (Solo para filas internas)
+import Input from '../../components/ui/Input';          // Por defecto
+import Select from '../../components/ui/Select';        // Por defecto
+import Button from '../../components/ui/Button';        // Por defecto
+import Badge from '../../components/ui/Badge';          // Por defecto
+
+import { Download, Upload, Plus } from 'lucide-react';
 
 export const AlumnoDocumentosPage: React.FC = () => {
     const { user } = useAuth();
@@ -18,8 +24,8 @@ export const AlumnoDocumentosPage: React.FC = () => {
     const [historialPagos, setHistorialPagos] = useState<DocumentoPagado[]>([]);
     const [solicitados, setSolicitados] = useState<DocumentoSolicitado[]>([]);
     
-    // Nuevo estado para el catálogo dinámico
-    const [opcionesDocumentos, setOpcionesDocumentos] = useState<string[]>([]);
+    // Nuevo estado para el catálogo dinámico (Ahora tipado para Select)
+    const [opcionesDocumentos, setOpcionesDocumentos] = useState<{ value: string; label: string; }[]>([]);
 
     // Estados del formulario
     const [documentoSolicitar, setDocumentoSolicitar] = useState('');
@@ -31,7 +37,6 @@ export const AlumnoDocumentosPage: React.FC = () => {
         const fetchData = async () => {
             if (!user?.id) return;
             try {
-                // Cargamos todo en paralelo: Pagos, Solicitudes y el Catálogo
                 const [pagos, docs, catalogo] = await Promise.all([
                     getHistorialPagos(user.id),
                     getDocumentosSolicitados(user.id),
@@ -40,9 +45,9 @@ export const AlumnoDocumentosPage: React.FC = () => {
 
                 setHistorialPagos(pagos);
                 setSolicitados(docs);
-                setOpcionesDocumentos(catalogo);
-
-                // Inicializamos los selects con el primer valor del catálogo
+                // Mapear a formato Select
+                setOpcionesDocumentos(catalogo.map(d => ({ value: d, label: d })));
+                
                 if (catalogo.length > 0) {
                     setDocumentoSolicitar(catalogo[0]);
                     setDocumentoAdjuntar(catalogo[0]);
@@ -58,7 +63,10 @@ export const AlumnoDocumentosPage: React.FC = () => {
     }, [user]);
 
     const handleDownload = (concepto: string) => alert(`Descargando: ${concepto}`);
-    const handleSolicitar = () => alert(`¡${documentoSolicitar} (x${cantidadSolicitar}) solicitado con éxito!`);
+    const handleSolicitar = () => {
+        if (!documentoSolicitar || cantidadSolicitar < 1) return alert("Selecciona documento y cantidad.");
+        alert(`¡${documentoSolicitar} (x${cantidadSolicitar}) solicitado con éxito!`);
+    };
     const handleUploadComprobante = () => {
         if (!archivoAdjunto) return alert("Por favor, selecciona un archivo.");
         alert(`Comprobante para ${documentoAdjuntar} subido con éxito.`);
@@ -67,26 +75,38 @@ export const AlumnoDocumentosPage: React.FC = () => {
 
     if (loading) return <div className="flex justify-center h-screen items-center bg-white"><LoadingSpinner text="Cargando trámites..." /></div>;
 
-    // --- ESTILOS VISUALES ---
-    const cardStyle = "bg-[#f4f6f8] rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-8 md:p-10";
-    const rowStyle = "bg-white rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between shadow-sm mb-3 text-sm text-gray-600 gap-4";
+    // 🛑 CLASE DE ESTILO GRIS ORIGINAL (Sin el componente Card)
+    const cardStyle = "bg-gray-200 rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.08)] p-8 md:p-10";
+
+    // Componente para las filas internas que deben ser blancas (usamos Card)
+    const InnerRow: React.FC<{ children: React.ReactNode, key: number }> = ({ children, key }) => (
+        <Card 
+            key={key} 
+            variant="flat" 
+            // Forzamos el fondo blanco y border/shadow ligero para la fila
+            className="rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between shadow-sm mb-3 text-sm text-gray-600 gap-4 bg-white border border-gray-200"
+        >
+            {children}
+        </Card>
+    );
 
     return (
         <div className="p-8 bg-white min-h-full font-sans">
             
-            {/* ENCABEZADO */}
+            {/* ENCABEZADO sin cambios */}
             <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-10">
                 <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     Documentos y Pagos
                 </h1>
                 <div className="mb-2">
-                   <UserHeaderIcons />
+                    <UserHeaderIcons />
                 </div>
             </header>
 
             <div className="flex flex-col gap-10 max-w-7xl mx-auto">
 
                 {/* 1. HISTORIAL GENERAL DE PAGOS */}
+                {/* 🛑 DE VUELTA A DIV NATIVO con la clase de estilo GRIS */}
                 <div className={cardStyle}>
                     <div className="mb-6 ml-2">
                         <h2 className="text-2xl font-bold text-gray-800">Historial General de Pagos</h2>
@@ -103,32 +123,35 @@ export const AlumnoDocumentosPage: React.FC = () => {
 
                     <div>
                         {historialPagos.map((item, i) => (
-                            <div key={i} className={rowStyle}>
+                            <InnerRow key={i}>
                                 <div className="w-full md:w-1/5 font-medium">{item.fecha}</div>
                                 <div className="w-full md:w-2/5 font-bold text-gray-800">{item.concepto}</div>
                                 <div className="w-full md:w-1/5 text-left md:text-right font-mono text-gray-700 font-bold">
                                     ${item.monto.toFixed(2)}
                                 </div>
                                 <div className="w-full md:w-1/5 flex justify-center">
-                                     <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                         {item.estado}
-                                     </span>
+                                    <Badge variant="success">
+                                        {item.estado}
+                                    </Badge>
                                 </div>
                                 <div className="w-full md:w-1/5 flex justify-center">
-                                    <button 
+                                    <Button 
                                         onClick={() => handleDownload(item.concepto)}
-                                        className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors font-bold text-xs"
+                                        variant="ghost"
+                                        className="text-gray-500 hover:text-black font-bold text-xs p-1"
+                                        icon={<Download size={16}/>}
                                     >
-                                        <Download size={16}/> Descargar
-                                    </button>
+                                        Descargar
+                                    </Button>
                                 </div>
-                            </div>
+                            </InnerRow>
                         ))}
                     </div>
                 </div>
 
 
                 {/* 2. SOLICITUD DE DOCUMENTOS */}
+                {/* 🛑 DE VUELTA A DIV NATIVO con la clase de estilo GRIS */}
                 <div className={cardStyle}>
                     <div className="mb-8 ml-2">
                         <h2 className="text-2xl font-bold text-gray-800">Solicitud de Documentos</h2>
@@ -138,64 +161,63 @@ export const AlumnoDocumentosPage: React.FC = () => {
                     {/* Formulario */}
                     <div className="flex flex-col md:flex-row items-end gap-6 mb-10 px-2">
                         <div className="flex-1 w-full space-y-2">
-                            <label className="text-sm font-bold text-gray-500 ml-1">Selecciona..</label>
-                            <div className="relative">
-                                <select 
-                                    value={documentoSolicitar}
-                                    onChange={(e) => setDocumentoSolicitar(e.target.value)}
-                                    className="w-full appearance-none bg-white border border-gray-200 text-gray-700 py-3 px-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
-                                >
-                                    {opcionesDocumentos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                </select>
-                                <ChevronDown className="absolute right-4 top-3.5 text-gray-400 pointer-events-none" size={20} />
-                            </div>
+                            <label className="block text-sm font-bold text-gray-500 ml-1">Selecciona..</label>
+                            <Select
+                                value={documentoSolicitar}
+                                onChange={(e) => setDocumentoSolicitar(e.target.value)}
+                                options={opcionesDocumentos}
+                                selectClassName="bg-white border-gray-300"
+                            />
                         </div>
 
                         <div className="w-full md:w-32 space-y-2">
-                             <div className="bg-[#e2e8f0] rounded-lg flex items-center px-3 py-1 h-[50px] relative mt-7">
-                                <input 
-                                    type="number" 
-                                    min="1"
-                                    value={cantidadSolicitar}
-                                    onChange={(e) => setCantidadSolicitar(parseInt(e.target.value))}
-                                    className="bg-transparent w-full text-center font-bold text-gray-700 outline-none text-lg"
-                                />
-                                <X size={16} className="text-gray-500 absolute right-3 cursor-pointer hover:text-red-500"/>
-                            </div>
+                            <label className="block text-sm font-bold text-gray-500 ml-1">Cantidad</label>
+                            <Input 
+                                type="number" 
+                                min="1"
+                                value={cantidadSolicitar}
+                                onChange={(e) => setCantidadSolicitar(parseInt(e.target.value))}
+                                className="w-full text-center font-bold bg-white"
+                            />
                         </div>
 
-                        <button 
+                        <Button 
                             onClick={handleSolicitar}
-                            className="bg-[#344054] hover:bg-[#232b38] text-white font-bold py-3 px-8 rounded-xl shadow-md transition-transform active:scale-95 h-[50px] min-w-[140px] w-full md:w-auto"
+                            variant="primary"
+                            icon={<Plus size={20} />}
+                            className="h-[50px] min-w-[140px] w-full md:w-auto mt-6"
                         >
                             Agregar
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Tabla de Pendientes */}
                     <div>
                         {solicitados.map((item, i) => (
-                            <div key={i} className={rowStyle}>
+                            <InnerRow key={i}>
                                 <div className="w-full md:w-1/4 font-medium text-gray-500">{item.fecha}</div>
                                 <div className="w-full md:w-1/4 font-bold text-gray-800">{item.concepto}</div>
                                 <div className="w-full md:w-1/4 text-left md:text-right font-mono text-gray-700 font-bold">
                                     {item.pago !== '---' ? `$${(item.pago as number).toFixed(2)}` : '---'}
                                 </div>
                                 <div className="w-full md:w-1/4 flex justify-center">
-                                    <button 
+                                    <Button 
                                         onClick={() => handleDownload("Voucher")}
-                                        className="flex items-center gap-2 text-gray-500 hover:text-black transition-colors font-bold text-xs uppercase"
+                                        variant="ghost"
+                                        className="text-gray-500 hover:text-black font-bold text-xs p-1"
+                                        icon={<Download size={16}/>}
                                     >
-                                        <Download size={16}/> Descargar
-                                    </button>
+                                        Voucher
+                                    </Button>
                                 </div>
-                            </div>
+                            </InnerRow>
                         ))}
                     </div>
                 </div>
 
 
                 {/* 3. ADJUNTAR COMPROBANTES */}
+                {/* 🛑 DE VUELTA A DIV NATIVO con la clase de estilo GRIS */}
                 <div className={cardStyle}>
                     <div className="mb-6 ml-2">
                         <h2 className="text-2xl font-bold text-gray-800">Adjuntar Comprobantes de Pago</h2>
@@ -204,23 +226,19 @@ export const AlumnoDocumentosPage: React.FC = () => {
 
                     <div className="flex flex-col lg:flex-row items-center gap-4 bg-transparent mt-8">
                         
-                        {/* 1. Selector (Gris) */}
-                        <div className="flex-1 w-full relative">
-                            <div className="bg-[#e2e8f0] rounded-xl px-6 py-4 flex items-center justify-between cursor-pointer h-[60px]">
-                                <span className="font-bold text-gray-700 truncate mr-2">{documentoAdjuntar}</span>
-                                <ChevronDown className="text-gray-500" size={20} />
-                            </div>
-                            <select 
+                        {/* 1. Selector */}
+                        <div className="flex-1 w-full space-y-2">
+                            <label className="block text-sm font-bold text-gray-500 ml-1">Selecciona..</label>
+                            <Select
                                 value={documentoAdjuntar}
                                 onChange={(e) => setDocumentoAdjuntar(e.target.value)}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            >
-                                {opcionesDocumentos.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                                options={opcionesDocumentos}
+                                selectClassName="bg-white border-gray-300"
+                            />
                         </div>
 
-                        {/* 2. Botón Archivo (Gris) */}
-                        <label className="flex-1 w-full bg-[#e2e8f0] rounded-xl px-6 py-4 flex items-center justify-center gap-3 cursor-pointer h-[60px] hover:bg-[#d1dbe6] transition-colors relative">
+                        {/* 2. Botón Archivo (Usamos Label con Button estilo manual) */}
+                        <label className="flex-1 w-full bg-white rounded-xl px-6 py-4 flex items-center justify-center gap-3 cursor-pointer h-[50px] hover:bg-gray-100 transition-colors relative mt-6 border border-gray-300">
                             <input 
                                 type="file" 
                                 className="hidden"
@@ -232,14 +250,16 @@ export const AlumnoDocumentosPage: React.FC = () => {
                             </span>
                         </label>
 
-                        {/* 3. Botón Subir (Oscuro) */}
-                        <button 
+                        {/* 3. Botón Subir */}
+                        <Button 
                             onClick={handleUploadComprobante}
                             disabled={!archivoAdjunto}
-                            className="bg-[#344054] hover:bg-[#232b38] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-12 rounded-xl shadow-md h-[60px] w-full lg:w-auto"
+                            variant="primary"
+                            icon={<Upload size={20} />}
+                            className="bg-[#344054] hover:bg-[#232b38] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold h-[50px] w-full lg:w-auto mt-6"
                         >
                             Subir
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
