@@ -1,11 +1,13 @@
-// src/pages/docente/DocenteDashboardPage.tsx
-
 import React, { useCallback, useMemo } from 'react';
-import { Bell, Menu, Home, Calendar, BookOpen, Users, MessageSquare, List, ClipboardList } from 'lucide-react';
-// 🛑 NUEVO: Importamos useNavigate de react-router-dom
-import { useNavigate } from 'react-router-dom'; 
+import { Calendar, List, ClipboardList } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-// 🛑 ELIMINADA LA LÍNEA: import { type DocenteView } from '../../App'; 
+// Importación de componentes atómicos (RUTAS CORREGIDAS: de ../../components/ui/... a ../../ui/...)
+// Asumo que el archivo DocenteDashboardPage.tsx se encuentra en src/pages/docente/
+// y los componentes UI se encuentran en src/components/ui/
+import { Card } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Table from '../../components/ui/Table'; // Importación de componente compuesto
 
 // --- Tipos de Datos para la Carga Académica (Mock Data) ---
 interface Asignatura {
@@ -21,9 +23,6 @@ interface Clase {
     asignatura: string;
     dia: 'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes' | 'Sabado' | 'Domingo';
 }
-
-// 🛑 ELIMINADA LA INTERFAZ: DocenteDashboardPageProps
-
 
 // --- MOCK DATA ---
 const MOCK_ASIGNATURAS: Asignatura[] = [
@@ -45,35 +44,19 @@ const MOCK_HORARIO: Clase[] = [
     { horaInicio: '12:00', horaFin: '14:00', asignatura: 'Historia (E4)', dia: 'Viernes' },
 ];
 
-// --- COMPONENTES ATÓMICOS (Incrustados para simplicidad) ---
+// --- COMPONENTE INTERNO DE HORARIO (Ajustado a tema claro) ---
 
-// Componente para la Fila de la Tabla de Asignaturas
-const AsignaturaRow: React.FC<{ asignatura: Asignatura, isHeader?: boolean }> = ({ asignatura, isHeader = false }) => {
-// ... (AsignaturaRow sin cambios) ...
-    const baseClasses = "py-3 px-4 border-b border-gray-600 truncate";
-    const headerClasses = "bg-gray-700 text-gray-100 font-semibold text-left";
-    const rowClasses = "text-gray-200";
-
-    return (
-        <div className={`grid grid-cols-4 ${isHeader ? headerClasses : rowClasses} text-sm`}>
-            <div className={`${baseClasses} col-span-1`}>{asignatura.nombre}</div>
-            <div className={`${baseClasses} col-span-1`}>{asignatura.clave}</div>
-            <div className={`${baseClasses} col-span-1`}>{asignatura.horario}</div>
-            <div className={`${baseClasses} col-span-1 border-b-0`}>{asignatura.salon}</div>
-        </div>
-    );
-};
-
-// Componente para la Celda de Horario
-const HorarioSlot: React.FC<{ timeRange: string, content?: Clase[] }> = ({ timeRange, content = [] }) => {
-// ... (HorarioSlot sin cambios) ...
+/**
+ * Componente para un slot de tiempo en la matriz del horario.
+ */
+const HorarioSlot: React.FC<{ timeRange: string, content: Clase[] }> = ({ timeRange, content = [] }) => {
     // Lista de los 7 días (Domingo a Sábado) para el mapeo
     const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
     
     return (
-        <div className="flex border-b border-gray-600 last:border-b-0">
+        <div className="flex border-b border-gray-200 last:border-b-0">
             {/* Columna de la Hora */}
-            <div className="w-[100px] text-xs py-2 px-1 text-gray-400 border-r border-gray-600 flex items-start justify-center text-center">
+            <div className="w-[100px] text-xs py-2 px-1 text-gray-500 bg-gray-50 border-r border-gray-200 flex items-start justify-center text-center font-medium">
                 {timeRange}
             </div>
             
@@ -84,13 +67,19 @@ const HorarioSlot: React.FC<{ timeRange: string, content?: Clase[] }> = ({ timeR
                     return (
                         <div 
                             key={day} 
-                            className={`flex flex-col justify-start p-1 text-xs border-r border-gray-600 last:border-r-0 h-full ${
-                                classes.length > 0 ? 'bg-blue-900/40' : 'bg-gray-800'
+                            // Estilos para celda vacía/con clase (ajustados a un tema claro más profesional)
+                            className={`flex flex-col justify-start p-1 text-xs border-r border-gray-200 last:border-r-0 h-full min-h-[50px] ${
+                                classes.length > 0 ? 'bg-blue-50' : 'bg-white'
                             }`}
                         >
                             {classes.map((clase, index) => (
-                                <div key={index} className="bg-blue-700/80 text-white rounded px-1 py-[1px] mb-1 truncate leading-tight cursor-pointer hover:bg-blue-600 transition-colors">
-                                    {clase.asignatura} ({clase.horaInicio}-{clase.horaFin})
+                                <div 
+                                    key={index} 
+                                    className="bg-blue-500 text-white rounded px-1 py-[1px] mb-1 truncate leading-tight cursor-pointer hover:bg-blue-600 transition-colors shadow-sm"
+                                    title={`${clase.asignatura} (${clase.horaInicio}-${clase.horaFin})`}
+                                >
+                                    {/* Muestra la abreviatura o el nombre completo si hay espacio */}
+                                    {clase.asignatura.split(' ')[0]}... ({clase.horaInicio})
                                 </div>
                             ))}
                         </div>
@@ -103,13 +92,11 @@ const HorarioSlot: React.FC<{ timeRange: string, content?: Clase[] }> = ({ timeR
 
 
 // --- PÁGINA PRINCIPAL DocenteDashboardPage (Carga Académica - Inicio) ---
-// 🛑 Componente principal sin props
 const DocenteDashboardPage: React.FC = () => {
-    // 🛑 Hook de React Router DOM
     const navigate = useNavigate();
     
-    // Rango de horas para el horario (como en la maqueta)
-    const timeSlots = [
+    // Rango de horas para el horario
+    const timeSlots = useMemo(() => [
         '06:00 - 07:00',
         '07:00 - 08:00', 
         '08:00 - 09:00',
@@ -119,14 +106,13 @@ const DocenteDashboardPage: React.FC = () => {
         '12:00 - 13:00', 
         '13:00 - 14:00', 
         '14:00 - 15:00', 
-        // Puedes extender esto según la necesidad
-    ];
+    ], []);
 
     // Función para obtener las clases que caen dentro de un rango de tiempo específico
-    // Esta es una simplificación visual que funciona para el mock.
     const getClasesForSlot = useCallback((slot: string): Clase[] => {
         const [timeStartStr] = slot.split(' - ');
         
+        // Asumiendo que las horas de inicio de las clases son horas enteras para el mock
         const slotStartHour = parseInt(timeStartStr.split(':')[0]);
 
         return MOCK_HORARIO.filter(clase => {
@@ -141,73 +127,70 @@ const DocenteDashboardPage: React.FC = () => {
     const daysHeader = useMemo(() => ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'], []);
 
     return (
-        <div className="p-4 md:p-8 bg-gray-900 text-gray-100 min-h-full">
+        // Se utiliza un fondo claro para toda la página, asumiendo que el layout ya lo tiene o lo necesita.
+        <div className="p-4 md:p-8 bg-gray-50 min-h-screen text-gray-800">
             
-            {/* Header del Contenido Principal (Simulando la parte superior derecha de la maqueta) */}
-            <header className="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-                <h1 className="text-3xl font-serif italic text-white">Mi Carga Académica</h1>
-                <div className="flex items-center space-x-4">
-                    {/* Icono de Campana de Notificaciones (Podríamos usar un componente UserHeaderIcons adaptado al Docente aquí) */}
-                    <Bell className="w-6 h-6 text-blue-400 cursor-pointer hover:text-blue-300 transition-colors" 
-                        onClick={() => navigate('/docente/mensajes')}
-                    />
-                    {/* Icono de Menú para dispositivos móviles (si Sidebar fuera colapsable) */}
-                    <Menu className="w-6 h-6 text-gray-400 md:hidden cursor-pointer hover:text-gray-300 transition-colors" />
-                </div>
+            {/* Header del Contenido Principal */}
+            <header className="mb-6">
+                <h1 className="text-3xl font-extrabold text-gray-900">Mi Carga Académica</h1>
+                <p className="text-gray-500 mt-1">
+                    Consulta tus planes de estudio, asignaturas y horarios
+                </p>
             </header>
             
-            <p className="text-gray-400 mb-8 text-lg">
-                Consulta tus planes de estudio, asignaturas y horarios
-            </p>
-
-            {/* 1. SECCIÓN DE ASIGNATURAS */}
-            <div className="bg-gray-800 p-6 rounded-xl shadow-xl mb-10">
-                <h2 className="text-xl font-semibold text-blue-400 mb-4 flex items-center">
-                    <List className="w-5 h-5 mr-2" />
+            {/* 1. SECCIÓN DE ASIGNATURAS (Usando Card y Table) */}
+            <Card className="mb-8" variant="default" header={
+                <div className="flex items-center">
+                    <List className="w-5 h-5 mr-2 text-blue-600" />
                     Asignaturas Actuales
-                </h2>
-                
-                {/* Tabla de Asignaturas (Estilo Maqueta) */}
-                <div className="overflow-x-auto rounded-lg">
-                    <div className="min-w-full divide-y divide-gray-700">
-                        {/* Fila de Encabezados */}
-                        <AsignaturaRow 
-                            isHeader 
-                            asignatura={{ 
-                                nombre: 'Asignaturas', 
-                                clave: 'Clave', 
-                                horario: 'Horario', 
-                                salon: 'Salón' 
-                            }} 
-                        />
-                        {/* Filas de Datos */}
-                        {MOCK_ASIGNATURAS.map((item, index) => (
-                            <AsignaturaRow key={index} asignatura={item} />
-                        ))}
-                    </div>
                 </div>
-            </div>
+            }>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.Head>Asignaturas</Table.Head>
+                                <Table.Head>Clave</Table.Head>
+                                <Table.Head>Horario</Table.Head>
+                                <Table.Head>Salón</Table.Head>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                            {MOCK_ASIGNATURAS.map((item, index) => (
+                                <Table.Row key={index}>
+                                    <Table.Cell className="font-semibold text-gray-900">{item.nombre}</Table.Cell>
+                                    <Table.Cell className="text-gray-600">{item.clave}</Table.Cell>
+                                    <Table.Cell className="text-gray-600">{item.horario}</Table.Cell>
+                                    <Table.Cell>
+                                        <span className="bg-cyan-100 text-cyan-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{item.salon}</span>
+                                    </Table.Cell>
+                                </Table.Row>
+                            ))}
+                        </Table.Body>
+                    </Table>
+                </div>
+            </Card>
 
 
-            {/* 2. SECCIÓN DE HORARIO SEMANAL */}
-            <div className="bg-gray-800 p-6 rounded-xl shadow-xl">
-                <h2 className="text-xl font-semibold text-blue-400 mb-4 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2" />
+            {/* 2. SECCIÓN DE HORARIO SEMANAL (Usando Card) */}
+            <Card header={
+                <div className="flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                     Horario Semanal
-                </h2>
-                
+                </div>
+            }>
                 {/* Contenedor del Horario (Scrollable horizontalmente si es necesario) */}
-                <div className="overflow-x-auto rounded-lg border border-gray-600">
-                    <div className="min-w-[800px] bg-gray-800">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-inner">
+                    <div className="min-w-[800px] bg-white">
                         
                         {/* Encabezados de los Días */}
-                        <div className="flex bg-gray-700 text-gray-100 font-semibold text-sm border-b border-gray-600">
+                        <div className="flex bg-gray-100 text-gray-700 font-semibold text-sm border-b border-gray-200">
                             {/* Celda de hora vacía */}
-                            <div className="w-[100px] py-2 px-1 text-center border-r border-gray-600">Hora</div>
+                            <div className="w-[100px] py-2 px-1 text-center border-r border-gray-200">Hora</div>
                             {/* Días de la Semana */}
                             <div className="flex-1 grid grid-cols-7">
                                 {daysHeader.map(day => (
-                                    <div key={day} className="py-2 px-1 text-center border-r border-gray-600 last:border-r-0">{day}</div>
+                                    <div key={day} className="py-2 px-1 text-center border-r border-gray-200 last:border-r-0">{day}</div>
                                 ))}
                             </div>
                         </div>
@@ -222,17 +205,17 @@ const DocenteDashboardPage: React.FC = () => {
                         ))}
                     </div>
                 </div>
-            </div>
+            </Card>
 
-            {/* Botones de acción opcional, navegando con el hook useNavigate */}
+            {/* Botón de acción (Usando Button) */}
             <div className="mt-8 flex justify-end">
-                <button
+                <Button
                     onClick={() => navigate('/docente/calificaciones')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg transition duration-150 shadow-md flex items-center gap-2"
+                    variant="primary" // Se ajusta al color azul de tu botón original
+                    icon={<ClipboardList className="w-5 h-5" />}
                 >
-                    <ClipboardList className="w-5 h-5" />
                     Capturar Calificaciones
-                </button>
+                </Button>
             </div>
 
         </div>
