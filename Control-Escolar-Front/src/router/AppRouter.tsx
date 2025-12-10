@@ -22,7 +22,6 @@ import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
 import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
 import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDetallesPage';
-
 import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
 import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
@@ -31,6 +30,9 @@ import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
 import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
 import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
+
+
+import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
 
 // === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
@@ -71,6 +73,7 @@ export const AppRouter: React.FC = () => {
           {/* ADMIN */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
+            <Route path="/admin/docentes" element={<AdminDocentesPage />} />
           </Route>
 
           {/* DOCENTE */}
