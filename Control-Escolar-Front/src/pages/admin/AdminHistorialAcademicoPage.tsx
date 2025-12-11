@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 
 export const AdminHistorialAcademicoPage: React.FC = () => {
   const { alumnoId, grupoId } = useParams<{ alumnoId: string; grupoId?: string }>();
@@ -33,6 +33,78 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
 
   // Promedio general
   const promedioGeneral = calificaciones.reduce((acc, curr) => acc + curr.calificacion, 0) / calificaciones.length;
+
+  // Función para descargar el historial en formato CSV
+  const handleDescargarHistorial = () => {
+    const fechaActual = new Date().toISOString().split('T')[0];
+    const nombreArchivo = `historial_academico_${alumno.matricula}_${fechaActual}`;
+    
+    // Crear contenido del CSV
+    const contenidoCSV = generarContenidoCSV();
+    
+    // Crear y descargar archivo CSV
+    const blob = new Blob([contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${nombreArchivo}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Mostrar mensaje de confirmación
+    alert(`Historial académico descargado exitosamente: ${nombreArchivo}.csv`);
+  };
+
+  // Función para generar el contenido CSV
+  const generarContenidoCSV = (): string => {
+    const lineas: string[] = [];
+    
+    // Encabezado del documento
+    lineas.push('HISTORIAL ACADÉMICO');
+    lineas.push('');
+    lineas.push(`Alumno: ${alumno.nombre}`);
+    lineas.push(`Matrícula: ${alumno.matricula}`);
+    lineas.push(`Fecha de generación: ${new Date().toLocaleString()}`);
+    lineas.push('');
+    
+    // Promedio general
+    lineas.push('=== RESUMEN GENERAL ===');
+    lineas.push('Promedio General,' + promedioGeneral.toFixed(1));
+    lineas.push('');
+    
+    // Detalles de inscripción
+    lineas.push('=== DETALLES DE INSCRIPCIÓN ===');
+    lineas.push('Ciclo,Estado,Fecha de Inscripción');
+    inscripciones.forEach(inscripcion => {
+      lineas.push(`${inscripcion.ciclo},${inscripcion.estado},${inscripcion.fecha}`);
+    });
+    lineas.push('');
+    
+    // Calificaciones y asistencia
+    lineas.push('=== CALIFICACIONES Y ASISTENCIA - CICLO 2024-1 ===');
+    lineas.push('Materia,Calificación,Asistencia,Estado');
+    calificaciones.forEach(materia => {
+      const estado = materia.calificacion >= 6 ? 'Aprobado' : 'Reprobado';
+      lineas.push(`${materia.materia},${materia.calificacion.toFixed(1)},${materia.asistencia},${estado}`);
+    });
+    lineas.push('');
+    
+    // Resumen del ciclo
+    const promedioCiclo = calificaciones.reduce((acc, curr) => acc + curr.calificacion, 0) / calificaciones.length;
+    const promedioAsistencia = calificaciones.reduce((acc, curr) => acc + parseFloat(curr.asistencia), 0) / calificaciones.length;
+    const materiasAprobadas = calificaciones.filter(m => m.calificacion >= 6).length;
+    
+    lineas.push('=== RESUMEN DEL CICLO 2024-1 ===');
+    lineas.push('Promedio del Ciclo,' + promedioCiclo.toFixed(1));
+    lineas.push('Promedio de Asistencia,' + promedioAsistencia.toFixed(1) + '%');
+    lineas.push('Materias Aprobadas,' + materiasAprobadas + '/' + calificaciones.length);
+    
+    return lineas.join('\n');
+  };
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">
@@ -193,90 +265,14 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* HISTORIAL POR CICLOS */}
-      <Card variant="elevated" className="mb-6">
-        <h3 className="text-xl font-bold text-[#2E4156] mb-6">Historial por Ciclos</h3>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Ciclo</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Promedio</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Asistencia</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Materias</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100 hover:bg-blue-50/50">
-                <td className="py-3 px-4 font-medium text-gray-800">2024-1</td>
-                <td className="py-3 px-4">
-                  <span className="text-lg font-bold text-green-600">9.0</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">94.5%</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">6/6 aprobadas</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Completado
-                  </span>
-                </td>
-              </tr>
-              
-              <tr className="border-b border-gray-100 hover:bg-blue-50/50">
-                <td className="py-3 px-4 font-medium text-gray-800">2023-2</td>
-                <td className="py-3 px-4">
-                  <span className="text-lg font-bold text-green-600">8.7</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">92.3%</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">6/6 aprobadas</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Completado
-                  </span>
-                </td>
-              </tr>
-              
-              <tr className="border-b border-gray-100 hover:bg-blue-50/50">
-                <td className="py-3 px-4 font-medium text-gray-800">2023-1</td>
-                <td className="py-3 px-4">
-                  <span className="text-lg font-bold text-blue-600">8.2</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">89.8%</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="text-gray-700">5/6 aprobadas</span>
-                </td>
-                <td className="py-3 px-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Completado
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* ACCIONES */}
-      <div className="flex flex-wrap gap-4 justify-end mt-8">
-        <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors">
+      {/* BOTÓN DE ACCIÓN */}
+      <div className="flex justify-end mt-8">
+        <button 
+          onClick={handleDescargarHistorial}
+          className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+        >
+          <Download size={18} />
           Descargar Historial
-        </button>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors">
-          Generar Reporte
-        </button>
-        <button className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-          Imprimir Constancia
         </button>
       </div>
     </div>

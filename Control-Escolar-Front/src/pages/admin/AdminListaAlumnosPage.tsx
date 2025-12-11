@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, X, Download } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import Table from '../../components/ui/Table';
 import Input from '../../components/ui/Input';
+
+interface Alumno {
+  id: number;
+  matricula: string;
+  nombre: string;
+}
 
 export const AdminListaAlumnosPage: React.FC = () => {
   const { grupoId = '3A' } = useParams<{ grupoId: string }>();
   const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState('');
-  
-  // Datos de ejemplo para la tabla
-  const alumnos = [
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [nuevoAlumno, setNuevoAlumno] = useState({
+    matricula: '',
+    nombre: ''
+  });
+  const [alumnos, setAlumnos] = useState<Alumno[]>([
     { id: 1, matricula: 'A001', nombre: 'Juan Pérez López' },
     { id: 2, matricula: 'A002', nombre: 'María González Ruiz' },
     { id: 3, matricula: 'A003', nombre: 'Carlos Rodríguez Sánchez' },
@@ -20,7 +29,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
     { id: 6, matricula: 'A006', nombre: 'Laura Díaz Méndez' },
     { id: 7, matricula: 'A007', nombre: 'Miguel Ángel Ruiz Castro' },
     { id: 8, matricula: 'A008', nombre: 'Sofía Herrera Vargas' },
-  ];
+  ]);
   
   // Filtrar alumnos según búsqueda
   const alumnosFiltrados = alumnos.filter(alumno =>
@@ -36,13 +45,111 @@ export const AdminListaAlumnosPage: React.FC = () => {
     navigate(`/admin/alumnos/${grupoId}/${alumnoId}/historial`);
   };
 
+  const handleAgregarAlumno = () => {
+    setMostrarModal(true);
+  };
+
+  const handleCerrarModal = () => {
+    setMostrarModal(false);
+    setNuevoAlumno({ matricula: '', nombre: '' });
+  };
+
+  const handleSubmitAlumno = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!nuevoAlumno.matricula.trim() || !nuevoAlumno.nombre.trim()) {
+      alert('Por favor complete todos los campos');
+      return;
+    }
+
+    // Verificar si la matrícula ya existe
+    const matriculaExiste = alumnos.some(
+      alumno => alumno.matricula.toLowerCase() === nuevoAlumno.matricula.toLowerCase()
+    );
+    
+    if (matriculaExiste) {
+      alert('La matrícula ya existe. Por favor ingrese una matrícula diferente.');
+      return;
+    }
+
+    // Crear nuevo alumno con ID único
+    const nuevoAlumnoConId: Alumno = {
+      id: alumnos.length > 0 ? Math.max(...alumnos.map(a => a.id)) + 1 : 1,
+      matricula: nuevoAlumno.matricula.toUpperCase(),
+      nombre: nuevoAlumno.nombre
+    };
+
+    // Agregar al estado
+    setAlumnos([...alumnos, nuevoAlumnoConId]);
+    
+    // Limpiar formulario y cerrar modal
+    setNuevoAlumno({ matricula: '', nombre: '' });
+    setMostrarModal(false);
+    
+    // Opcional: Mostrar mensaje de éxito
+    alert(`Alumno ${nuevoAlumnoConId.nombre} agregado exitosamente al grupo ${grupoId}`);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNuevoAlumno(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleExportarLista = () => {
+    // Crear contenido CSV
+    const alumnosAExportar = busqueda ? alumnosFiltrados : alumnos;
+    
+    // Encabezados del CSV
+    const headers = ['No.', 'Matrícula', 'Nombre Completo'];
+    
+    // Filas de datos
+    const rows = alumnosAExportar.map((alumno, index) => [
+      index + 1,
+      alumno.matricula,
+      alumno.nombre
+    ]);
+
+    // Combinar encabezados y filas
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Crear blob y descargar archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download', 
+      `lista_alumnos_${grupoId}_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Mostrar mensaje de éxito
+    alert(`Se ha exportado la lista de ${alumnosAExportar.length} alumno(s) del grupo ${grupoId}`);
+  };
+
+  // Función alternativa para exportar como Excel (usando xlsx library si está disponible)
+  const handleExportarExcel = () => {
+    // Si quieres exportar como Excel necesitarías la librería xlsx
+    // Por ahora, exportaremos como CSV que es más simple
+    handleExportarLista();
+  };
+
   return (
     <div className="p-8 bg-gray-50 min-h-full font-['Lato']">
       {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-gray-300 pb-6 mb-8">
-        <h1 
-          className="text-5xl text-black font-['Kaushan_Script'] mb-4 md:mb-0"
-        >
+        <h1 className="text-5xl text-black font-['Kaushan_Script'] mb-4 md:mb-0">
           {grupoId}
         </h1>
         
@@ -135,14 +242,95 @@ export const AdminListaAlumnosPage: React.FC = () => {
         </button>
         
         <div className="flex gap-3">
-          <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors">
+          <button 
+            onClick={handleExportarLista}
+            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+          >
+            <Download size={18} />
             Exportar Lista
           </button>
-          <button className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+          <button 
+            onClick={handleAgregarAlumno}
+            className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+          >
             + Agregar Alumno
           </button>
         </div>
       </div>
+
+      {/* MODAL PARA AGREGAR ALUMNO */}
+      {mostrarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-2xl font-bold text-gray-800">
+                Agregar Nuevo Alumno
+              </h3>
+              <button
+                onClick={handleCerrarModal}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitAlumno} className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Matrícula *
+                  </label>
+                  <Input
+                    name="matricula"
+                    value={nuevoAlumno.matricula}
+                    onChange={handleInputChange}
+                    placeholder="Ej: A009"
+                    className="w-full"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    La matrícula debe ser única
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre Completo *
+                  </label>
+                  <Input
+                    name="nombre"
+                    value={nuevoAlumno.nombre}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Carlos Sánchez García"
+                    className="w-full"
+                    required
+                  />
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  <p>El alumno será agregado al grupo: <strong>{grupoId}</strong></p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8 pt-6 border-t">
+                <button
+                  type="button"
+                  onClick={handleCerrarModal}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  Agregar Alumno
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
