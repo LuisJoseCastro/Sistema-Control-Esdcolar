@@ -1,11 +1,9 @@
-//src/router/AppRouter.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 
 // === Páginas públicas ===
-//import { LandingPage } from '../pages/public/LandingPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 
@@ -14,7 +12,12 @@ import { AppLayout } from '../components/layout/AppLayout';
 
 // === Dashboards principales ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
-import DocenteDashboardPage  from '../pages/docente/DocenteDashboardPage';
+import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
+import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
+import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
+import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcademicoPage';
+import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
+import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 
 // === Vistas adicionales del alumno ===
@@ -27,12 +30,10 @@ import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
+// === Vistas del docente ===
 import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
 import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
 import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
-
-
-import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
 
 // === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
@@ -57,10 +58,9 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Routes>
         {/* PÚBLICAS */}
-        {/* 1. REDIRECCIÓN DE RUTA RAÍZ A LOGIN */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={<LoginPageGeneral />} /> // Usamos el login SaaS
+        <Route path="/login" element={<LoginPageGeneral />} />
 
         {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
@@ -74,6 +74,11 @@ export const AppRouter: React.FC = () => {
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
+            {/* RUTAS DE ALUMNOS */}
+            <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
+            <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />
+            <Route path="/admin/alumnos/:grupoId/:alumnoId/perfil" element={<AdminPerfilAlumnoPage />} />
+            <Route path="/admin/alumnos/:grupoId/:alumnoId/historial" element={<AdminHistorialAcademicoPage />} />
           </Route>
 
           {/* DOCENTE */}
@@ -82,7 +87,6 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
             <Route path="/docente/calificaciones" element={<DocenteCalificacionesPage />} />
             <Route path="/docente/mensajes" element={<DocenteMensajesPage />} />
-
           </Route>
 
           {/* ALUMNO */}
@@ -92,14 +96,10 @@ export const AppRouter: React.FC = () => {
             <Route path="/alumno/calificaciones" element={<AlumnoCalificacionesPage />} />
             <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
             <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
-
             <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
             <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
             <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
-
             <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
-
-
           </Route>
         </Route>
 
@@ -109,4 +109,3 @@ export const AppRouter: React.FC = () => {
     </BrowserRouter>
   );
 };
-  
