@@ -19,6 +19,7 @@ import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcadem
 import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
 import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
+import { AdminDocenteProfilePage } from '../pages/admin/AdminDocenteProfilePage';
 
 // === Vistas adicionales del alumno ===
 import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
@@ -79,6 +80,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/perfil" element={<AdminPerfilAlumnoPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/historial" element={<AdminHistorialAcademicoPage />} />
+            <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
           </Route>
 
           {/* DOCENTE */}
