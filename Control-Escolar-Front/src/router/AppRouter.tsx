@@ -28,9 +28,13 @@ import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
+// === Vistas adicionales del docente ===
 import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
 import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
 import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
+import DocenteGruposPage from '../pages/docente/DocenteGruposPage';
+import DocenteReportesPage from '../pages/docente/DocenteReportesPage';
+import DocentePerfilPage from '../pages/docente/DocentePerfilPage'; // 🚨 1. IMPORTACIÓN DE LA NUEVA PANTALLA
 
 // === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
@@ -79,7 +83,9 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
             <Route path="/docente/calificaciones" element={<DocenteCalificacionesPage />} />
             <Route path="/docente/mensajes" element={<DocenteMensajesPage />} />
-
+            <Route path="/docente/grupos" element={<DocenteGruposPage />} />
+            <Route path="/docente/reportes" element={<DocenteReportesPage />} />
+            <Route path="/docente/perfil" element={<DocentePerfilPage />} /> {/* 🚨 2. RUTA AGREGADA */}
           </Route>
 
           {/* ALUMNO */}
@@ -106,4 +112,3 @@ export const AppRouter: React.FC = () => {
     </BrowserRouter>
   );
 };
-  

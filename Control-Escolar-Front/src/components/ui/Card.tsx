@@ -18,12 +18,12 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 const getVariantClasses = (variant: CardVariant) => {
   switch (variant) {
     case 'elevated': // Para elementos que flotan (ej: Modales o el contenedor de Login)
-      return `bg-white shadow-xl hover:shadow-2xl transition-shadow duration-300`;
+      return `shadow-xl hover:shadow-2xl transition-shadow duration-300`;
     case 'flat': // Para contenedores de información o filtros (ej: Tarjeta de Filtros en Grades)
-      return `bg-gray-50 border border-gray-200`;
+      return `border border-gray-200`;
     case 'default': // El estilo más común
     default:
-      return `bg-white shadow-lg border border-gray-100`;
+      return `shadow-lg border border-gray-100`;
   }
 };
 
@@ -39,9 +39,9 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   ...rest
 }) => {
-  const baseClasses = `
-    rounded-2xl p-6 // Aumenté el redondeado a 2xl para más modernidad
-  `;
+  // Si el className tiene un color de fondo personalizado, no agregamos bg-white
+  const hasCustomBg = className.includes('bg-');
+  const baseClasses = `rounded-2xl p-6 ${!hasCustomBg ? 'bg-white' : ''}`;
 
   const finalClasses = `${baseClasses} ${getVariantClasses(variant)} ${className}`;
 
