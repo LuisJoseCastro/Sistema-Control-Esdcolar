@@ -1,3 +1,5 @@
+// src/router/AppRouter.tsx
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -10,18 +12,28 @@ import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 // === Layout principal ===
 import { AppLayout } from '../components/layout/AppLayout';
 
-// === Dashboards principales ===
+// === Dashboards principales y vistas del ADMINISTRADOR ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
 import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
 import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
 import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcademicoPage';
 import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
-import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
-import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 import { AdminDocenteProfilePage } from '../pages/admin/AdminDocenteProfilePage';
+import AdminMensajesPage from '../pages/admin/AdminMensajesPage'; 
+import AdminGestionPage from '../pages/admin/AdminGestionPage'; 
 
-// === Vistas adicionales del alumno ===
+// 🚨 AÑADIR ESTA IMPORTACIÓN 
+import AdminReportesPage from '../pages/admin/AdminReportesPage'; 
+
+// === Vistas del docente ===
+import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
+import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
+import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
+import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
+
+// === Vistas del alumno ===
+import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
 import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
@@ -31,10 +43,6 @@ import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
-// === Vistas del docente ===
-import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
-import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
-import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
 
 // === PrivateRoute: protege rutas según el rol ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
@@ -75,6 +83,14 @@ export const AppRouter: React.FC = () => {
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
+            
+            {/* RUTAS ADMINISTRADOR AGREGADAS RECIENTEMENTE */}
+            <Route path="/admin/mensajes" element={<AdminMensajesPage />} /> 
+            <Route path="/admin/plan-estudios" element={<AdminGestionPage />} /> 
+
+            {/* 🚨 AÑADIR ESTA RUTA */}
+            <Route path="/admin/reportes" element={<AdminReportesPage />} /> 
+
             {/* RUTAS DE ALUMNOS */}
             <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />

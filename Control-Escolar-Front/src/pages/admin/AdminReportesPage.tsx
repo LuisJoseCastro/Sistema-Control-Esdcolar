@@ -1,244 +1,325 @@
 // src/pages/admin/AdminReportesPage.tsx
 
-import React, { useState } from 'react';
-import { FileDown, ListChecks } from 'lucide-react';
-//import { useNavigate } from 'react-router-dom';
-
-// Importación de Componentes UI
+import React, { useState, useEffect } from 'react'; 
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Select from '../../components/ui/Select'; 
-import Input from '../../components/ui/Input';
-import Table, { TableHead, TableCell, TableRow } from '../../components/ui/Table'; // 🛑 Importamos Table
-import { ExportFormatModal } from '../../components/ui/ExportFormatModal'; 
-import Badge from '../../components/ui/Badge'; // Usaremos Badge para el estado
+import Input from '../../components/ui/Input'; 
+// 🚨 NUEVA IMPORTACIÓN DEL MODAL
+import Modal from '../../components/ui/Modal'; 
+// Importamos iconos adicionales para el modal
+import { BarChart3, ChevronDown, Download, User, FileText, FileSpreadsheet } from 'lucide-react'; 
 
-// =======================================================
-// Mocks de datos y tipos para resultados
-// =======================================================
-
-// Simulación de un reporte consolidado de grupo
-interface ReporteGrupo {
-    matricula: string;
-    nombre: string;
-    asistencia: number; // Porcentaje
-    promedio: number;
-    estado: 'APROBADO' | 'REPROBADO';
+// --- TIPOS DE DATOS ---
+interface FilterOption {
+    value: string;
+    label: string;
 }
 
-const mockReportData: ReporteGrupo[] = [
-    { matricula: 'A12301', nombre: 'Carlos Soto', asistencia: 95, promedio: 8.8, estado: 'APROBADO' },
-    { matricula: 'A12302', nombre: 'Laura Alumna', asistencia: 85, promedio: 7.2, estado: 'APROBADO' },
-    { matricula: 'A12303', nombre: 'Daniela Ríos', asistencia: 65, promedio: 5.9, estado: 'REPROBADO' },
-    { matricula: 'A12304', nombre: 'Javier Pérez', asistencia: 99, promedio: 9.5, estado: 'APROBADO' },
+// --- MOCK DATA PARA SIMULAR LA RESPUESTA DE LA API ---
+const mockPeriodosData: FilterOption[] = [
+    { value: '2024-1', label: 'Enero - Junio 2024' },
+    { value: '2023-2', label: 'Julio - Diciembre 2023' },
 ];
 
-const mockPeriods = [
-    { value: '2025-1', label: '2025-1 (Actual)' },
-    { value: '2024-2', label: '2024-2' },
+const mockAsignaturasData: FilterOption[] = [
+    { value: 'matematicas', label: 'Matemáticas I' },
+    { value: 'programacion', label: 'Programación Avanzada' },
+    { value: 'contabilidad', label: 'Fundamentos de Contabilidad' },
 ];
 
-const mockSubjects = [
-    { value: 'bd', label: 'Bases de Datos I' },
-    { value: 'web', label: 'Desarrollo Web' },
-    { value: 'calc', label: 'Cálculo Avanzado' },
+const mockGruposData: FilterOption[] = [
+    { value: '3A', label: 'Grupo 3A' },
+    { value: '5B', label: 'Grupo 5B' },
+    { value: '1C', label: 'Grupo 1C' },
 ];
 
-const mockGroups = [
-    { value: '101', label: 'Grupo 101' },
-    { value: '102', label: 'Grupo 102' },
-];
 
-// =======================================================
-// Renderizado de la tabla de resultados
-// =======================================================
+// --- COMPONENTE PRINCIPAL ---
+const AdminReportesPage: React.FC = () => {
+    // ESTADOS PARA DATOS DE FILTROS 
+    const [periodos, setPeriodos] = useState<FilterOption[]>([]);
+    const [asignaturas, setAsignaturas] = useState<FilterOption[]>([]);
+    const [grupos, setGrupos] = useState<FilterOption[]>([]);
+    
+    // ESTADOS PARA SELECCIONES Y DATOS DEL REPORTE
+    const [selectedPeriodo, setSelectedPeriodo] = useState('');
+    const [selectedAsignatura, setSelectedAsignatura] = useState('');
+    const [selectedGrupo, setSelectedGrupo] = useState('');
+    const [selectedMatricula, setSelectedMatricula] = useState(''); 
+    
+    const [reportData, setReportData] = useState<string | null>(null);
+    const [isLoadingReporte, setIsLoadingReporte] = useState(false); 
+    const [isLoadingFilters, setIsLoadingFilters] = useState(true); 
 
-const ReporteResultTable: React.FC<{ data: ReporteGrupo[] }> = ({ data }) => {
-    return (
-        <Table className="shadow-none">
-            <Table.Header>
-                <TableRow>
-                    <TableHead>Matrícula</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Asistencia</TableHead>
-                    <TableHead>Promedio</TableHead>
-                    <TableHead>Estado</TableHead>
-                </TableRow>
-            </Table.Header>
-            <Table.Body>
-                {data.map((item) => (
-                    <TableRow key={item.matricula}>
-                        <TableCell className="font-mono">{item.matricula}</TableCell>
-                        <TableCell>{item.nombre}</TableCell>
-                        <TableCell>{item.asistencia}%</TableCell>
-                        <TableCell className="font-semibold">{item.promedio.toFixed(1)}</TableCell>
-                        <TableCell>
-                            <Badge variant={item.estado === 'APROBADO' ? 'success' : 'danger'}>
-                                {item.estado}
-                            </Badge>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </Table.Body>
-        </Table>
-    );
-};
-
-// =======================================================
-// Componente Principal
-// =======================================================
-
-export const AdminReportesPage: React.FC = () => {
+    // 🚨 ESTADO DEL MODAL
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [reportGenerated, setReportGenerated] = useState(false);
-    const [reportType, setReportType] = useState<'individual' | 'group' | null>(null);
-    
-    // Estados para filtros
-    const [period, setPeriod] = useState('');
-    const [subject, setSubject] = useState('');
-    const [group, setGroup] = useState('');
-    const [studentId, setStudentId] = useState('');
 
-    const handleGenerateReport = (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (studentId.trim()) {
-            setReportType('individual');
-        } else {
-            setReportType('group');
+    
+    // --- LÓGICA DE CARGA INICIAL DE FILTROS ---
+    useEffect(() => {
+        // ... (lógica de carga de filtros existente)
+        const fetchFilters = async () => {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                
+                setPeriodos(mockPeriodosData);
+                setAsignaturas(mockAsignaturasData);
+                setGrupos(mockGruposData);
+
+                if (mockPeriodosData.length > 0) setSelectedPeriodo(mockPeriodosData[0].value);
+                if (mockAsignaturasData.length > 0) setSelectedAsignatura(mockAsignaturasData[0].value);
+                if (mockGruposData.length > 0) setSelectedGrupo(mockGruposData[0].value);
+
+            } catch (error) {
+                console.error("Error al cargar los filtros:", error);
+            } finally {
+                setIsLoadingFilters(false);
+            }
+        };
+        fetchFilters();
+    }, []); 
+
+    // --- LÓGICA PARA GENERAR REPORTE ---
+    const handleGenerarReporte = async () => {
+        if (!selectedPeriodo || !selectedAsignatura || !selectedGrupo) {
+            alert("Por favor, selecciona un Periodo, Asignatura y Grupo.");
+            return;
         }
+
+        setIsLoadingReporte(true);
+        setReportData(null); 
         
-        setReportGenerated(true);
-    };
-    
-    const handleExport = (format: 'PDF' | 'EXCEL') => {
-        console.log(`Exportando reporte (${reportType}) a: ${format}`);
-        alert(`Reporte de ${reportType === 'individual' ? studentId : group} exportado a ${format}.`);
+        const payload = {
+            periodo: selectedPeriodo,
+            asignatura: selectedAsignatura,
+            grupo: selectedGrupo,
+            matricula: selectedMatricula || undefined,
+        };
+        
+        try {
+            const response = await fetch('/api/v1/reportes/generar', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error en la API: ${response.statusText}`);
+            }
+            
+            const reportName = asignaturas.find(a => a.value === selectedAsignatura)?.label;
+            const periodName = periodos.find(p => p.value === selectedPeriodo)?.label;
+
+            const simulatedReport = (
+                `[DATOS PROVENIENTES DE LA API]\n\n` +
+                `Reporte de Calificaciones Generado:\n\n` +
+                `Asignatura: ${reportName}\n` +
+                `Grupo: ${selectedGrupo}\n` +
+                `Periodo: ${periodName}\n` +
+                (selectedMatricula ? `Matrícula Filtrada: ${selectedMatricula}` : `Datos de 30 alumnos...`)
+            );
+
+            setReportData(simulatedReport); 
+            
+        } catch (error) {
+            console.error("Error al generar reporte:", error);
+            setReportData("Error de conexión: No se pudo generar el reporte.");
+        } finally {
+            setIsLoadingReporte(false);
+        }
     };
 
-    const displayTitle = reportType === 'individual' 
-        ? `Resultados de Alumno: ${studentId}` 
-        : `Resultados de ${mockSubjects.find(s => s.value === subject)?.label || 'Asignatura'} - ${group}`;
-    
-    const displayData = reportType === 'individual'
-        ? mockReportData.filter(d => d.matricula === studentId) 
-        : mockReportData;
-    
-    // Si es reporte individual, solo mostramos si existe
-    const showReport = reportGenerated && (reportType === 'group' || displayData.length > 0);
+    // 🚨 MODIFICACIÓN: Abre el modal
+    const handleExportar = () => {
+        if (reportData) {
+            setIsExportModalOpen(true);
+        }
+    };
 
+    // 🚨 NUEVA FUNCIÓN: Maneja la selección dentro del modal
+    const handleExportSelection = (format: 'pdf' | 'xlsx') => {
+        alert(`Llamando API para exportar el reporte a ${format.toUpperCase()}.`);
+        // Aquí iría la lógica real de llamada a la API con el formato seleccionado
+        setIsExportModalOpen(false); // Cierra el modal después de la selección
+    }
+
+
+    // Componente Select Control (Sin cambios)
+    const SelectControl: React.FC<{ label: string; name: string; value: string; options: FilterOption[]; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; disabled: boolean }> = ({ label, name, value, options, onChange, disabled }) => (
+        <div>
+            <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+                {label}
+            </label>
+            <div className="relative">
+                <select
+                    id={name}
+                    name={name}
+                    value={value}
+                    onChange={onChange}
+                    disabled={disabled}
+                    className="appearance-none w-full border border-gray-300 rounded-lg p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 pr-10 disabled:bg-gray-200 disabled:text-gray-500"
+                >
+                    {options.length === 0 ? <option value="">Cargando...</option> : null}
+                    {options.map(option => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                <ChevronDown size={18} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" />
+            </div>
+        </div>
+    );
+
+    const disabledControls = isLoadingFilters || isLoadingReporte;
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
-            
-            {/* TÍTULO PRINCIPAL */}
+        <div className="min-h-screen bg-gray-100 p-8">
+            {/* ... (Header y paneles de filtros/vista previa) ... */}
+
             <header className="mb-8">
-                <h1 
-                    className="text-5xl text-black border-b border-gray-400 pb-2" 
-                    style={{ fontFamily: '"Kaushan Script", cursive' }}
-                >
+                <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
+                    <BarChart3 size={32} className="mr-3 text-green-600" />
                     Reporte Académico
                 </h1>
+                <p className="text-gray-600 ml-10">Filtros para generar calificaciones y reportes de progreso.</p>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
                 
-                {/* Columna 1: Filtros de Reporte */}
-                <Card header="Reporte" className="lg:col-span-1 shadow-xl">
-                    <form onSubmit={handleGenerateReport} className="space-y-4">
-                        
-                        <Select 
-                            label="Período:"
-                            options={mockPeriods}
-                            placeholder="Seleccione un período"
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            required
-                        />
-
-                        <Select 
-                            label="Asignatura:"
-                            options={mockSubjects}
-                            placeholder="Seleccione la asignatura"
-                            value={subject}
-                            onChange={(e) => setSubject(e.target.value)}
-                            required
-                        />
-
-                        <Select 
-                            label="Grupo:"
-                            options={mockGroups}
-                            placeholder="Seleccione el grupo"
-                            value={group}
-                            onChange={(e) => setGroup(e.target.value)}
-                            required
-                        />
-
-                        <Input
-                            label="Alumno (opcional)"
-                            type="text"
-                            placeholder="Matrícula"
-                            value={studentId}
-                            onChange={(e) => setStudentId(e.target.value)}
-                        />
-
-                        <div className="pt-4">
-                            <Button 
-                                type="submit" 
-                                variant="primary" 
-                                className="w-full"
-                                icon={<ListChecks size={20} />}
-                                disabled={!period || !subject || !group}
-                            >
-                                Generar Reporte
-                            </Button>
+                {/* PANEL IZQUIERDO: FILTROS */}
+                <Card className="p-6 bg-white shadow-xl lg:w-1/3">
+                    <h2 className="text-xl font-semibold mb-6 border-b pb-2">Filtros</h2>
+                    {/* ... (Controles de filtro) ... */}
+                    {isLoadingFilters ? (
+                        <div className="text-center py-10 text-blue-500">
+                            Cargando opciones de filtro...
                         </div>
-                    </form>
-                </Card>
-
-                {/* Columna 2: Contenido y Exportación */}
-                <Card header="Reporte Académico" className="lg:col-span-2 shadow-xl flex flex-col justify-between min-h-[500px]">
-                    
-                    {showReport ? (
-                        /* Contenido del reporte */
-                        <div className="p-4 text-gray-700 flex-1 overflow-y-auto">
-                            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">{displayTitle}</h2>
-                            <ReporteResultTable data={displayData} />
-                            <p className="mt-4 text-sm text-green-600">Reporte listo para ser exportado.</p>
-                        </div>
-                    ) : reportGenerated && reportType === 'individual' ? (
-                        <div className="flex-1 flex items-center justify-center text-gray-500">
-                             No se encontró el alumno con matrícula {studentId} en el grupo/asignatura seleccionada.
-                         </div>
                     ) : (
-                        /* Mensaje de inicio */
-                         <div className="flex-1 flex items-center justify-center text-gray-500">
-                             Seleccione los filtros y haga clic en "Generar Reporte".
-                         </div>
+                        <div className="space-y-6">
+                             {/* Periodo, Asignatura, Grupo, Alumno Input... */}
+                             <SelectControl
+                                label="Periodo"
+                                name="periodo"
+                                value={selectedPeriodo}
+                                options={periodos} 
+                                onChange={(e) => setSelectedPeriodo(e.target.value)}
+                                disabled={disabledControls}
+                            />
+                             <SelectControl
+                                label="Asignatura"
+                                name="asignatura"
+                                value={selectedAsignatura}
+                                options={asignaturas} 
+                                onChange={(e) => setSelectedAsignatura(e.target.value)}
+                                disabled={disabledControls}
+                            />
+                            <SelectControl
+                                label="Grupo"
+                                name="grupo"
+                                value={selectedGrupo}
+                                options={grupos} 
+                                onChange={(e) => setSelectedGrupo(e.target.value)}
+                                disabled={disabledControls}
+                            />
+                            <Input 
+                                label="Alumno (opcional)"
+                                name="matricula"
+                                value={selectedMatricula}
+                                onChange={(e) => setSelectedMatricula(e.target.value)}
+                                placeholder="matrícula (ej: 20201234)"
+                                icon={<User size={18} className="text-gray-400"/>}
+                                type="text" 
+                                disabled={disabledControls}
+                            />
+                        </div>
                     )}
 
-                    {/* Botón de Exportar */}
-                    <div className="text-right pt-4 border-t">
+
+                    {/* Botón de Generar Reporte */}
+                    <div className="mt-8">
                         <Button 
-                            onClick={() => setIsExportModalOpen(true)}
-                            variant="secondary" 
-                            disabled={!showReport} // Solo se puede exportar si hay un reporte generado y visible
-                            icon={<FileDown size={20} />}
+                            variant="primary" 
+                            onClick={handleGenerarReporte}
+                            disabled={disabledControls || !selectedPeriodo || !selectedAsignatura || !selectedGrupo}
+                            className="w-full"
+                        >
+                            {isLoadingReporte ? 'Generando...' : 'Generar reporte'}
+                        </Button>
+                    </div>
+                </Card>
+
+                {/* PANEL DERECHO: VISUALIZACIÓN Y EXPORTACIÓN */}
+                <Card className="p-6 bg-white shadow-xl lg:w-2/3 flex flex-col">
+                    <h2 className="text-xl font-semibold mb-6 border-b pb-2">Vista Previa</h2>
+                    
+                    <div className="flex-grow min-h-[300px] bg-gray-50 border p-4 overflow-auto rounded-lg mb-6 text-gray-700 whitespace-pre-wrap">
+                        {isLoadingReporte && (
+                            <div className="text-center py-10 text-blue-500">Cargando datos...</div>
+                        )}
+                        {!isLoadingFilters && !isLoadingReporte && reportData === null && (
+                            <div className="text-center py-10 text-gray-500 italic">
+                                Selecciona los filtros y haz clic en "Generar reporte".
+                            </div>
+                        )}
+                        {!isLoadingReporte && reportData !== null && (
+                            <pre className="text-sm font-mono">{reportData}</pre>
+                        )}
+                    </div>
+
+                    {/* Botón de Exportar */}
+                    <div className="flex justify-end pt-4 border-t">
+                        <Button 
+                            variant="secondary"
+                            onClick={handleExportar} // Ahora abre el modal
+                            disabled={!reportData || isLoadingReporte}
+                            icon={<Download size={18} />}
                         >
                             Exportar
                         </Button>
                     </div>
                 </Card>
             </div>
-            
-            {/* Modal de Exportación (Reutilizable) */}
-            <ExportFormatModal
-                isOpen={isExportModalOpen}
-                onClose={() => setIsExportModalOpen(false)}
-                onSelectFormat={handleExport}
-                title={`Exportar ${reportType === 'individual' ? 'Resultado Individual' : 'Reporte Consolidado'}`}
-            />
-            
+
+
+            {/* 🚨 COMPONENTE MODAL DE EXPORTACIÓN */}
+            <Modal 
+                isOpen={isExportModalOpen} 
+                onClose={() => setIsExportModalOpen(false)} 
+                title="Exportación"
+            >
+                <div className="text-center p-4">
+                    <h3 className="text-xl font-semibold mb-2">Formato de exportación</h3>
+                    <p className="text-gray-600 mb-8">Seleccione el formato en que desea exportar</p>
+
+                    <div className="flex justify-center space-x-16">
+                        {/* Opción PDF */}
+                        <button
+                            onClick={() => handleExportSelection('pdf')}
+                            className="flex flex-col items-center p-6 border rounded-xl hover:bg-gray-50 transition duration-200 w-44 h-44 justify-center"
+                        >
+                            <div className="relative mb-2">
+                                {/* Simulando el icono de PDF con FileText y un label */}
+                                <FileText size={80} className="text-red-600 mx-auto" />
+                                <span className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded-sm">PDF</span>
+                            </div>
+                            <span className="mt-4 text-gray-700 font-medium">PDF</span>
+                        </button>
+
+                        {/* Opción Excel */}
+                        <button
+                            onClick={() => handleExportSelection('xlsx')}
+                            className="flex flex-col items-center p-6 border rounded-xl hover:bg-gray-50 transition duration-200 w-44 h-44 justify-center"
+                        >
+                            {/* Usando FileSpreadsheet para el icono de Excel */}
+                            <FileSpreadsheet size={80} className="text-green-700" />
+                            <span className="mt-4 text-gray-700 font-medium">Excel (XLSX)</span>
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
+
+export default AdminReportesPage;
