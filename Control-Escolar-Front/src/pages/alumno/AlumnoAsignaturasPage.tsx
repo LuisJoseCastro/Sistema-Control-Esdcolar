@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
-import { Search, CalendarDays, Clock, User, ChevronDown } from 'lucide-react';
+import { Search, CalendarDays, Clock, User } from 'lucide-react';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
 // 🛑 Importaciones de UI unificada: Input y Modal por defecto, Card y LoadingSpinner nombradas
