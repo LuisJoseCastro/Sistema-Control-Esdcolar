@@ -2,10 +2,15 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
 import { CalendarCheck, Save, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-// 🛑 NUEVO: Importamos useNavigate de react-router-dom para la navegación
 import { useNavigate } from 'react-router-dom';
 
-// 🛑 ELIMINADA LA LÍNEA: import { type DocenteView } from '../../App'; 
+// 🛑 IMPORTACIONES DE COMPONENTES ATÓMICOS
+import Button from '../../components/ui/Button';
+import Select from '../../components/ui/Select';
+// Importamos todos los sub-componentes necesarios
+import Table, { TableRow, TableCell, TableHead } from '../../components/ui/Table';
+import { Card } from '../../components/ui/Card';
+import Badge from '../../components/ui/Badge'; // Nuevo: Para el estado
 
 // --- Tipos de Datos (Mock) ---
 
@@ -39,12 +44,12 @@ const MOCK_ALUMNOS: AlumnoAsistencia[] = [
     { id: 'a6', nombre: 'Diego Fernando Ruiz', status: 'AUSENTE' },
 ];
 
-// Mapeo de estados a estilos
-const STATUS_STYLES: Record<AsistenciaStatus, string> = {
-    PRESENTE: 'bg-green-600 text-white',
-    AUSENTE: 'bg-red-600 text-white',
-    JUSTIFICADA: 'bg-yellow-600 text-gray-900',
-    RETARDO: 'bg-blue-600 text-white',
+// 🛑 Mapeo de estados a variantes de Badge (Usando la lógica de Badge.tsx)
+const STATUS_BADGE_VARIANT: Record<AsistenciaStatus, 'success' | 'danger' | 'warning' | 'info'> = {
+    PRESENTE: 'success', // Verde
+    AUSENTE: 'danger',   // Rojo
+    JUSTIFICADA: 'warning', // Amarillo
+    RETARDO: 'info',    // Azul
 };
 
 // Mapeo de estados a etiquetas en español
@@ -56,10 +61,7 @@ const STATUS_LABELS: Record<AsistenciaStatus, string> = {
 };
 
 
-// 🛑 ELIMINADA LA INTERFAZ: DocenteAsistenciaPageProps
-
-
-// --- Componentes Atómicos ---
+// --- Componentes Atómicos Específicos de la Página ---
 
 interface AlumnoAsistenciaRowProps {
     alumno: AlumnoAsistencia;
@@ -68,70 +70,72 @@ interface AlumnoAsistenciaRowProps {
 
 const AlumnoAsistenciaRow: React.FC<AlumnoAsistenciaRowProps> = ({ alumno, onUpdateStatus }) => {
 
-    // Función para obtener el color de fondo y texto del estado actual
-    const statusClasses = STATUS_STYLES[alumno.status] || 'bg-gray-700 text-gray-200';
-    // const statusLabel = STATUS_LABELS[alumno.status]; // No utilizada en el render
-
-    // Array de opciones para el dropdown
-    const statusOptions: AsistenciaStatus[] = ['PRESENTE', 'AUSENTE', 'JUSTIFICADA', 'RETARDO'];
+    const statusOptions = (Object.keys(STATUS_LABELS) as AsistenciaStatus[]).map(status => ({
+        value: status,
+        label: STATUS_LABELS[status],
+    }));
 
     return (
-        <div className="grid grid-cols-2 text-sm border-b border-gray-700/50 hover:bg-gray-700/50 transition-colors">
+        // 🛑 USO DEL SUB-COMPONENTE: TableRow
+        <TableRow key={alumno.id}>
             {/* Nombre del Alumno */}
-            <div className="py-3 px-4 font-medium text-gray-100 truncate">
+            {/* 🛑 USO DEL SUB-COMPONENTE: TableCell */}
+            <TableCell className="font-medium text-gray-900 truncate">
                 {alumno.nombre}
-            </div>
+            </TableCell>
 
-            {/* Selector de Asistencia (simulando la pastilla de la maqueta) */}
-            <div className="py-2 px-4 flex items-center justify-center">
-                <select
+            {/* Selector de Asistencia */}
+            <TableCell className="w-[180px]">
+                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Select */}
+                <Select
                     value={alumno.status}
                     onChange={(e) => onUpdateStatus(alumno.id, e.target.value as AsistenciaStatus)}
-                    className={`
-                        w-full max-w-[150px] text-center rounded-xl py-1 px-2 text-xs font-semibold 
-                        border-none appearance-none cursor-pointer focus:ring-2 focus:ring-blue-400
-                        ${statusClasses} transition-all duration-200
-                    `}
-                >
-                    {statusOptions.map(status => (
-                        <option key={status} value={status} className="bg-gray-800 text-white">
-                            {STATUS_LABELS[status]}
-                        </option>
-                    ))}
-                </select>
-            </div>
-        </div>
+                    // Aplicamos clases al select interno para darle el estilo de pastilla
+                    selectClassName={`
+                        bg-white border-gray-300 py-1 px-2 rounded-full text-sm font-semibold text-center
+                        ${STATUS_BADGE_VARIANT[alumno.status] === 'success' ? 'text-green-800' : ''}
+                        ${STATUS_BADGE_VARIANT[alumno.status] === 'danger' ? 'text-red-800' : ''}
+                        ${STATUS_BADGE_VARIANT[alumno.status] === 'warning' ? 'text-yellow-800' : ''}
+                        ${STATUS_BADGE_VARIANT[alumno.status] === 'info' ? 'text-blue-800' : ''}
+                        
+                    `}
+                    className="p-0 m-0 w-full"
+                    options={statusOptions}
+                />
+            </TableCell>
+        </TableRow>
     );
 };
 
-// Componente de Botón de Día
+// Componente de Botón de Día (se mantiene manual ya que es muy específico del diseño de calendario)
 const DayButton: React.FC<{ day: number, isSelected: boolean, onClick: () => void }> = ({ day, isSelected, onClick }) => {
     const classes = isSelected
         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
-        : 'bg-gray-700 text-gray-200 hover:bg-gray-600';
+        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'; // Ajustamos a estética Light Theme (asumimos que la página de asistencia debería seguir el tema general Light, aunque tu código original usaba dark)
 
     return (
-        <button
+        // 🛑 USO DE COMPONENTE ATÓMICO: Button (pero con override fuerte de estilo para el calendario)
+        <Button
             onClick={onClick}
-            className={`w-10 h-10 rounded-lg font-bold transition-all duration-150 ${classes}`}
+            variant='secondary' // Usamos secondary como base, pero sobreescribimos con las clases de DayButton
+            className={`w-10 h-10 p-0 rounded-lg font-bold transition-all duration-150 ${classes}`}
         >
             {day}
-        </button>
+        </Button>
     );
 };
 
 
 // --- PÁGINA PRINCIPAL: DocenteAsistenciaPage ---
-// 🛑 Ahora el componente no recibe props de navegación, usa el hook useNavigate
 export const DocenteAsistenciaPage: React.FC = () => {
-    // 🛑 Hook de React Router DOM
     const navigate = useNavigate();
 
     // Estado de los filtros y datos
     const [selectedGrupo, setSelectedGrupo] = useState<string>('');
-    const [selectedDate, setSelectedDate] = useState<number>(12); // Simula el día 12 seleccionado
+    const [selectedDate, setSelectedDate] = useState<number>(12);
     const [currentMonth, setCurrentMonth] = useState<string>('Enero 2026');
     const [alumnos, setAlumnos] = useState<AlumnoAsistencia[]>(MOCK_ALUMNOS);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
     // Días del mes mock (simulamos 31 días)
     const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -149,34 +153,42 @@ export const DocenteAsistenciaPage: React.FC = () => {
             alert('Por favor, selecciona un grupo antes de guardar la asistencia.');
             return;
         }
+        setIsLoading(true);
         console.log(`Guardando asistencia para el grupo ${selectedGrupo} en el día ${selectedDate}:`, alumnos);
-        // Aquí iría la lógica de API/Firestore
-        alert('Asistencia guardada exitosamente (Simulación).');
+        setTimeout(() => {
+            setIsLoading(false);
+            alert('Asistencia guardada exitosamente (Simulación).');
+        }, 1500);
     }, [alumnos, selectedGrupo, selectedDate]);
 
     const isReadyToSave = useMemo(() => selectedGrupo !== '', [selectedGrupo]);
 
+    // Opciones para el Select atómico (transformación de Mock Data)
+    const grupoOptions = MOCK_GRUPOS.map(g => ({ value: g.id, label: g.nombre }));
+
+
     return (
-        <div className="p-4 md:p-8 bg-gray-900 text-gray-100 min-h-full">
+        // 🛑 AJUSTE: Volvemos a un fondo Light (bg-gray-50) para consistencia con el tema atómico
+        <div className="p-4 md:p-8 bg-gray-50 min-h-full">
 
             {/* Header: Título y Navegación */}
-            <header className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-                <h1 className="text-3xl font-serif italic text-white flex items-center">
-                    <CalendarCheck className="w-7 h-7 mr-3 text-blue-400" />
+            <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
+                <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+                    <CalendarCheck className="w-7 h-7 mr-3 text-cyan-600" />
                     Registro de Asistencia
                 </h1>
-                {/* Botón de Regresar */}
-                <button
-                    // 🛑 CORREGIDO: Usamos navigate de React Router DOM
+                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: ghost) */}
+                <Button
+                    variant='ghost'
                     onClick={() => navigate('/docente/dashboard')}
-                    className="flex items-center text-gray-400 hover:text-blue-400 transition-colors text-sm"
+                    icon={<ArrowLeft className="w-4 h-4" />}
+                    className="text-sm px-3 py-2"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Volver a Inicio
-                </button>
+                </Button>
             </header>
 
-            <p className="text-gray-400 mb-6 text-lg">
+            <p className="text-gray-600 mb-6 text-lg">
                 Selecciona el grupo y la fecha para empezar a registrar la asistencia de los alumnos.
             </p>
 
@@ -186,93 +198,114 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 {/* COLUMNA IZQUIERDA: Filtros y Lista de Estudiantes (ocupa 2/3) */}
                 <div className="lg:col-span-2 space-y-8">
 
-                    {/* Sección: Seleccionar Grupo (Misma estética que el filtro de calificaciones) */}
-                    <div className="bg-gray-800 p-6 rounded-xl shadow-xl">
-                        <h2 className="text-xl font-semibold text-blue-400 mb-4">Seleccionar Grupo</h2>
-
-                        <div>
-                            <label htmlFor="grupo" className="block text-sm font-medium text-gray-300 mb-2 sr-only">Grupos</label>
-                            <select
-                                id="grupo"
-                                value={selectedGrupo}
-                                onChange={(e) => setSelectedGrupo(e.target.value)}
-                                className="w-full bg-gray-700 border border-gray-600 text-gray-200 py-2.5 px-4 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            >
-                                <option value="" disabled>Seleccionar Grupos</option>
-                                {MOCK_GRUPOS.map(grupo => (
-                                    <option key={grupo.id} value={grupo.id}>{grupo.nombre}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+                    {/* Sección: Seleccionar Grupo */}
+                    {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card (variant: flat) */}
+                    <Card header="Seleccionar Grupo" variant="flat">
+                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Select */}
+                        <Select
+                            label="Grupos" // Label se usa aquí
+                            value={selectedGrupo}
+                            onChange={(e) => setSelectedGrupo(e.target.value)}
+                            placeholder="Seleccionar Grupos"
+                            options={grupoOptions}
+                        />
+                    </Card>
 
                     {/* Sección: Lista de Estudiantes */}
-                    <div className="bg-gray-800 p-6 rounded-xl shadow-xl">
-                        <h2 className="text-xl font-semibold text-blue-400 mb-4">Lista de Estudiantes</h2>
+                    {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card */}
+                    <Card header="Lista de Estudiantes">
 
-                        <div className="overflow-x-auto rounded-lg border border-gray-700">
-                            <div className="min-w-full divide-y divide-gray-700">
+                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Table */}
+                        <Table className="shadow-none border border-gray-200">
+                            {/* 🛑 USO DEL SUB-COMPONENTE: Table.Header */}
+                            <Table.Header>
+                                {/* 🛑 USO DEL SUB-COMPONENTE: TableRow */}
+                                <TableRow>
+                                    {/* 🛑 USO DEL SUB-COMPONENTE: TableHead */}
+                                    <TableHead className="w-1/2">Nombre Completo</TableHead>
+                                    <TableHead className="w-1/2 text-center">Asistencia</TableHead>
+                                </TableRow>
+                            </Table.Header>
 
-                                {/* Encabezados de la Tabla */}
-                                <div className="grid grid-cols-2 text-sm bg-gray-700 text-gray-100 font-bold">
-                                    <div className="py-3 px-4 text-left">Nombre Completo</div>
-                                    <div className="py-3 px-4 text-center">Asistencia</div>
-                                </div>
-
-                                {/* Filas de Datos */}
-                                <div className="divide-y divide-gray-700/50">
-                                    {alumnos.map(alumno => (
+                            {/* 🛑 USO DEL SUB-COMPONENTE: Table.Body */}
+                            <Table.Body>
+                                {selectedGrupo ? (
+                                    alumnos.map(alumno => (
                                         <AlumnoAsistenciaRow
                                             key={alumno.id}
                                             alumno={alumno}
                                             onUpdateStatus={handleUpdateStatus}
                                         />
-                                    ))}
-                                </div>
-                            </div>
+                                    ))
+                                ) : (
+                                    // Fila de mensaje si no hay grupo seleccionado
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center text-gray-500 py-6">
+                                            Por favor, selecciona un grupo para ver la lista de alumnos.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </Table.Body>
+                        </Table>
+                    </Card>
+                    
+                    {/* 3. BOTÓN DE GUARDAR */}
+                    {isReadyToSave && (
+                        <div className="flex justify-start">
+                            {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: gradient) */}
+                            <Button
+                                variant='gradient'
+                                onClick={handleGuardarAsistencia}
+                                disabled={!isReadyToSave || isLoading}
+                                isLoading={isLoading}
+                                icon={<Save className="w-5 h-5" />}
+                            >
+                                Guardar Asistencia
+                            </Button>
                         </div>
-
-                    </div>
+                    )}
                 </div>
 
                 {/* COLUMNA DERECHA: Calendario (ocupa 1/3) */}
-                <div className="lg:col-span-1 bg-gray-800 p-6 rounded-xl shadow-xl flex flex-col h-full">
+                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card */}
+                <Card header="Seleccionar Día" className="lg:col-span-1 flex flex-col h-full">
 
                     {/* Header del Calendario */}
                     <div className="flex justify-between items-center mb-6">
-                        <button
-                            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
+                        <Button
+                            variant='secondary'
                             onClick={() => console.log('Anterior Mes')}
+                            className="p-2 rounded-full h-auto w-auto"
+                            icon={<ChevronLeft className="w-5 h-5" />}
                         >
-                            <ChevronLeft className="w-5 h-5 text-gray-200" />
-                        </button>
-                        <h3 className="text-xl font-semibold text-white">{currentMonth}</h3>
-                        <button
-                            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
+                            {/* Vacio */}
+                        </Button>
+                        <h3 className="text-xl font-semibold text-gray-800">{currentMonth}</h3>
+                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
+                        <Button
+                            variant='secondary'
                             onClick={() => console.log('Siguiente Mes')}
+                            className="p-2 rounded-full h-auto w-auto"
+                            icon={<ChevronRight className="w-5 h-5" />}
                         >
-                            <ChevronRight className="w-5 h-5 text-gray-200" />
-                        </button>
+                            {/* Vacio */}
+                        </Button>
                     </div>
 
-                    {/* Días del Calendario (Grid 7xN) */}
-                    <div className="grid grid-cols-7 gap-2 text-xs text-center flex-grow">
-                        {/* Nombres de los días (Mockup simplificado, asumiendo inicio en Lunes o Domingo) */}
-                        <span className="text-gray-400 font-medium">D</span>
-                        <span className="text-gray-400 font-medium">L</span>
-                        <span className="text-gray-400 font-medium">M</span>
-                        <span className="text-gray-400 font-medium">X</span>
-                        <span className="text-gray-400 font-medium">J</span>
-                        <span className="text-gray-400 font-medium">V</span>
-                        <span className="text-gray-400 font-medium">S</span>
-
-                        {/* Relleno para que Enero empiece en el día correcto (Ejemplo: Enero 1, 2026 fue Jueves) */}
-                        {/* Simularemos que el mes empieza un Lunes para la estética del grid 7xN de la maqueta */}
-                        {Array.from({ length: 1 }, (_, i) => i + 1).map((_, index) => (
-                            <div key={`empty-${index}`} className="w-10 h-10"></div>
+                    {/* Vista de Días */}
+                    <div className="grid grid-cols-7 text-center gap-2">
+                        {/* Días de la semana (Encabezado) */}
+                        {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(day => (
+                            <div key={day} className="text-sm font-bold text-gray-500">{day}</div>
                         ))}
 
-                        {/* Botones de Días */}
+                        {/* Relleno inicial (mock) */}
+                        {Array.from({ length: 3 }, (_, i) => (
+                            <div key={`fill-${i}`} className="w-10 h-10"></div>
+                        ))}
+
+                        {/* Botones de Días del Mes */}
                         {daysInMonth.map(day => (
                             <DayButton
                                 key={day}
@@ -282,25 +315,8 @@ export const DocenteAsistenciaPage: React.FC = () => {
                             />
                         ))}
                     </div>
-
-                </div>
+                </Card>
             </div>
-
-            {/* Botón de Guardar Asistencia (Posicionado en la parte inferior derecha, como en la maqueta) */}
-            <div className="fixed bottom-6 right-6 z-10">
-                <button
-                    onClick={handleGuardarAsistencia}
-                    disabled={!isReadyToSave}
-                    className={`flex items-center space-x-2 py-3 px-6 rounded-xl font-bold text-white transition-all duration-300 shadow-xl ${isReadyToSave
-                            ? 'bg-blue-600 hover:bg-blue-700 transform hover:scale-[1.02]'
-                            : 'bg-gray-500 cursor-not-allowed'
-                        }`}
-                >
-                    <Save className="w-5 h-5" />
-                    <span>Guardar Asistencia</span>
-                </button>
-            </div>
-
         </div>
     );
 };
