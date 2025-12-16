@@ -1,37 +1,52 @@
-//src/router/AppRouter.tsx
+// src/router/AppRouter.tsx
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 
 // === Páginas públicas ===
-//import { LandingPage } from '../pages/public/LandingPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 
 // === Layout principal ===
 import { AppLayout } from '../components/layout/AppLayout';
 
-// === Dashboards principales ===
+// === Dashboards principales y vistas del ADMINISTRADOR ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
-import DocenteDashboardPage  from '../pages/docente/DocenteDashboardPage';
-import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
+import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
+import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
+import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
+import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcademicoPage';
+import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
+import { AdminDocenteProfilePage } from '../pages/admin/AdminDocenteProfilePage';
+import AdminMensajesPage from '../pages/admin/AdminMensajesPage'; 
+import AdminGestionPage from '../pages/admin/AdminGestionPage'; 
 
-// === Vistas adicionales del alumno ===
+// 🚨 AÑADIR ESTA IMPORTACIÓN 
+import AdminReportesPage from '../pages/admin/AdminReportesPage'; 
+
+// === Vistas del docente ===
+import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
+import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
+import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
+import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
+
+// === Vistas del alumno ===
+import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
 import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
 import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDetallesPage';
-
 import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
 import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
 // === Vistas adicionales del docente ===
-import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
-import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
-import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
+//import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
+//import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
+//import { DocenteMensajesPage } from '../pages/docente/DocenteMensajesPage';
 import DocenteGruposPage from '../pages/docente/DocenteGruposPage';
 import DocenteReportesPage from '../pages/docente/DocenteReportesPage';
 import DocentePerfilPage from '../pages/docente/DocentePerfilPage'; // 🚨 1. IMPORTACIÓN DE LA NUEVA PANTALLA
@@ -59,10 +74,9 @@ export const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Routes>
         {/* PÚBLICAS */}
-        {/* 1. REDIRECCIÓN DE RUTA RAÍZ A LOGIN */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/login" element={<LoginPageGeneral />} /> // Usamos el login SaaS
+        <Route path="/login" element={<LoginPageGeneral />} />
 
         {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
@@ -75,6 +89,21 @@ export const AppRouter: React.FC = () => {
           {/* ADMIN */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
+            <Route path="/admin/docentes" element={<AdminDocentesPage />} />
+            
+            {/* RUTAS ADMINISTRADOR AGREGADAS RECIENTEMENTE */}
+            <Route path="/admin/mensajes" element={<AdminMensajesPage />} /> 
+            <Route path="/admin/plan-estudios" element={<AdminGestionPage />} /> 
+
+            {/* 🚨 AÑADIR ESTA RUTA */}
+            <Route path="/admin/reportes" element={<AdminReportesPage />} /> 
+
+            {/* RUTAS DE ALUMNOS */}
+            <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
+            <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />
+            <Route path="/admin/alumnos/:grupoId/:alumnoId/perfil" element={<AdminPerfilAlumnoPage />} />
+            <Route path="/admin/alumnos/:grupoId/:alumnoId/historial" element={<AdminHistorialAcademicoPage />} />
+            <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
           </Route>
 
           {/* DOCENTE */}
@@ -95,14 +124,10 @@ export const AppRouter: React.FC = () => {
             <Route path="/alumno/calificaciones" element={<AlumnoCalificacionesPage />} />
             <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
             <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
-
             <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
             <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
             <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
-
             <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
-
-
           </Route>
         </Route>
 

@@ -1,3 +1,5 @@
+// src/components/ui/Button.tsx
+
 import React, { type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react'; // Usamos Loader2 para simular carga
 

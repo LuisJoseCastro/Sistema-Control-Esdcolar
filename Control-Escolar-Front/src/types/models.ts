@@ -1,32 +1,53 @@
-// src/types/models.ts - CÓDIGO FINAL CORREGIDO Y COMPLETO
+// src/types/models.ts - CÓDIGO ACTUALIZADO Y COMPLETO
 
 // =========================================================
 // 1. Tipos de Roles y Configuración del Sistema (SaaS)
 // =========================================================
 
-// Tipos de Roles para la autenticación
 export type Role = 'ADMIN' | 'DOCENTE' | 'ALUMNO';
 
-// Configuración mínima y dinámica de un Tenant (Escuela)
 export interface TenantConfig {
-  id: string; 
-  nombre: string;
-  logoUrl?: string;
-  colorPrimario?: string; 
+    id: string; // ID interno del Tenant (Ej: T-123)
+    nombre: string;
+    logoUrl?: string;
+    colorPrimario?: string;
 }
 
 // Interfaz del usuario logueado
 export interface User {
-  id: string;
-  nombre: string;
-  email: string;
-  rol: Role; 
-  tenantId: string; 
+    id: string;
+    nombre: string;
+    email: string;
+    rol: Role; 
+    tenantId: string; // A qué escuela pertenece
 }
 
 
 // =========================================================
-// 2. Tipos para Módulos Específicos
+// 2. Tipos para Módulo de Docente (Perfil Admin/Docente)
+// =========================================================
+
+// Tipos base para el perfil del docente
+export interface MateriaAsignada {
+    id: string;
+    nombre: string;
+    grupo: string;
+}
+
+export type HorarioType = Record<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes', Record<string, string>>;
+
+// Interfaz que extiende User para el perfil detallado del Docente
+export interface DocenteProfile extends User {
+    clave: string; // Clave institucional del docente (DOC-1001)
+    especialidad: string;
+    telefono: string;
+    materiasAsignadas: MateriaAsignada[];
+    horario: HorarioType;
+}
+
+
+// =========================================================
+// 3. Tipos para Módulos Específicos (Resto de tus tipos)
 // =========================================================
 
 // 🚨 CORRECCIÓN CLAVE: Interfaz RendimientoMateria extraída y exportada
@@ -37,36 +58,28 @@ export interface RendimientoMateria {
 
 // Tipos para el Módulo de Docente (Reportes y Calificaciones)
 export interface ReporteSummary {
-  promedioFinalGrupo: number;
-  asistenciaPromedio: number;
-  tasaAprobacion: number;
-  // Usamos la interfaz exportada arriba
-  rendimientoMateria: RendimientoMateria[];
-  
-  // Métricas Clave del dashboard
-  totalEstudiantes?: number;
-  estudiantesBajoRendimiento?: number;
-  materiasImpartidas?: number;
-  gruposAsignados?: number;
-  estudiantesAsistenciaCritica?: number;
+    promedioFinalGrupo: number;
+    asistenciaPromedio: number;
+    tasaAprobacion: number;
+    rendimientoMateria: { materia: string; promedio: number; }[];
 }
 
 export interface CalificacionDetalle {
-  alumnoId: string;
-  nombre: string;
-  parcial1: number | 'NA';
-  parcial2: number | 'NA';
-  final: number | 'NA';
-  parcial3?: number | 'NA';
-  extraordinario?: string | 'NA'; 
+    alumnoId: string;
+    nombre: string;
+    parcial1: number | 'NA';
+    parcial2: number | 'NA';
+    final: number | 'NA';
+    parcial3?: number | 'NA';
+    extraordinario?: string | 'NA'; 
 }
 
 // Tipos para el Módulo de Alumno
 export interface Asignatura {
-  id: string;
-  nombre: string;
-  docente: string;
-  promedio: number;
+    id: string;
+    nombre: string;
+    docente: string;
+    promedio: number;
 }
 
 // --- Nuevos tipos para Historial Académico ---
@@ -105,7 +118,6 @@ export interface AlumnoDashboardSummary {
 
 // --- Tipos para la Página de Perfil (AlumnoPerfilPage) ---
 
-// 1. Tipo para la sección superior de resumen
 export interface StudentProfileSummary {
     name: string;
     id: string; 
@@ -115,7 +127,6 @@ export interface StudentProfileSummary {
     profileImageUrl: string;
 }
 
-// 2. Tipo para la información personal
 export interface PersonalInfoType {
     fullName: string;
     id: string;
@@ -132,7 +143,6 @@ export interface PersonalInfoType {
     nss: string;
 }
 
-// 3. Tipo para la información académica
 export interface AcademicInfoType {
     semester: string;
     average: number;
@@ -147,13 +157,11 @@ export interface AcademicInfoType {
     credits: number;
 }
 
-// 4. Tipo de Datos de Pago
 export interface PaymentInfo {
     balanceDue: number;
     lastPaymentDate: string;
 }
 
-// 5. Tipo principal que junta todos los datos del perfil
 export interface AlumnoProfileData {
     resumen: StudentProfileSummary;
     personal: PersonalInfoType;
@@ -161,10 +169,8 @@ export interface AlumnoProfileData {
     payment: PaymentInfo;
 }
 
+// --- Tipos para la Página de Documentos y Pagos ---
 
-// --- Tipos para la Página de Documentos y Pagos (AlumnoDocumentosPage) ---
-
-// 1. Historial de documentos YA PAGADOS y finalizados
 export interface DocumentoPagado {
     fecha: string; 
     concepto: string; 
@@ -172,9 +178,8 @@ export interface DocumentoPagado {
     estado: 'Pagado' | 'Pendiente' | 'Cancelado'; 
 }
 
-// 2. Documentos actualmente SOLICITADOS
 export interface DocumentoSolicitado {
     fecha: string; 
     concepto: string;
-    pago: number | '---';
+    pago: number | '---'; 
 }
