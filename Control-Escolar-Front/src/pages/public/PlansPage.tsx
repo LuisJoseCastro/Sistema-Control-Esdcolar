@@ -4,14 +4,12 @@ import { Check, X, MessageCircle, BookOpen, ClipboardCheck, CreditCard } from 'l
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
-// --- TIPOS ---
 type PlanType = 'gratuito' | 'pago' | null;
 
 export const PlansPage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>(null);
 
-  // --- DATOS DE LAS SOLUCIONES (Parte superior) ---
   const solutions = [
     {
       title: 'Gestión Académica',
@@ -35,21 +33,16 @@ export const PlansPage: React.FC = () => {
     }
   ];
 
-  // --- LÓGICA DE NAVEGACIÓN ---
+  // --- LÓGICA DE NAVEGACIÓN CORREGIDA ---
   const handleRegisterAction = () => {
-    if (selectedPlan === 'pago') {
-      // Si es plan de pago, va al login general según tu instrucción
-      navigate('/login'); 
-    } else if (selectedPlan === 'gratuito') {
-      // Aquí iría la lógica para el sistema acotado
-      alert("Redirigiendo al registro del Plan Gratuito (Sistema Acotado)...");
-      // navigate('/register-free'); // Ejemplo de ruta futura
+    if (selectedPlan) {
+      // Ahora redirige a la ruta del formulario de registro
+      navigate('/register-school'); 
     }
   };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-800 pb-20">
-      {/* HEADER / NAV */}
       <header className="flex justify-between items-center px-12 py-6">
         <h1 className="text-4xl font-serif italic font-bold tracking-tighter">
           Academic<span className="text-teal-600">+</span>
@@ -62,7 +55,6 @@ export const PlansPage: React.FC = () => {
         </button>
       </header>
 
-      {/* SECCIÓN SOLUCIONES */}
       <section className="text-center mt-4">
         <h2 className="text-3xl font-semibold mb-10">Nuestras soluciones</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-12">
@@ -76,12 +68,9 @@ export const PlansPage: React.FC = () => {
         </div>
       </section>
 
-      {/* SECCIÓN PLANES */}
       <section className="text-center mt-16">
         <h2 className="text-3xl font-semibold mb-10">Elige el Plan Perfecto para Ti</h2>
-        
         <div className="flex flex-col md:flex-row justify-center gap-12 px-12 max-w-6xl mx-auto">
-          
           {/* PLAN GRATUITO */}
           <Card 
             className={`w-full md:w-1/2 transition-all duration-300 ${selectedPlan === 'gratuito' ? 'ring-4 ring-teal-500 scale-105' : 'bg-blue-50/30'}`}
@@ -126,7 +115,6 @@ export const PlansPage: React.FC = () => {
         </div>
       </section>
 
-      {/* BOTÓN FINAL DE REGISTRO (Solo visible si hay selección) */}
       <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 transition-all duration-500 ${selectedPlan ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
         <Button 
           variant="primary" 

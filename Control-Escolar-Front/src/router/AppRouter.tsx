@@ -1,21 +1,19 @@
-// src/router/AppRouter.tsx
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 
 // === Páginas públicas ===
-import { PlansPage } from '../pages/public/PlansPage'; // 🚨 NUEVA IMPORTACIÓN
+import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
+import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage'; // ✅ IMPORTACIÓN NUEVA
 
 // === Layout principal ===
 import { AppLayout } from '../components/layout/AppLayout';
 
 // === Dashboards principales y vistas del ADMINISTRADOR ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
-// ... (resto de tus importaciones de admin se mantienen igual)
 import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
 import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
 import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
@@ -41,7 +39,7 @@ import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
 import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
 import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDetallesPage';
-import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
+import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage'; // ✅ CORREGIDO (Sin error de dedo)
 import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
@@ -68,24 +66,24 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* PÚBLICAS */}
-        {/* 🚨 CAMBIO AQUÍ: Ahora la raíz muestra la página de Planes */}
+        {/* RUTAS PÚBLICAS */}
         <Route path="/" element={<PlansPage />} /> 
-        
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
+        
+        {/* ✅ NUEVA RUTA DE REGISTRO DE ESCUELA */}
+        <Route path="/register-school" element={<RegisterSchoolPage />} />
 
-        {/* Redirecciones */}
+        {/* Redirecciones rápidas */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/docente/login" element={<Navigate to="/login" replace />} />
         <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
-        {/* RUTAS PROTEGIDAS */}
+        {/* RUTAS PROTEGIDAS (Requieren Login y Layout) */}
         <Route element={<AppLayout />}>
-          {/* ... (Todo el bloque de rutas de ADMIN, DOCENTE y ALUMNO se mantiene igual) */}
           
-          {/* ADMIN */}
+          {/* SECCIÓN ADMINISTRADOR */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
@@ -99,7 +97,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
           </Route>
 
-          {/* DOCENTE */}
+          {/* SECCIÓN DOCENTE */}
           <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
             <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
@@ -110,7 +108,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/perfil" element={<DocentePerfilPage />} />
           </Route>
 
-          {/* ALUMNO */}
+          {/* SECCIÓN ALUMNO */}
           <Route element={<PrivateRoute allowedRoles={['ALUMNO']} />}>
             <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
             <Route path="/alumno/asignaturas" element={<AlumnoAsignaturasPage />} />
@@ -118,14 +116,19 @@ export const AppRouter: React.FC = () => {
             <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
             <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
             <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
+            {/* ✅ CORREGIDO: historial-academico */}
             <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
             <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
             <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
           </Route>
         </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<h1>404 | Página no encontrada</h1>} />
+        {/* 404 - No Encontrado */}
+        <Route path="*" element={
+          <div className="flex items-center justify-center h-screen">
+            <h1 className="text-2xl font-bold">404 | Página no encontrada</h1>
+          </div>
+        } />
       </Routes>
     </BrowserRouter>
   );
