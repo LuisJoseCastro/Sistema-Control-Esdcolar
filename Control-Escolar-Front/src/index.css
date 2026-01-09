@@ -40,8 +40,8 @@ body {
   --color-grayDark-100: #eef0f0;
   --color-grayDark-200: #d9dede;
   --color-grayDark-300: #aab7b7; /* ESTE ES EL COLOR ORIGINAL */
-  --color-grayDark-200: #90a0a0;
-  --color-grayDark-200: #728585;
+  --color-grayDark-400: #90a0a0;
+  --color-grayDark-500: #728585;
 
   /* Color Gris Claro */
   --color-grayLight-100: #eeeff0;

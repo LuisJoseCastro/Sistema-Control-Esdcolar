@@ -21,16 +21,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const getVariantClasses = (variant: ButtonVariant) => {
   switch (variant) {
     case 'gradient': // Visto en el botón "Empezar Ahora" y "Guardar Calificaciones"
-      return `bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 
-              text-white shadow-md hover:shadow-lg focus:ring-4 focus:ring-cyan-300 focus:ring-opacity-75`;
+      return `bg-main-800 hover:bg-main-900 
+              text-whiteBg-50 shadow-md hover:shadow-lg focus:ring-4 focus:ring-grayDark-500 focus:ring-opacity-75 cursor-pointer`;
     case 'primary': // Visto en botones "Enviar" y "Iniciar Sesión" (Azul Oscuro)
-      return `bg-blue-600 hover:bg-blue-700 text-white shadow-md focus:ring-4 focus:ring-blue-300`;
+      return `bg-main-800 hover:bg-main-900 text-whiteBg-50 shadow-md focus:ring-4 focus:ring-grayDark-500 cursor-pointer`;
     case 'secondary': // Visto en botón "Limpiar" o acciones menos prioritarias (Gris/Claro)
-      return `bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-300`;
+      return `bg-main-600 hover:bg-main-700 text-whiteBg-50 border border-gray-300 cursor-pointer`;
     case 'ghost': // Visto en la barra lateral o botones de texto plano (Transparente)
-      return `bg-transparent hover:bg-gray-100 text-blue-600 border border-transparent`;
+      return `bg-transparent hover:bg-main-600 text-whiteBg-50 border border-transparent cursor-pointer`;
     default:
-      return 'bg-blue-600 hover:bg-blue-700 text-white';
+      return 'bg-main-600 hover:bg-main-700 text-whiteBg-50 cursor-pointer';
   }
 };
 
