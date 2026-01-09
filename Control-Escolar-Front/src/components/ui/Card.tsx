@@ -41,7 +41,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   // Si el className tiene un color de fondo personalizado, no agregamos bg-white
   const hasCustomBg = className.includes('bg-');
-  const baseClasses = `rounded-2xl p-6 ${!hasCustomBg ? 'bg-white' : ''}`;
+  const baseClasses = `rounded-2xl p-6 ${!hasCustomBg ? 'bg-grayDark-300' : ''}`;
 
   const finalClasses = `${baseClasses} ${getVariantClasses(variant)} ${className}`;
 
@@ -52,7 +52,7 @@ export const Card: React.FC<CardProps> = ({
     >
       {/* Encabezado Opcional */}
       {header && (
-        <div className="mb-4 pb-3 border-b border-gray-200">
+        <div className="mb-4 pb-3 border-b border-whiteBg-50">
           {/* Aseguramos un estilo consistente para el encabezado */}
           <h2 className="text-xl font-bold text-gray-800">{header}</h2>
         </div>
