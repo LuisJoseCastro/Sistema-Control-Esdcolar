@@ -14,8 +14,8 @@ export const LoadingSpinner: React.FC<LoadingProps> = ({ size = 32, className = 
   return (
     <div className={`flex flex-col items-center justify-center space-y-3 ${className}`}>
       {/* Aplicamos una animación de giro y el color principal */}
-      <Loader size={size} className="animate-spin text-blue-600" />
-      <p className="text-sm text-gray-500">{text}</p>
+      <Loader size={size} className="animate-spin text-main-800" />
+      <p className="text-sm text-main-900">{text}</p>
     </div>
   );
 };
