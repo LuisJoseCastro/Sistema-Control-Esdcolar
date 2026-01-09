@@ -52,7 +52,7 @@ const Input: React.FC<InputProps> = ({
   }
 
   const inputBaseClasses = `
-    w-full py-2.5 px-4 bg-grayLight-200 border border-gray-300 rounded-lg text-gray-800 
+    w-full py-2.5 px-4 bg-grayLight-100 border border-gray-300 rounded-lg text-gray-800 
     focus:border-gray-200 focus:ring-1 focus:ring-gray-300 
     transition duration-150 placeholder:text-gray-500
   `;
