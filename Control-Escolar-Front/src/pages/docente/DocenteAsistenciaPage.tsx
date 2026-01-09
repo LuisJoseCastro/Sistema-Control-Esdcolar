@@ -10,7 +10,7 @@ import Select from '../../components/ui/Select';
 // Importamos todos los sub-componentes necesarios
 import Table, { TableRow, TableCell, TableHead } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
-import Badge from '../../components/ui/Badge'; // Nuevo: Para el estado
+// import Badge from '../../components/ui/Badge'; // Nuevo: Para el estado
 
 // --- Tipos de Datos (Mock) ---
 
@@ -174,7 +174,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
             {/* Header: Título y Navegación */}
             <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                    <CalendarCheck className="w-7 h-7 mr-3 text-cyan-600" />
+                    <CalendarCheck className="w-7 h-7 mr-3 text-main-900" />
                     Registro de Asistencia
                 </h1>
                 {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: ghost) */}
@@ -240,7 +240,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                                 ) : (
                                     // Fila de mensaje si no hay grupo seleccionado
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500 py-6">
+                                        <TableCell colSpan={2} className="text-center text-gray-500 py-6 font-medium">
                                             Por favor, selecciona un grupo para ver la lista de alumnos.
                                         </TableCell>
                                     </TableRow>
@@ -254,7 +254,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                         <div className="flex justify-start">
                             {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: gradient) */}
                             <Button
-                                variant='gradient'
+                                variant='primary'
                                 onClick={handleGuardarAsistencia}
                                 disabled={!isReadyToSave || isLoading}
                                 isLoading={isLoading}
@@ -274,7 +274,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                     <div className="flex justify-between items-center mb-6">
                         {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
                         <Button
-                            variant='secondary'
+                            variant='primary'
                             onClick={() => console.log('Anterior Mes')}
                             className="p-2 rounded-full h-auto w-auto"
                             icon={<ChevronLeft className="w-5 h-5" />}
@@ -284,7 +284,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                         <h3 className="text-xl font-semibold text-gray-800">{currentMonth}</h3>
                         {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
                         <Button
-                            variant='secondary'
+                            variant='primary'
                             onClick={() => console.log('Siguiente Mes')}
                             className="p-2 rounded-full h-auto w-auto"
                             icon={<ChevronRight className="w-5 h-5" />}
@@ -297,7 +297,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                     <div className="grid grid-cols-7 text-center gap-2">
                         {/* Días de la semana (Encabezado) */}
                         {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(day => (
-                            <div key={day} className="text-sm font-bold text-gray-500">{day}</div>
+                            <div key={day} className="text-sm font-bold text-gray-900">{day}</div>
                         ))}
 
                         {/* Relleno inicial (mock) */}
