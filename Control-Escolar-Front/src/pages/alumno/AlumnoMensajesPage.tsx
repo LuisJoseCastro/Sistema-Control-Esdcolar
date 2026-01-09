@@ -95,10 +95,10 @@ export const AlumnoMensajesPage: React.FC = () => {
                                 // Aplicamos estilo 'flat' para un mejor contraste sobre la Card contenedora.
                                 variant="flat"
                                 className={`p-4 flex items-center justify-between cursor-pointer transition-shadow border-2
-                                    ${notif.leida ? 'bg-gray-100 text-gray-600 hover:shadow-md' : 'bg-white text-gray-800 border-blue-600 shadow-sm'}`}
+                                    ${notif.leida ? 'bg-gray-100 text-gray-600 hover:shadow-md' : 'bg-white text-gray-800 border-main-900 shadow-sm'}`}
                             >
                                 <div className="flex items-center space-x-4 flex-1">
-                                    <Bell size={24} className={notif.leida ? 'text-gray-400' : 'text-blue-600'} />
+                                    <Bell size={24} className={notif.leida ? 'text-gray-400' : 'text-main-900'} />
                                     <span className={`flex-1 whitespace-nowrap overflow-hidden text-ellipsis ${notif.leida ? 'font-normal' : 'font-semibold'}`}>
                                         {notif.mensaje}
                                     </span>
