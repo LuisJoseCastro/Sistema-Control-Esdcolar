@@ -61,13 +61,13 @@ const MensajeRow: React.FC<MensajeRowProps> = ({ mensaje, isSelected, onClick })
             onClick={() => onClick(mensaje.id)}
         >
             {/* Ícono de Perfil (Avatar) - Estilo manual más acorde a un avatar simple */}
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 
+            <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 
                 ${mensaje.read ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white'}`}>
                 <User className="w-5 h-5" />
             </div>
 
             {/* Contenido del Mensaje */}
-            <div className="flex-grow min-w-0">
+            <div className="grow min-w-0">
                 <div className={`text-base truncate ${fontClasses}`}>
                     {mensaje.sender}
                     {/* 🛑 USO DEL COMPONENTE ATÓMICO: Badge para No Leído */}
@@ -83,7 +83,7 @@ const MensajeRow: React.FC<MensajeRowProps> = ({ mensaje, isSelected, onClick })
             </div>
 
             {/* Fecha y Hora */}
-            <div className="flex-shrink-0 ml-4 text-right hidden sm:block">
+            <div className="shrink-0 ml-4 text-right hidden sm:block">
                 <div className="text-sm text-gray-600 font-medium">
                     {mensaje.date}
                 </div>
@@ -132,7 +132,7 @@ export const DocenteMensajesPage: React.FC = () => {
             {/* Header: Título y Botón */}
             <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                    <Mail className="w-7 h-7 mr-3 text-cyan-600" />
+                    <Mail className="w-7 h-7 mr-3 text-main-900" />
                     Buzón de Mensajes
                 </h1>
                 {/* USO DEL COMPONENTE ATÓMICO: Button (variant: primary) */}
@@ -155,7 +155,7 @@ export const DocenteMensajesPage: React.FC = () => {
                         <button
                             className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 
                                 ${activeTab === 'INBOX'
-                                    ? 'border-b-4 border-blue-600 text-blue-600'
+                                    ? 'border-b-4 border-grayDark-500 text-main-800'
                                     : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             onClick={() => {
@@ -168,7 +168,7 @@ export const DocenteMensajesPage: React.FC = () => {
                         <button
                             className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 
                                 ${activeTab === 'SENT'
-                                    ? 'border-b-4 border-blue-600 text-blue-600'
+                                    ? 'border-b-4 border-grayDark-500 text-main-800'
                                     : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             onClick={() => {
@@ -193,7 +193,7 @@ export const DocenteMensajesPage: React.FC = () => {
                             placeholder="Buscar por remitente o asunto..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full py-2.5 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150 placeholder:text-gray-500"
+                            className="w-full py-2.5 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-main-700 focus:ring-1 focus:ring-main-800 transition duration-150 placeholder:text-gray-500"
                         />
                     </div>
                 </div>
@@ -234,7 +234,7 @@ export const DocenteMensajesPage: React.FC = () => {
                             placeholder="Destinatario"
                             value={to}
                             onChange={(e) => setTo(e.target.value)}
-                            className="bg-gray-100"
+                            className="bg-whiteBg-300"
                         />
                     </div>
 
@@ -243,10 +243,10 @@ export const DocenteMensajesPage: React.FC = () => {
                             placeholder="Escribe tu mensaje aquí..."
                             value={messageBody}
                             onChange={(e) => setMessageBody(e.target.value)}
-                            className="w-full h-40 p-4 bg-gray-100 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500"
+                            className="w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500"
                         />
                         <div className="absolute right-3 top-3 text-gray-500">
-                            <button type="button" className="p-1 rounded-md hover:bg-gray-200 transition">
+                            <button type="button" className="p-1 rounded-md hover:bg-whiteBg-400 transition">
                                 <Paperclip className="w-5 h-5" />
                             </button>
                         </div>
@@ -264,7 +264,7 @@ export const DocenteMensajesPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center space-x-3">
-                            <span className="text-sm text-gray-500">Adjuntar archivos (opcional)</span>
+                            <span className="w-auto text-sm text-gray-500 ms-8 me-2">Adjuntar archivos (opcional)</span>
                             <Button
                                 variant="primary"
                                 onClick={() => {
@@ -286,7 +286,7 @@ export const DocenteMensajesPage: React.FC = () => {
             {selectedMessageId && (
                 <div className="mt-8">
                     {/* USO DEL COMPONENTE ATÓMICO: Card (para el detalle) */}
-                    <Card header="Detalle del Mensaje" className="border-l-4 border-cyan-600">
+                    <Card header="Detalle del Mensaje" className="border-l-4 border-main-800">
                         <p className="text-sm text-gray-500 mb-2">
                             De: <span className="font-semibold text-gray-800">{MOCK_MESSAGES.find(m => m.id === selectedMessageId)?.sender}</span>
                         </p>
@@ -296,7 +296,7 @@ export const DocenteMensajesPage: React.FC = () => {
                         <p className="text-lg font-bold text-gray-800 mb-4">
                             {MOCK_MESSAGES.find(m => m.id === selectedMessageId)?.subject}
                         </p>
-                        <div className="border-t border-gray-100 pt-4 text-gray-700">
+                        <div className="border-t border-gray-100 pt-4 text-gray-800 font-medium">
                             <p>
                                 {/* Simulación de contenido del mensaje */}
                                 Estimado Docente, la administración ha emitido una nueva circular con respecto a las horas de salida.
