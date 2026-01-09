@@ -75,7 +75,7 @@ const HorarioSlot: React.FC<{ timeRange: string, content: Clase[] }> = ({ timeRa
                             {classes.map((clase, index) => (
                                 <div 
                                     key={index} 
-                                    className="bg-blue-500 text-white rounded px-1 py-[1px] mb-1 truncate leading-tight cursor-pointer hover:bg-blue-600 transition-colors shadow-sm"
+                                    className="w-auto h-5 bg-grayLight-400 text-white font-semibold rounded px-1 py-px mb-1 truncate leading-tight cursor-pointer hover:bg-grayLight-500 transition-colors shadow-sm"
                                     title={`${clase.asignatura} (${clase.horaInicio}-${clase.horaFin})`}
                                 >
                                     {/* Muestra la abreviatura o el nombre completo si hay espacio */}
@@ -141,7 +141,7 @@ const DocenteDashboardPage: React.FC = () => {
             {/* 1. SECCIÓN DE ASIGNATURAS (Usando Card y Table) */}
             <Card className="mb-8" variant="default" header={
                 <div className="flex items-center">
-                    <List className="w-5 h-5 mr-2 text-blue-600" />
+                    <List className="w-5 h-5 mr-2 text-main-900" />
                     Asignaturas Actuales
                 </div>
             }>
@@ -162,7 +162,7 @@ const DocenteDashboardPage: React.FC = () => {
                                     <Table.Cell className="text-gray-600">{item.clave}</Table.Cell>
                                     <Table.Cell className="text-gray-600">{item.horario}</Table.Cell>
                                     <Table.Cell>
-                                        <span className="bg-cyan-100 text-cyan-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{item.salon}</span>
+                                        <span className="bg-grayLight-300 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">{item.salon}</span>
                                     </Table.Cell>
                                 </Table.Row>
                             ))}
@@ -175,7 +175,7 @@ const DocenteDashboardPage: React.FC = () => {
             {/* 2. SECCIÓN DE HORARIO SEMANAL (Usando Card) */}
             <Card header={
                 <div className="flex items-center">
-                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    <Calendar className="w-5 h-5 mr-2 text-main-900" />
                     Horario Semanal
                 </div>
             }>
