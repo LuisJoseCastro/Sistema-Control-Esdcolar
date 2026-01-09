@@ -223,7 +223,7 @@ export const AlumnoPerfilPage: React.FC = () => {
             <div className="flex flex-col gap-8 max-w-7xl mx-auto">
 
                 {/* 1. TARJETA SUPERIOR: RESUMEN */}
-                <Card className={`${cardStyle} flex flex-col md:flex-row items-center justify-between gap-8 bg-gray-100!`}>
+                <Card className={`${cardStyle} flex flex-col md:flex-row items-center justify-between gap-8 bg-grayDark-200`}>
                     <div className="flex flex-col md:flex-row items-center gap-8 w-full">
                         <div className="w-32 h-32 rounded-full bg-purple-100 flex items-center justify-center shrink-0 border-4 border-white shadow-sm">
                              <UserIcon size={64} className="text-purple-600" />
@@ -261,7 +261,7 @@ export const AlumnoPerfilPage: React.FC = () => {
                 {/* 2. SECCIÓN MEDIA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Tarjeta: Información Personal */}
-                    <Card className={`${cardStyle} relative flex flex-col bg-gray-100!`}>
+                    <Card className={`${cardStyle} relative flex flex-col bg-grayDark-200`}>
                         <h3 className="text-2xl font-bold text-gray-800 text-center mb-8">Información Personal</h3>
                         <div className="grid grid-cols-2 gap-y-6 gap-x-4 text-sm md:text-base flex-1">
                             <div><p className="font-bold text-gray-800">Nombre Completo:</p><p className="text-gray-600 text-sm mt-1">{personal.fullName}</p></div>
@@ -276,7 +276,7 @@ export const AlumnoPerfilPage: React.FC = () => {
                             <Button 
                                 onClick={() => setModalState(p => ({...p, personal: true}))} 
                                 variant="ghost"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-bold p-0"
+                                className="text-blue-600 text-sm font-bold p-0 bg-main-800"
                                 icon={<ArrowRight size={16} />}
                             >
                                 Haz clic para ver detalles completos
@@ -285,7 +285,7 @@ export const AlumnoPerfilPage: React.FC = () => {
                     </Card>
 
                     {/* Tarjeta: Datos Académicos */}
-                    <Card className={`${cardStyle} relative flex flex-col bg-gray-100!`}>
+                    <Card className={`${cardStyle} relative flex flex-col bg-grayDark-200`}>
                         <h3 className="text-2xl font-bold text-gray-800 text-center mb-8">Datos Académicos</h3>
                         <div className="grid grid-cols-2 gap-y-8 gap-x-4 text-sm md:text-base flex-1">
                             <div className="text-center md:text-left"><p className="font-bold text-gray-800">Semestre</p><p className="text-gray-600 mt-1">{academic.semester}</p></div>
@@ -298,7 +298,7 @@ export const AlumnoPerfilPage: React.FC = () => {
                              <Button 
                                 onClick={() => setModalState(p => ({...p, academic: true}))} 
                                 variant="ghost"
-                                className="text-blue-600 hover:text-blue-800 text-sm font-bold p-0"
+                                className="text-blue-600 text-sm font-bold p-0"
                                 icon={<ArrowRight size={16} />}
                             >
                                 Haz clic para ver detalles completos
@@ -308,7 +308,7 @@ export const AlumnoPerfilPage: React.FC = () => {
                 </div>
 
                 {/* 3. TARJETA INFERIOR: MIS PAGOS */}
-                <Card className={`${cardStyle} text-center bg-gray-100!`}>
+                <Card className={`${cardStyle} text-center bg-grayDark-200`}>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">Mis Pagos</h3>
                     <p onClick={() => navigate('/alumno/documentos-pagos')} className="text-gray-600 mb-8 cursor-pointer hover:text-blue-600 hover:underline transition-colors" title="Ir a sección de pagos">
                         Consulta adeudos de Documentos Solicitados
