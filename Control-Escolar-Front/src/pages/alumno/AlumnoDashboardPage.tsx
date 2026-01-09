@@ -71,8 +71,8 @@ export const AlumnoDashboardPage: React.FC = () => {
 
         {/* Promedio General */}
         {/* 🛑 CORRECCIÓN: Añadir bg-white ya que la nueva Card no tiene fondo fijo */}
-        <Card className="bg-gray-100! p-10 text-center shadow-xl w-72 border-t-4 ">
-          <p className="text-2xl text-gray-600 font-semibold mb-2">Promedio</p>
+        <Card className="bg-grayLight-200 p-10 text-center shadow-xl w-72 border-t-4 ">
+          <p className="text-2xl text-main-800 font-semibold mb-2">Promedio</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.promedioGeneral.toFixed(1)}
           </span>
@@ -80,8 +80,8 @@ export const AlumnoDashboardPage: React.FC = () => {
 
         {/* Porcentaje de Asistencia */}
         {/* 🛑 CORRECCIÓN: Añadir bg-white ya que la nueva Card no tiene fondo fijo */}
-        <Card className="bg-gray-100! p-10 text-center shadow-xl w-72 border-t-4 ">
-          <p className="text-2xl text-gray-600 font-semibold mb-2">Asistencia</p>
+        <Card className="bg-grayLight-200 p-10 text-center shadow-xl w-72 border-t-4 ">
+          <p className="text-2xl text-main-800 font-semibold mb-2">Asistencia</p>
           <span className="text-7xl font-extrabold text-gray-900 leading-none">
             {dashboardData.asistenciaPorcentaje}%
           </span>
@@ -90,9 +90,9 @@ export const AlumnoDashboardPage: React.FC = () => {
 
       {/* SECCIÓN DE NOTIFICACIONES */}
       {/* Este contenedor no usa Card, pero se ve afectado por la Card del Docente si se cambia a la versión "flat" */}
-      <div className="bg-gray-100! rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-          <Bell className="text-blue-600" /> Últimas Notificaciones
+      <div className="bg-grayLight-200 rounded-xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-2xl font-semibold text-main-800 mb-6 flex items-center gap-2">
+          <Bell className="text-main-800" /> Últimas Notificaciones
         </h2>
 
         <div className="space-y-4">
@@ -103,20 +103,20 @@ export const AlumnoDashboardPage: React.FC = () => {
                 // Este DIV debe ser blanco si no está leído.
                 className={`p-4 rounded-lg flex items-start gap-4 transition-all
                   ${notif.leida
-                    ? 'bg-gray-50 text-gray-500'
-                    : 'bg-white text-blue-900 border-l-4 border-blue-500 shadow-sm'
+                    ? 'bg-grayDark-100 text-main-600'
+                    : 'bg-whiteBg-50 text-main-900 border-l-4 border-main-500 shadow-sm'
                   }`}
               >
                 <div className="mt-1">
                   {/* Punto indicador de estado */}
-                  <div className={`h-3 w-3 rounded-full ${notif.leida ? 'bg-gray-300' : 'bg-blue-500'}`}></div>
+                  <div className={`h-3 w-3 rounded-full ${notif.leida ? 'bg-grayLight-300' : 'bg-main-900'}`}></div>
                 </div>
                 <div className="flex-1">
                   <p className="text-base font-medium">{notif.mensaje}</p>
                   <p className="text-xs opacity-70 mt-1">{notif.fecha}</p>
                 </div>
                 {!notif.leida && (
-                  <span className="text-xs font-bold bg-blue-200 text-blue-800 px-2 py-1 rounded">
+                  <span className="text-xs font-bold bg-grayLight-200 text-main-800 px-2 py-1 rounded">
                     NUEVA
                   </span>
                 )}
