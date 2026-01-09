@@ -16,14 +16,14 @@ interface TableBodyProps {
 
 // Componente para el encabezado de la tabla
 const TableHeader: React.FC<TableHeaderProps> = ({ children, className = '' }) => (
-    <thead className={`bg-gray-100 ${className}`}>
+    <thead className={`bg-whiteBg-200  ${className}`}>
         {children}
     </thead>
 );
 
 // Componente para el cuerpo de la tabla
 const TableBody: React.FC<TableBodyProps> = ({ children, className = '' }) => (
-    <tbody className={`bg-white divide-y divide-gray-100 ${className}`}>
+    <tbody className={`bg-whiteBg-50 divide-y divide-grayDark-200 ${className}`}>
         {children}
     </tbody>
 );
@@ -44,7 +44,7 @@ export const TableHead: React.FC<HTMLAttributes<HTMLTableCellElement> & { colSpa
 
 // 🛑 CORRECCIÓN: Tipado de TableCell para aceptar 'colSpan'
 export const TableCell: React.FC<HTMLAttributes<HTMLTableCellElement> & { colSpan?: number }> = ({ children, className = '', ...rest }) => (
-    <td className={`p-3 border-b border-gray-100 text-sm text-gray-700 ${className}`} {...rest}>
+    <td className={`p-3 border-b border-whiteBg-400 text-sm text-gray-700 ${className}`} {...rest}>
         {children}
     </td>
 );
@@ -66,9 +66,9 @@ const Table: React.FC<TableProps> & {
     Cell: typeof TableCell;
 } = ({ children, className = '', ...rest }) => {
     return (
-        <div className="bg-white rounded-xl shadow-xl overflow-x-auto">
+        <div className="bg-whiteBg-50 rounded-xl shadow-xl overflow-x-auto">
             <table
-                className={`min-w-full divide-y divide-gray-200 ${className}`}
+                className={`min-w-full divide-y divide-grayDark-200 ${className}`}
                 {...rest}
             >
                 {children}
