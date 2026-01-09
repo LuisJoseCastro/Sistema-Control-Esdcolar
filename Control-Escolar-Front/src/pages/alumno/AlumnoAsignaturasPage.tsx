@@ -53,7 +53,7 @@ export const AlumnoAsignaturasPage: React.FC = () => {
     );
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
+        <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
             
             <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8">
                 <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
@@ -65,7 +65,7 @@ export const AlumnoAsignaturasPage: React.FC = () => {
             </header>
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 px-4">
-                <div className="relative w-full md:w-80 mb-4 md:mb-0">
+                <div className="relative w-full md:w-80 mb-4 md:mb-0 bg-whiteBg-50 rounded-full">
                     {/* Usamos el componente Input unificado */}
                     <Input 
                         type="text" 
@@ -87,10 +87,10 @@ export const AlumnoAsignaturasPage: React.FC = () => {
             </div>
 
             {/* CONTENEDOR PRINCIPAL GRIS (DIV) */}
-            <div className="bg-[#eff3f6] p-8 rounded-[3rem] shadow-[0_20px_40px_rgba(0,0,0,0.15)] min-h-[500px]">
+            <div className="bg-grayLight-100 p-8 rounded-[3rem] shadow-[0_20px_40px_rgba(0,0,0,0.15)] min-h-[500px]">
                 
                 {/* Encabezados de la tabla (ocultos en móvil) */}
-                <div className="hidden md:grid grid-cols-4 gap-4 px-8 mb-4 text-gray-500 font-bold text-sm uppercase tracking-wider">
+                <div className="bg-grayDark-200  w-full h-auto p-2 rounded-xl hidden md:grid grid-cols-4 g1ap-4 px-8 mb-4 text-main-800 font-bold text-sm uppercase tracking-wider">
                     <div className="text-left pl-2">Materia</div>
                     <div className="text-center col-span-2">Horario</div>
                     <div className="text-right pr-4">Profesor</div>
@@ -103,7 +103,7 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                             <Card
                                 key={item.id}
                                 // Reaplicamos el grid y el estilo visual de la fila
-                                className="grid grid-cols-1 md:grid-cols-4 gap-4 py-4 px-8 items-center text-sm md:text-base text-gray-600 hover:shadow-md transition-all hover:-translate-y-1 duration-200"
+                                className="bg-whiteBg-200 grid grid-cols-1 md:grid-cols-4 gap-4 py-4 px-8 items-center text-sm md:text-base text-gray-600 hover:shadow-md transition-all hover:-translate-y-1 duration-200"
                                 variant="default" // Asegura el fondo blanco y la sombra ligera por defecto
                             >
                                 {/* COLUMNA 1: Materia */}
@@ -114,7 +114,7 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                                 {/* COLUMNA 2 y 3: Horarios Multiples */}
                                 <div className="md:col-span-2 flex flex-col items-center gap-2">
                                     {item.horarios.map((horario, index) => (
-                                        <div key={index} className="flex items-center gap-3 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 w-fit">
+                                        <div key={index} className="flex items-center gap-3 bg-whiteBg-50 px-4 py-1.5 rounded-full border border-gray-100 w-fit">
                                             {/* Día */}
                                             <div className="flex items-center gap-2 text-blue-600 font-semibold w-24 justify-end">
                                                 <span>{horario.dia}</span>
