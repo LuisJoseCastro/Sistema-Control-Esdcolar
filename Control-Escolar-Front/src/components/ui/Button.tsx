@@ -28,7 +28,7 @@ const getVariantClasses = (variant: ButtonVariant) => {
     case 'secondary': // Visto en botón "Limpiar" o acciones menos prioritarias (Gris/Claro)
       return `bg-main-600 hover:bg-main-700 text-whiteBg-50 border border-gray-300 cursor-pointer`;
     case 'ghost': // Visto en la barra lateral o botones de texto plano (Transparente)
-      return `bg-transparent hover:bg-main-600 text-whiteBg-50 border border-transparent cursor-pointer`;
+      return `bg-main-600 hover:bg-main-800 text-whiteBg-50 border border-transparent cursor-pointer`;
     default:
       return 'bg-main-600 hover:bg-main-700 text-whiteBg-50 cursor-pointer';
   }
