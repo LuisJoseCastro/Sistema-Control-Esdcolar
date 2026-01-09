@@ -1,22 +1,22 @@
 // src/components/ui/Input.tsx
 
 import React, { type InputHTMLAttributes, useState, type ReactNode, type ComponentType } from 'react';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'; 
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 
 // --- TIPOS Y PROPIEDADES ---
 
 type LucideIconComponent = ComponentType<{ className: string }>;
-type CustomIcon = LucideIconComponent | ReactNode; 
+type CustomIcon = LucideIconComponent | ReactNode;
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   iconType?: 'email' | 'password' | 'default';
-  endIcon?: CustomIcon; 
+  endIcon?: CustomIcon;
   className?: string;
-  
+
   // Mantenemos 'children' opcional por el tipado de React
-  children?: ReactNode; 
-  icon?: CustomIcon; 
+  children?: ReactNode;
+  icon?: CustomIcon;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -25,12 +25,12 @@ const Input: React.FC<InputProps> = ({
   endIcon,
   className = '',
   type = 'text',
-  icon, 
-  
+  icon,
+
   // 🚨 CORRECCIÓN CLAVE: Extraemos 'children' para que NO vaya en {...rest}
-  children, 
-  
-  ...rest 
+  children,
+
+  ...rest
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const inputType = iconType === 'password' && showPassword ? 'text' : type;
@@ -38,13 +38,13 @@ const Input: React.FC<InputProps> = ({
   // LÓGICA DE ICONOS DE INICIO (Start Icon)
   let StartIconComponent: LucideIconComponent | null | ReactNode = null;
   if (icon) {
-      StartIconComponent = icon;
+    StartIconComponent = icon;
   } else if (iconType === 'email') {
     StartIconComponent = Mail;
   } else if (iconType === 'password') {
     StartIconComponent = Lock;
   }
-  
+
   // Lógica de End Icon
   let EndIconComponent: CustomIcon | undefined = endIcon;
   if (iconType === 'password') {
@@ -52,21 +52,21 @@ const Input: React.FC<InputProps> = ({
   }
 
   const inputBaseClasses = `
-    w-full py-2.5 px-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 
-    focus:border-blue-500 focus:ring-1 focus:ring-blue-500 
+    w-full py-2.5 px-4 bg-grayLight-200 border border-gray-300 rounded-lg text-gray-800 
+    focus:border-gray-200 focus:ring-1 focus:ring-gray-300 
     transition duration-150 placeholder:text-gray-500
   `;
-  
+
   const renderIcon = (IconComponent: CustomIcon | undefined, isStart: boolean = false) => {
-      if (React.isValidElement(IconComponent) || typeof IconComponent === 'string' || typeof IconComponent === 'number') {
-          return IconComponent;
-      }
-      if (IconComponent && typeof IconComponent === 'function') {
-          const Component = IconComponent as LucideIconComponent; 
-          const iconClassName = isStart ? 'w-5 h-5 text-gray-400' : 'w-5 h-5';
-          return <Component className={iconClassName} />;
-      }
-      return null;
+    if (React.isValidElement(IconComponent) || typeof IconComponent === 'string' || typeof IconComponent === 'number') {
+      return IconComponent;
+    }
+    if (IconComponent && typeof IconComponent === 'function') {
+      const Component = IconComponent as LucideIconComponent;
+      const iconClassName = isStart ? 'w-5 h-5 text-black' : 'w-5 h-5';
+      return <Component className={iconClassName} />;
+    }
+    return null;
   };
 
   const renderedEndIcon = endIcon && iconType !== 'password' ? renderIcon(endIcon) : null;
@@ -89,13 +89,13 @@ const Input: React.FC<InputProps> = ({
             {renderedStartIcon}
           </div>
         )}
-        
+
         {/* Campo de Input principal */}
         <input
           type={inputType}
           className={`${inputBaseClasses} ${renderedStartIcon ? 'pl-10' : 'pl-4'}`}
           // 'children' NO está en {...rest}
-          {...rest} 
+          {...rest}
         />
 
         {/* Icono de fin (Toggle de Contraseña o Icono personalizado) */}
@@ -103,13 +103,13 @@ const Input: React.FC<InputProps> = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 p-1 text-gray-500 hover:text-gray-700 transition"
+            className="absolute right-3 p-1 text-black hover:text-black transition"
           >
             {renderIcon(EndIconComponent)}
           </button>
         ) : (
           renderedEndIcon && (
-            <span className="absolute right-3 text-gray-500 pointer-events-none">
+            <span className="absolute right-3 text-black pointer-events-none">
               {renderedEndIcon}
             </span>
           )
