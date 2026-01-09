@@ -147,7 +147,7 @@ export const DocenteCalificacionesPage: React.FC = () => {
             {/* Header: Título y Navegación */}
             <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                    <ClipboardList className="w-7 h-7 mr-3 text-cyan-600" />
+                    <ClipboardList className="w-7 h-7 mr-3 text-main-900" />
                     Captura de Calificaciones
                 </h1>
                 {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: ghost) */}
@@ -197,8 +197,8 @@ export const DocenteCalificacionesPage: React.FC = () => {
                 {(!selectedGrupo || !selectedAsignatura) ? (
                     // 🛑 USO DE COMPONENTE ATÓMICO: Card para el mensaje de inactividad
                     <Card variant="flat" className="text-center py-12">
-                        <Search className="w-10 h-10 mx-auto text-gray-400 mb-4" />
-                        <p className="text-xl font-medium text-gray-600">
+                        <Search className="w-10 h-10 mx-auto text-gray-600 mb-4" />
+                        <p className="text-xl font-medium text-gray-700">
                             Filtros pendientes. Por favor, selecciona un **Grupo** y una **Asignatura** para cargar el registro de calificaciones.
                         </p>
                     </Card>
