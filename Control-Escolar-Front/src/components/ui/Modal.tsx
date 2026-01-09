@@ -90,7 +90,7 @@ const Modal: React.FC<ModalProps> = ({
       {/* Contenedor del Modal */}
       <div
         ref={modalRef}
-        className={`bg-white rounded-xl shadow-2xl w-full mx-4 p-6 
+        className={`bg-whiteBg-50 rounded-xl shadow-2xl w-full mx-4 p-6 
                     transform transition-all duration-300 
                     ${sizeClasses} ${className}
                     max-h-[90vh] overflow-y-auto`}
@@ -98,7 +98,7 @@ const Modal: React.FC<ModalProps> = ({
       >
         {/* Encabezado: SOLO SE RENDERIZA SI hideHeader ES FALSE O NO ESTÁ PRESENTE */}
         {!hideHeader && (
-          <div className="flex justify-between items-center pb-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div className="flex justify-between items-center rounded-xl pb-4 border-b border-gray-200 sticky top-0 bg-whiteBg-200 z-10 p-2">
             <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
             <button
               onClick={onClose}
