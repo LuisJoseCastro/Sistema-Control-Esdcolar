@@ -102,9 +102,9 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
                 {asignaturasList.map((asig, index) => (
                     <div key={index} className="flex gap-2">
                         <Input name="materia" value={asig.materia} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Nombre Materia" className="flex-1" />
-                        <Input name="codigo" value={asig.codigo} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Cód." className="w-24" />
+                        <Input name="codigo" value={asig.codigo} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Cód." className="flex-2" />
                         {asignaturasList.length > 1 && (
-                            <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => prev.filter((_, i) => i !== index))} className="text-red-500 p-2"><MinusCircle size={20} /></Button>
+                            <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => prev.filter((_, i) => i !== index))} className="p-2"><MinusCircle size={20} /></Button>
                         )}
                     </div>
                 ))}
@@ -219,12 +219,12 @@ const AdminGestionPage: React.FC = () => {
 
 
     return (
-        <div className="min-h-screen bg-gray-100 p-8">
+        <div className="min-h-screen bg-whiteBg-50 p-8">
             
             {/* 🛑 SECCIÓN 1: HEADER (SOLO TÍTULO) */}
             <header className="mb-6">
                 <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
-                    <GraduationCap size={32} className="mr-3 text-blue-600" />
+                    <GraduationCap size={32} className="mr-3 text-main-800" />
                     Gestión Académica
                 </h1>
                 <p className="text-gray-600 ml-10">Administración de planes y asignaturas</p>
@@ -249,10 +249,10 @@ const AdminGestionPage: React.FC = () => {
             </div>
 
             {/* TABLAS */}
-            <Card className="p-6 bg-white shadow-xl mb-10">
+            <Card className="p-6 bg-white shadow-xl shadow-grayDark-200 mb-10 border-2 border-gray-400">
                 <div className="flex justify-between items-end mb-4 border-b pb-2">
                     <div>
-                        <h2 className="text-xl font-semibold">Planes de Estudio</h2>
+                        <h2 className="text-2xl font-semibold">Planes de Estudio</h2>
                         <p className="text-xs text-gray-500 mt-1">Haz clic en una fila para ver sus materias.</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -263,17 +263,17 @@ const AdminGestionPage: React.FC = () => {
 
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 text-sm font-semibold text-gray-700">
+                        <thead className="bg-grayDark-200 text-sm font-semibold text-gray-700">
                             <tr>
-                                <th className="p-3 text-center">#</th>
-                                <th className="p-3 text-left">Nombre del Plan</th>
-                                <th className="p-3 text-left">Código</th>
-                                <th className="p-3 text-left">Inicio</th>
-                                <th className="p-3 text-left">Fin</th>
-                                <th className="p-3 text-center">Acciones</th>
+                                <th className="p-3 text-center text-xl">#</th>
+                                <th className="p-3 text-left text-xl">Nombre del Plan</th>
+                                <th className="p-3 text-left text-xl">Código</th>
+                                <th className="p-3 text-left text-xl">Inicio</th>
+                                <th className="p-3 text-left text-xl">Fin</th>
+                                <th className="p-3 text-center text-xl">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-whiteBg-50 divide-y divide-gray-200">
                             {filteredPlanes.map((plan) => {
                                 const isSelected = selectedPlanId === plan.id;
                                 return (
@@ -282,8 +282,8 @@ const AdminGestionPage: React.FC = () => {
                                         onClick={() => handleSelectPlan(plan.id)}
                                         className={`transition-colors duration-200 cursor-pointer ${
                                             isSelected 
-                                                ? 'bg-blue-50 border-l-4 border-l-blue-600'
-                                                : 'hover:bg-gray-50 border-l-4 border-l-transparent'
+                                                ? 'bg-blue-50 border-l-4 border-l-main-600'
+                                                : 'hover:bg-whiteBg-100 border-l-4 border-l-transparent'
                                         }`}
                                     >
                                         <td className="p-3 text-center text-gray-500">{plan.id}</td>
@@ -292,10 +292,10 @@ const AdminGestionPage: React.FC = () => {
                                         <td className="p-3 text-sm">{plan.fechaInicio}</td>
                                         <td className="p-3 text-sm">{plan.fechaFinal}</td>
                                         <td className="p-3 text-center flex justify-center gap-2" onClick={(e) => e.stopPropagation()}> 
-                                            <Button variant="ghost" className="text-blue-500 p-1" onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }}>
+                                            <Button variant="ghost" className="p-1" onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }}>
                                                 <Edit size={16} />
                                             </Button>
-                                            <Button variant="ghost" className="text-red-500 p-1" onClick={() => handleDeletePlan(plan.id)}>
+                                            <Button variant="ghost" className="p-1" onClick={() => handleDeletePlan(plan.id)}>
                                                 <Trash2 size={16} />
                                             </Button>
                                         </td>
@@ -310,11 +310,11 @@ const AdminGestionPage: React.FC = () => {
             <Card className="p-6 bg-white shadow-xl">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-semibold">Asignaturas</h2>
+                        <h2 className="text-2xl font-semibold">Asignaturas</h2>
                         {selectedPlanId && (
                             <div className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full animate-fadeIn">
                                 <span>Filtrado por: <strong>{planes.find(p => p.id === selectedPlanId)?.nombre}</strong></span>
-                                <button onClick={() => setSelectedPlanId(null)} className="ml-2 hover:text-red-600">
+                                <button onClick={() => setSelectedPlanId(null)} className="ml-2">
                                     <FilterX size={16} />
                                 </button>
                             </div>
@@ -329,28 +329,28 @@ const AdminGestionPage: React.FC = () => {
 
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 text-sm font-semibold text-gray-700">
+                        <thead className="bg-grayDark-200 text-xl font-semibold text-gray-700">
                             <tr>
-                                <th className="p-3 text-center">#</th>
-                                <th className="p-3 text-left">Materia</th>
-                                <th className="p-3 text-left">Código</th>
-                                <th className="p-3 text-left">Plan de Estudio</th>
-                                <th className="p-3 text-center">Acciones</th>
+                                <th className="p-3 text-center text-xl">#</th>
+                                <th className="p-3 text-left text-xl">Materia</th>
+                                <th className="p-3 text-left text-xl">Código</th>
+                                <th className="p-3 text-left text-xl">Plan de Estudio</th>
+                                <th className="p-3 text-center text-xl">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-whiteBg-50 divide-y divide-gray-200">
                             {filteredAsignaturas.length > 0 ? (
                                 filteredAsignaturas.map((asig) => (
-                                    <tr key={asig.id} className="border-b hover:bg-gray-50">
+                                    <tr key={asig.id} className="border-b hover:bg-whiteBg-100">
                                         <td className="p-3 text-center text-gray-500">{asig.id}</td>
                                         <td className="p-3 font-medium text-gray-800">{asig.materia}</td>
                                         <td className="p-3 font-mono text-xs text-gray-500">{asig.codigo}</td>
                                         <td className="p-3 text-sm text-blue-600 bg-blue-50/50 rounded">{asig.planEstudio}</td>
                                         <td className="p-3 text-center flex justify-center gap-2">
-                                            <Button variant="ghost" className="text-blue-500 p-1" onClick={() => { setEditingAsignatura(asig); setIsMateriaModalOpen(true); }}>
+                                            <Button variant="ghost" className="p-1" onClick={() => { setEditingAsignatura(asig); setIsMateriaModalOpen(true); }}>
                                                 <Edit size={16} />
                                             </Button>
-                                            <Button variant="ghost" className="text-red-500 p-1" onClick={() => { /* Eliminar Asig */ }}>
+                                            <Button variant="ghost" className="p-1" onClick={() => { /* Eliminar Asig */ }}>
                                                 <Trash2 size={16} />
                                             </Button>
                                         </td>
