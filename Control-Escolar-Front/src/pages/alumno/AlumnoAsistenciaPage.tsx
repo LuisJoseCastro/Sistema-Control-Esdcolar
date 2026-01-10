@@ -41,7 +41,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
 
     // Estilo base para los recordatorios
     // 🛑 Usamos bg-gray-100 para limpieza del linter
-    const reminderCardStyle = "rounded-full py-4 px-8 flex items-center gap-6 shadow-sm w-full bg-gray-100";
+    const reminderCardStyle = "rounded-full py-4 px-8 flex items-center gap-6 shadow-sm w-full bg-grayDark-100";
 
     // Función auxiliar para saber si un día específico (1, 2... 31) tiene evento
     const getEventoDia = (day: number) => {
@@ -51,7 +51,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-white">
+            <div className="flex justify-center items-center h-screen bg-whiteBg-50">
                 <LoadingSpinner text="Cargando calendario..." />
             </div>
         );
@@ -63,7 +63,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
     // 🛑 Componente para las tarjetas de estadísticas (KPIs) usando Card
     const StatCard: React.FC<{ title: string; value: string | number }> = ({ title, value }) => (
         <Card 
-            className="w-56 h-40 flex flex-col items-center justify-center transition-transform hover:scale-105 bg-gray-100! rounded-2xl shadow-md"
+            className="w-56 h-40 flex flex-col items-center justify-center transition-transform hover:scale-105 bg-grayLight-200 rounded-2xl shadow-md"
             variant="default"
         >
             <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
@@ -72,10 +72,10 @@ export const AlumnoAsistenciaPage: React.FC = () => {
     );
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
+        <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
             
             {/* HEADER */}
-            <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-8">
+            <header className="flex justify-between items-end border-b-2 border-grayDark-400 pb-2 mb-8">
                 <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     Mi Asistencia
                 </h1>
@@ -90,7 +90,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
                 <div className="flex flex-col xl:flex-row gap-16 items-start mb-16">
                     
                     {/* 1. CALENDARIO (Izquierda) */}
-                    <Card className="p-8 rounded-[2.5rem] shadow-sm w-full lg:w-[450px] shrink-0 bg-gray-100!" variant="default">
+                    <Card className="p-8 rounded-[2.5rem] shadow-sm w-full lg:w-[450px] shrink-0 bg-grayDark-100 border-grayDark-200" variant="default">
                         
                         {/* Cabecera del Calendario */}
                         <div className="mb-6 px-2">
@@ -194,7 +194,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
                             onClick={() => navigate("/alumno/asistencia/detalles")}
                             variant="primary"
                             // Usamos clases canónicas para el botón (reemplazando el hex code y las clases nativas)
-                            className="bg-gray-400 hover:bg-gray-700 text-white font-bold py-4 px-10 rounded-2xl shadow-md hover:shadow-lg transition-all text-lg mb-2 shrink-0"
+                            className="bg-grayDark-400 hover:bg-gray-700 text-white font-bold py-4 px-10 rounded-2xl shadow-md hover:shadow-lg transition-all text-lg mb-2 shrink-0"
                         >
                             Detalles de Asistencia
                         </Button>
