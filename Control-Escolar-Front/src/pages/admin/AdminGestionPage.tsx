@@ -307,7 +307,7 @@ const AdminGestionPage: React.FC = () => {
                 </div>
             </Card>
 
-            <Card className="p-6 bg-white shadow-xl">
+            <Card className="p-6 bg-white shadow-xl  border-2 border-gray-400">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-semibold">Asignaturas</h2>

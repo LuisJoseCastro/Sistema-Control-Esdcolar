@@ -188,7 +188,7 @@ const AdminReportesPage: React.FC = () => {
             <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
                 
                 {/* PANEL IZQUIERDO: FILTROS */}
-                <Card className="p-6 bg-white shadow-xl lg:w-1/3">
+                <Card className="p-6 bg-grayDark-200 shadow-xl lg:w-1/3 border-2 border-grayDark-300">
                     <h2 className="text-xl font-semibold mb-6 border-b pb-2">Filtros</h2>
                     {/* ... (Controles de filtro) ... */}
                     {isLoadingFilters ? (
@@ -296,12 +296,12 @@ const AdminReportesPage: React.FC = () => {
                         {/* Opción PDF */}
                         <button
                             onClick={() => handleExportSelection('pdf')}
-                            className="flex flex-col items-center p-6 border rounded-xl hover:bg-gray-50 transition duration-200 w-44 h-44 justify-center"
+                            className="flex flex-col items-center p-6 border border-grayDark-300 rounded-xl bg-whiteBg-100 hover:bg-whiteBg-200 hover:shadow-xl hover:shadow-grayDark-300 transition duration-200 w-44 h-44 justify-cente cursor-pointer"
                         >
                             <div className="relative mb-2">
                                 {/* Simulando el icono de PDF con FileText y un label */}
                                 <FileText size={80} className="text-red-600 mx-auto" />
-                                <span className="absolute bottom-[-10px] left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded-sm">PDF</span>
+                                <span className="absolute bottom-2.5 left-1/2 transform -translate-x-1/2 text-xs font-bold text-white bg-red-600 px-2 py-0.5 rounded-sm">PDF</span>
                             </div>
                             <span className="mt-4 text-gray-700 font-medium">PDF</span>
                         </button>
@@ -309,7 +309,7 @@ const AdminReportesPage: React.FC = () => {
                         {/* Opción Excel */}
                         <button
                             onClick={() => handleExportSelection('xlsx')}
-                            className="flex flex-col items-center p-6 border rounded-xl hover:bg-gray-50 transition duration-200 w-44 h-44 justify-center"
+                            className="flex flex-col items-center p-6 border border-grayDark-300 rounded-xl bg-whiteBg-100 hover:bg-whiteBg-200 hover:shadow-xl hover:shadow-grayDark-300 transition duration-200 w-44 h-44 justify-center cursor-pointer"
                         >
                             {/* Usando FileSpreadsheet para el icono de Excel */}
                             <FileSpreadsheet size={80} className="text-green-700" />
