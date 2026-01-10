@@ -192,7 +192,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
             </Table.Header>
             <Table.Body>
               {alumnosFiltrados.map((alumno, index) => (
-                <Table.Row key={alumno.id} className="hover:bg-blue-50/50">
+                <Table.Row key={alumno.id} className="hover:bg-whiteBg-100">
                   <Table.Cell className="text-center font-medium text-gray-500">
                     {index + 1}
                   </Table.Cell>
@@ -205,7 +205,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
                   <Table.Cell>
                     <button
                       onClick={() => handleVerPerfil(alumno.id)}
-                      className="text-[#2E4156] font-semibold hover:text-blue-700 transition-colors"
+                      className="text-gray-800 font-semibold hover:text-blue-700 transition-colors cursor-pointer"
                     >
                       ver perfil
                     </button>
@@ -213,7 +213,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
                   <Table.Cell>
                     <button
                       onClick={() => handleVerHistorial(alumno.id)}
-                      className="text-[#2E4156] font-semibold hover:text-blue-700 transition-colors"
+                      className="text-gray-800 font-semibold hover:text-blue-700 transition-colors cursor-pointer"
                     >
                       Historial Académico
                     </button>
@@ -251,7 +251,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
           </button>
           <button 
             onClick={handleAgregarAlumno}
-            className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            className="bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
           >
             + Agregar Alumno
           </button>
@@ -322,7 +322,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  className="flex-1 bg-main-800 hover:bg-main-900 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
                   Agregar Alumno
                 </button>
