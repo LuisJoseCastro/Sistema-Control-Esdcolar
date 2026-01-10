@@ -125,7 +125,7 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </h1>
 
       {/* ENCABEZADO CON FOTO Y DATOS */}
-      <Card variant="elevated" className="mb-6">
+      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
         <div className="flex items-center gap-6">
           {/* FOTO */}
           <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-200 to-blue-200 flex items-center justify-center">
@@ -150,8 +150,8 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
 
           {/* PROMEDIO GENERAL */}
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-1">Promedio General</p>
-            <div className="text-3xl font-bold bg-gradient-to-r from-teal-500 to-cyan-600 text-transparent bg-clip-text">
+            <p className="text-xl font-bold text-gray-600 mb-1">Promedio General</p>
+            <div className="text-3xl font-bold bg-whiteBg-100 text-main-800 p-2 rounded-xl">
               {promedioGeneral.toFixed(1)}
             </div>
           </div>
@@ -159,8 +159,8 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </Card>
 
       {/* DETALLES DE INSCRIPCIÓN */}
-      <Card variant="elevated" className="mb-6">
-        <h3 className="text-xl font-bold text-[#2E4156] mb-6">Detalles de Inscripción</h3>
+      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
+        <h3 className="text-xl font-bold text-main-800 mb-6">Detalles de Inscripción</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {inscripciones.map((inscripcion, index) => (
@@ -192,17 +192,17 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </Card>
 
       {/* CALIFICACIONES Y ASISTENCIA */}
-      <Card variant="elevated" className="mb-6">
-        <h3 className="text-xl font-bold text-[#2E4156] mb-6">Calificaciones y Asistencia - Ciclo 2024-1</h3>
+      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
+        <h3 className="text-xl font-bold text-main-800 mb-6">Calificaciones y Asistencia - Ciclo 2024-1</h3>
         
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-300">
-                <th className="text-left py-3 px-4 font-bold text-gray-700">Materia</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700 w-32">Calificación</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700 w-32">Asistencia</th>
-                <th className="text-left py-3 px-4 font-bold text-gray-700 w-32">Estado</th>
+                <th className="text-left py-3 px-4 font-bold text-main-800">Materia</th>
+                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Calificación</th>
+                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Asistencia</th>
+                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -269,7 +269,7 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       <div className="flex justify-end mt-8">
         <button 
           onClick={handleDescargarHistorial}
-          className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
         >
           <Download size={18} />
           Descargar Historial
