@@ -79,7 +79,7 @@ export const AlumnoHistorialAcademicoPage: React.FC = () => {
                 <div className="flex flex-wrap justify-center gap-8 md:gap-16">
                     {/* Tarjeta Promedio */}
                     {/* 🛑 Usamos Card */}
-                    <Card className={`${statCardStyle} bg-gray-100! shadow-[0_8px_20px_rgba(0,0,0,0.1)] border border-white`}>
+                    <Card className={`${statCardStyle} bg-grayDark-200 shadow-[0_8px_20px_rgba(0,0,0,0.1)] border border-white`}>
                         <p className="text-2xl text-gray-800 mb-1" style={{ fontFamily: '"Kaushan Script", cursive' }}>Promedio</p>
                         <p className={`text-5xl font-black ${historial.promedioGeneral >= 8 ? 'text-gray-900' : 'text-red-600'}`}>
                             {historial.promedioGeneral.toFixed(1)}
@@ -88,7 +88,7 @@ export const AlumnoHistorialAcademicoPage: React.FC = () => {
                     
                     {/* Tarjeta Asignaturas */}
                     {/* 🛑 Usamos Card */}
-                    <Card className={`${statCardStyle} bg-gray-100! shadow-[0_8px_20px_rgba(0,0,0,0.1)] border border-white`}>
+                    <Card className={`${statCardStyle} bg-grayDark-200 shadow-[0_8px_20px_rgba(0,0,0,0.1)] border border-white`}>
                         <p className="text-xl text-gray-800 mb-2" style={{ fontFamily: '"Kaushan Script", cursive' }}>Asignaturas Aprobadas</p>
                         <p className="text-5xl font-black text-gray-900">{historial.asignaturasAprobadas}</p>
                     </Card>
@@ -114,7 +114,7 @@ export const AlumnoHistorialAcademicoPage: React.FC = () => {
                     {/* COLUMNA IZQ: LISTA DE MATERIAS */}
                     {/* 🛑 Usamos Card para el contenedor gris */}
                     <Card 
-                        className={`flex-1 w-full rounded-4xl shadow-[0_15px_35px_rgba(0,0,0,0.1)] p-8 relative overflow-hidden h-fit bg-gray-100!`}
+                        className={`flex-1 w-full rounded-4xl shadow-[0_15px_35px_rgba(0,0,0,0.1)] p-8 relative overflow-hidden h-fit bg-grayDark-200`}
                         variant="default"
                     >
                         {/* Encabezados */}
