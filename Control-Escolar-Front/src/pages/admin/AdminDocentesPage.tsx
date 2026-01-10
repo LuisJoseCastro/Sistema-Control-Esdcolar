@@ -123,10 +123,10 @@ export const AdminDocentesPage: React.FC = () => {
 
     // --- Renderizado Principal ---
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
+        <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
             
             {/* TÍTULO Y BOTÓN DE NUEVO */}
-            <header className="flex justify-between items-end border-b border-gray-400 pb-2 mb-8">
+            <header className="flex justify-between items-end border-b border-grayDark-500 pb-2 mb-8">
                 <h1 
                     className="text-5xl text-black" 
                     style={{ fontFamily: '"Kaushan Script", cursive' }}
@@ -139,9 +139,9 @@ export const AdminDocentesPage: React.FC = () => {
                     variant="ghost" 
                     onClick={handleNewDocente}
                     className="flex items-center text-sm font-normal p-2 rounded-lg bg-gray-100 hover:bg-gray-200"
-                    icon={<PlusCircle size={16} className="text-gray-600 mr-1" />}
+                    icon={<PlusCircle size={16} className="text-white-50 mr-1" />}
                 >
-                    + Nuevo
+                    Nuevo
                 </Button>
             </header>
             
@@ -167,12 +167,12 @@ export const AdminDocentesPage: React.FC = () => {
             ) : (
                 <Card variant="default">
                     {filteredDocentes.length === 0 && searchTerm === '' ? (
-                        <div className="text-center p-8 text-gray-500">
+                        <div className="text-center p-8 text-main-700">
                             <Briefcase size={48} className="mx-auto mb-4" />
                             <p className="text-lg">No hay docentes registrados.</p>
                         </div>
                     ) : filteredDocentes.length === 0 && searchTerm !== '' ? (
-                        <div className="text-center p-8 text-gray-500">
+                        <div className="text-center p-8 text-main-700">
                             <p className="text-lg">No se encontraron docentes con el término: **{searchTerm}**.</p>
                         </div>
                     ) : (
@@ -181,11 +181,11 @@ export const AdminDocentesPage: React.FC = () => {
                             <Table>
                                 <Table.Header>
                                     <TableRow>
-                                        <TableHead>clave</TableHead>
-                                        <TableHead>Nombre Completo</TableHead>
-                                        <TableHead>Email</TableHead>
-                                        <TableHead>perfil</TableHead>
-                                        <TableHead className="text-right">Accion</TableHead>
+                                        <TableHead className="text-start">clave</TableHead>
+                                        <TableHead className="text-start">Nombre Completo</TableHead>
+                                        <TableHead className="text-start">Email</TableHead>
+                                        <TableHead className="text-start">perfil</TableHead>
+                                        <TableHead className="text-start">Accion</TableHead>
                                     </TableRow>
                                 </Table.Header>
                                 
@@ -202,7 +202,7 @@ export const AdminDocentesPage: React.FC = () => {
                                                 <Button 
                                                     variant="ghost" 
                                                     onClick={() => handleViewProfile(docente.id)} 
-                                                    className="px-2 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                                                    className="px-2 py-1 text-sm text-whiteBG-50 hover: underline"
                                                     icon={<Eye size={16} className="mr-1" />}
                                                 >
                                                     ver perfil
@@ -212,7 +212,7 @@ export const AdminDocentesPage: React.FC = () => {
                                                 <Button 
                                                     variant="ghost"
                                                     onClick={() => handleDelete(docente.id, docente.nombre)}
-                                                    className="px-2 py-1 text-red-600 hover:bg-red-50/50"
+                                                    className="px-2 py-1 hover:bg-main-900"
                                                     title={`Eliminar a ${docente.nombre}`}
                                                 >
                                                     <Trash2 size={20} />
