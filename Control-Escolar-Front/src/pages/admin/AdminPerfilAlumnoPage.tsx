@@ -188,7 +188,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
     switch (tabActiva) {
       case 'informacion':
         return (
-          <div className="mt-6">
+          <div className="mt-6 bg-whiteBg-50 p-5 rounded-xl m-1">
             <h3 className="text-xl font-bold text-[#2E4156] mb-4">Datos Personales</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
@@ -225,7 +225,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
 
       case 'pagos':
         return (
-          <div className="mt-6">
+          <div className="mt-6 bg-whiteBg-50 p-5 rounded-xl m-1">
             <h3 className="text-xl font-bold text-[#2E4156] mb-4">Historial de Pagos</h3>
             <div className="space-y-4">
               {pagos.map((pago, index) => (
@@ -260,11 +260,11 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
 
       case 'solicitudes':
         return (
-          <div className="mt-6">
+          <div className="mt-6 bg-whiteBg-50 p-5 rounded-xl m-1">
             <h3 className="text-xl font-bold text-[#2E4156] mb-4">Solicitudes</h3>
             <div className="space-y-4">
               {solicitudes.map((solicitud, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div key={index} className="bg-whiteBg-100 p-4 rounded-xl border border-grayDark-300">
                   <div className="flex justify-between items-center">
                     <div>
                       <h4 className="font-bold text-gray-800">{solicitud.tipo}</h4>
@@ -289,7 +289,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-full font-['Lato']">
+    <div className="p-8 bg-whiteBg-50 min-h-full font-['Lato']">
       {/* BOTÓN VOLVER */}
       <div className="mb-6">
         <button
@@ -308,7 +308,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
       <hr className="border-gray-300 mb-8" />
 
       {/* HEADER DEL PERFIL */}
-      <Card variant="elevated" className="mb-8">
+      <Card variant="elevated" className="mb-8 bg-whiteBg-100">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
           {/* AVATAR */}
           <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-3xl font-bold text-gray-600">
@@ -340,7 +340,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
           {/* BOTÓN EDITAR */}
           <button 
             onClick={handleEditarPerfil}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-main-800 hover:bg-main-900 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Edit2 size={18} />
             Editar Perfil
@@ -350,7 +350,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
 
       {/* INDICADORES */}
       <div className="mb-8 flex justify-center">
-        <div className="bg-gray-100 w-full md:w-2/3 p-6 rounded-3xl shadow-sm flex justify-around">
+        <div className="bg-whiteBg-100 w-full md:w-2/3 p-6 rounded-3xl shadow-sm flex justify-around">
           <div className="text-center">
             <p className="text-gray-600 mb-1">Promedio</p>
             <p className="text-3xl font-bold text-[#2E4156]">{alumno.promedio}</p>
@@ -399,7 +399,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
       <div className="mt-8 flex justify-end">
         <button 
           onClick={handleDescargarHistorial}
-          className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
         >
           <Download size={18} />
           Descargar Historial
@@ -409,8 +409,8 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
       {/* MODAL PARA EDITAR PERFIL */}
       {mostrarModalEditar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white">
+          <div className="bg-grayDark-200 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-grayDark-100">
               <h3 className="text-2xl font-bold text-gray-800">
                 Editar Perfil de Alumno
               </h3>
@@ -593,7 +593,7 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleGuardarCambios}
-                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  className="flex-1 flex items-center justify-center gap-2 bg-main-800 hover:bg-main-900 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
                   <Save size={18} />
                   Guardar Cambios
