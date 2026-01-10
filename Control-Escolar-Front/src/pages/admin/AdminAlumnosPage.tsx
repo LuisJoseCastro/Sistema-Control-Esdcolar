@@ -181,7 +181,7 @@ export const AdminAlumnosPage: React.FC = () => {
                 {/* Acciones */}
                 <div className="mt-4 flex gap-2">
                   <button 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition-colors text-sm flex items-center justify-center gap-1"
+                    className="flex-1 bg-main-700 hover:bg-main-900 text-white px-3 py-2 rounded transition-colors text-sm flex items-center justify-center gap-1 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleVerAlumnos(grupo.nombre);
@@ -224,7 +224,7 @@ export const AdminAlumnosPage: React.FC = () => {
         <div className="mt-8 flex justify-end">
           <button 
             onClick={agregarNuevoGrupo}
-            className="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2"
+            className="bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer"
           >
             <Plus size={20} />
             Agregar Nuevo Grupo
@@ -239,7 +239,7 @@ export const AdminAlumnosPage: React.FC = () => {
         title={grupoEditando.id === 0 ? "Nuevo Grupo" : "Editar Grupo"}
         size="md"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 bg-whiteBg-200 p-2 rounded-xl">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Input
@@ -282,7 +282,7 @@ export const AdminAlumnosPage: React.FC = () => {
               <select
                 value={grupoEditando.turno}
                 onChange={(e) => setGrupoEditando({...grupoEditando, turno: e.target.value})}
-                className="w-full py-2.5 px-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition duration-150"
+                className="w-full py-2.5 px-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-main-600 focus:ring-1 focus:ring-main-600 transition duration-150"
               >
                 <option value="Matutino">Matutino</option>
                 <option value="Vespertino">Vespertino</option>
@@ -290,11 +290,11 @@ export const AdminAlumnosPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <p className="text-sm text-blue-800">
+          <div className="bg-whiteBg-100 p-3 rounded-lg border border-grayDark-400 hover:bg-whiteBg-50">
+            <p className="text-sm text-main-800">
               <strong>Nombre completo del grupo:</strong> GRUPO {grupoEditando.grado}{grupoEditando.nombre}
             </p>
-            <p className="text-xs text-blue-600 mt-1">
+            <p className="text-xs text-main-600 mt-1">
               {grupoEditando.alumnos} alumnos • {grupoEditando.turno}
             </p>
           </div>
