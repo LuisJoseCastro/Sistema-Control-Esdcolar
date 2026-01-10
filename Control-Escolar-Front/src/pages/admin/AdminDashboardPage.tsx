@@ -76,7 +76,7 @@ export const AdminDashboardPage: React.FC = () => {
                         title="Alumnos" 
                         target="/admin/alumnos" 
                         // 🛑 Pasamos el JSX del ícono grande con su color
-                        largeIcon={<GraduationCap size={100} className="text-blue-500" />} 
+                        largeIcon={<GraduationCap size={100} className="text-main-600" />} 
                     />
 
                     {/* Tarjeta 2: Docentes */}
@@ -84,7 +84,7 @@ export const AdminDashboardPage: React.FC = () => {
                         title="Docentes" 
                         target="/admin/docentes" 
                         // 🛑 Pasamos el JSX del ícono grande con su color
-                        largeIcon={<Briefcase size={100} className="text-purple-500" />} 
+                        largeIcon={<Briefcase size={100} className="text-main-600" />} 
                     />
 
                 </div>
