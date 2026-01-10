@@ -107,7 +107,7 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
   };
 
   return (
-    <div className="p-8 bg-gray-50 min-h-full">
+    <div className="p-8 bg-whiteBg-50 min-h-full">
       {/* BOTÓN VOLVER */}
       <div className="mb-6">
         <button
@@ -125,7 +125,7 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </h1>
 
       {/* ENCABEZADO CON FOTO Y DATOS */}
-      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
+      <Card variant="elevated" className="mb-6 bg-whiteBg-100 border-2 border-grayDark-200">
         <div className="flex items-center gap-6">
           {/* FOTO */}
           <div className="w-20 h-20 rounded-full bg-gradient-to-r from-purple-200 to-blue-200 flex items-center justify-center">
@@ -159,8 +159,8 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </Card>
 
       {/* DETALLES DE INSCRIPCIÓN */}
-      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
-        <h3 className="text-xl font-bold text-main-800 mb-6">Detalles de Inscripción</h3>
+      <Card variant="elevated" className="mb-6 bg-whiteBg-100 border-2 border-grayDark-200">
+        <h3 className="text-2xl font-bold text-main-800 mb-6">Detalles de Inscripción</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {inscripciones.map((inscripcion, index) => (
@@ -192,22 +192,22 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
       </Card>
 
       {/* CALIFICACIONES Y ASISTENCIA */}
-      <Card variant="elevated" className="mb-6 bg-whiteBg-200">
-        <h3 className="text-xl font-bold text-main-800 mb-6">Calificaciones y Asistencia - Ciclo 2024-1</h3>
+      <Card variant="elevated" className="mb-6 bg-whiteBg-100 border-2 border-grayDark-200">
+        <h3 className="text-2xl font-bold text-main-800 mb-6">Calificaciones y Asistencia - Ciclo 2024-1</h3>
         
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left py-3 px-4 font-bold text-main-800">Materia</th>
-                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Calificación</th>
-                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Asistencia</th>
-                <th className="text-left py-3 px-4 font-bold text-main-800 w-32">Estado</th>
+              <tr className="border-b border-gray-300 bg-grayLight-300">
+                <th className="text-left py-3 px-4 font-bold text-xl text-main-800">Materia</th>
+                <th className="text-left py-3 px-4 font-bold text-xl text-main-800 w-32">Calificación</th>
+                <th className="text-left py-3 px-4 font-bold text-xl text-main-800 w-32">Asistencia</th>
+                <th className="text-left py-3 px-4 font-bold text-xl text-main-800 w-32">Estado</th>
               </tr>
             </thead>
             <tbody>
               {calificaciones.map((materia, index) => (
-                <tr key={index} className="border-b border-gray-100 hover:bg-blue-50/50">
+                <tr key={index} className="border-b border-gray-100 hover:bg-whiteBg-200">
                   <td className="py-3 px-4">
                     <div className="font-medium text-gray-800">{materia.materia}</div>
                   </td>
@@ -240,14 +240,14 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
 
         {/* RESUMEN */}
         <div className="mt-8 pt-6 border-t border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
+          <div className="text-center border-rounded-xl">
             <p className="text-sm text-gray-600 mb-1">Promedio del Ciclo</p>
             <p className="text-2xl font-bold text-[#2E4156]">
               {(calificaciones.reduce((acc, curr) => acc + curr.calificacion, 0) / calificaciones.length).toFixed(1)}
             </p>
           </div>
           
-          <div className="text-center">
+          <div className="text-center border-rounded-xl">
             <p className="text-sm text-gray-600 mb-1">Promedio de Asistencia</p>
             <p className="text-2xl font-bold text-[#2E4156]">
               {(
@@ -256,7 +256,7 @@ export const AdminHistorialAcademicoPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="text-center">
+          <div className="text-center border-rounded-xl">
             <p className="text-sm text-gray-600 mb-1">Materias Aprobadas</p>
             <p className="text-2xl font-bold text-[#2E4156]">
               {calificaciones.filter(m => m.calificacion >= 6).length} / {calificaciones.length}
