@@ -59,14 +59,14 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-white">
+            <div className="flex justify-center items-center h-screen bg-whiteBg-50">
                 <LoadingSpinner text="Cargando detalles..." />
             </div>
         );
     }
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
+        <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
 
             {/* ENCABEZADO */}
             <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-12">
@@ -93,7 +93,7 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
             {/* CONTENEDOR CENTRAL */}
             <div className="flex justify-center items-start mt-4">
                 <Card
-                    className="w-full max-w-4xl bg-gray-200! rounded-4xl shadow-xl p-8 md:p-12 min-h-[500px]"
+                    className="w-full max-w-4xl bg-grayLight-200 rounded-4xl shadow-xl p-8 md:p-12 min-h-[500px]"
                     variant="default"
                 >
                     <div className="overflow-x-auto">
@@ -112,7 +112,7 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
                                     asistencias.map((item, index) => (
                                         <TableRow
                                             key={index}
-                                            className="text-center hover:bg-gray-50"
+                                            className="text-center hover:bg-grayDark-100"
                                         >
                                             <TableCell className="text-base font-medium text-gray-600 capitalize">
                                                 {formatDate(item.fecha)}
@@ -145,7 +145,7 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
                         <Button
                             onClick={() => navigate("/alumno/asistencia")}
                             variant="ghost"
-                            className="text-gray-500 hover:text-gray-700 font-medium text-sm transition-colors"
+                            className="text-gray-500 font-medium text-sm transition-colors"
                         >
                             Volver al calendario
                         </Button>
