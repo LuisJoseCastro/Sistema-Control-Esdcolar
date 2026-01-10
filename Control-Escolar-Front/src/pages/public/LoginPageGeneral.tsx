@@ -75,7 +75,7 @@ export const LoginPageGeneral: React.FC = () => {
       <form onSubmit={handleSubmit} className="bg-whiteBg-50 p-8 rounded-lg shadow-xl w-96">
         <div className='flex'>
           <div className='w-20 flex-none ...'>
-            <p>Icon</p>
+            <img src="../../../public/Logo-Academy+.jpeg" alt="Logo del sistema Academy+" className='w-auto h-auto rounded-xl'/>
           </div>
           <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto'>
             <p className=" text-sm text-center text-gray-800 font-semibold">

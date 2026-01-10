@@ -71,16 +71,6 @@ export const AlumnoAsistenciaDetallesPage: React.FC = () => {
             {/* ENCABEZADO */}
             <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-12">
                 <div className="flex items-end gap-4">
-                    {/* 🛑 CORRECCIÓN: Damos un children explícito (un espacio) al Button para satisfacer ButtonProps */}
-                    <Button
-                        onClick={() => navigate(-1)}
-                        variant="ghost"
-                        icon={<ArrowLeft size={24} />}
-                        className="mb-2 p-2 rounded-full text-gray-500 hover:bg-gray-100"
-                        title="Regresar"
-                    >
-                        {" "} {/* Espacio en blanco para satisfacer children */}
-                    </Button>
                     <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                         Detalles de asistencia
                     </h1>
