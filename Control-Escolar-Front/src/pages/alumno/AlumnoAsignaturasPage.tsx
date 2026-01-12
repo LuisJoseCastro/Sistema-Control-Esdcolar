@@ -65,16 +65,15 @@ export const AlumnoAsignaturasPage: React.FC = () => {
             </header>
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 px-4">
-                <div className="relative w-full md:w-80 mb-4 md:mb-0 bg-whiteBg-50 rounded-full">
+                <div className="relative w-full md:w-80 mb-4 md:mb-0 bg-whiteBg-50">
                     {/* Usamos el componente Input unificado */}
                     <Input 
                         type="text" 
                         placeholder="Buscar asignatura..." 
-                        className="w-full pl-4 pr-10 py-2 rounded-full border border-gray-200 shadow-sm focus:ring-2 focus:ring-gray-200 text-gray-600"
+                        className="w-full p-4 rounded-xl border border-gray-200 shadow-xl focus:ring-2 focus:ring-gray-200 text-gray-600"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <Search className="absolute right-3 top-2.5 text-gray-400" size={18} />
                 </div>
                 <div>
                     {/* Mantenemos el select nativo del diseño original */}
