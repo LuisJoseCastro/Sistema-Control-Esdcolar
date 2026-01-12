@@ -79,7 +79,7 @@ const CalificacionInput: React.FC<CalificacionInputProps> = ({ value, onChange, 
     return (
         // 🛑 USO DEL COMPONENTE ATÓMICO: Input
         <Input
-            type="text" // Usamos text para permitir 'NA', 'P1', etc.
+            type="number" // Usamos text para permitir 'NA', 'P1', etc.
             value={value}
             // 🛑 CORRECCIÓN: El Input atómico usa (e) => onChange(e.target.value) para extraer el valor.
             // Aquí lo adaptamos para que el prop 'onChange' de CalificacionInput reciba directamente el valor.

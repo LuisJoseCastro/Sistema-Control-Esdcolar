@@ -134,7 +134,7 @@ const DocenteDashboardPage: React.FC = () => {
             <header className="mb-6">
                 <h1 className="text-3xl font-extrabold text-gray-900">Mi Carga Académica</h1>
                 <p className="text-gray-500 mt-1">
-                    Consulta tus planes de estudio, asignaturas y horarios
+                    Consulta tus asignaturas y horarios
                 </p>
             </header>
             
