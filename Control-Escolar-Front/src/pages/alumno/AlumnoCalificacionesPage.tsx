@@ -118,14 +118,17 @@ export const AlumnoCalificacionesPage: React.FC = () => {
               <Table className="min-w-full">
 
                 {/* ENCABEZADOS DE LA TABLA */}
+                {/* CORRECCIÓN DEL ERROR DE TESTING (Table.Row)*/}
                 <Table.Header>
-                  <TableHead colSpan={2} className="text-left pl-4 w-2/5">Materia</TableHead>
-                  <TableHead className="text-center">U1</TableHead>
-                  <TableHead className="text-center">U2</TableHead>
-                  <TableHead className="text-center">U3</TableHead>
-                  <TableHead className="text-center">U4</TableHead>
-                  <TableHead className="text-center">U5</TableHead>
-                  <TableHead className="text-center">Final</TableHead>
+                  <Table.Row> 
+                    <TableHead colSpan={2} className="text-left pl-4 w-2/5">Materia</TableHead>
+                    <TableHead className="text-center">U1</TableHead>
+                    <TableHead className="text-center">U2</TableHead>
+                    <TableHead className="text-center">U3</TableHead>
+                    <TableHead className="text-center">U4</TableHead>
+                    <TableHead className="text-center">U5</TableHead>
+                    <TableHead className="text-center">Final</TableHead>
+                  </Table.Row>
                 </Table.Header>
 
                 {/* FILAS DE DATOS DESDE EL SERVICIO */}

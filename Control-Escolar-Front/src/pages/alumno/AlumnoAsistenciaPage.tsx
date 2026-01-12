@@ -104,9 +104,11 @@ export const AlumnoAsistenciaPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Grid Días (Encabezados) */}
+                        {/* Grid Días (Encabezados) */
+                         /* CORRECCIÓN DEL ERROR DE TESTING (SE REPETIAN LAS 'KEY' PARA EL MÉTODO '.map' "T" y "S")*/
+                        }
                         <div className="grid grid-cols-7 text-center text-xs font-bold text-gray-400 mb-4 uppercase tracking-wide">
-                            {["S","M","T","W","T","F","S"].map(d => <div key={d}>{d}</div>)}
+                            {["D","M","T","W","J","F","S"].map(d => <div key={d}>{d}</div>)}
                         </div>
                         
                         {/* Grid Días (Números) */}
