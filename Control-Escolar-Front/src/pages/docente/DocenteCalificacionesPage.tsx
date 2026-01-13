@@ -39,9 +39,24 @@ interface Asignatura {
 
 // --- MOCK DATA (Sin cambios) ---
 const MOCK_GRUPOS: Grupo[] = [
-    { id: '1', nombre: 'Grupo 3A - Matemáticas' },
-    { id: '2', nombre: 'Grupo 5B - Español' },
-    { id: '3', nombre: 'Grupo 1C - Historia' },
+    { id: '1', nombre: 'Grupo 1A' },
+    { id: '2', nombre: 'Grupo 1B' },
+    { id: '3', nombre: 'Grupo 1C' },
+    { id: '4', nombre: 'Grupo 2A' },
+    { id: '5', nombre: 'Grupo 2B' },
+    { id: '6', nombre: 'Grupo 2C' },
+    { id: '7', nombre: 'Grupo 3A' },
+    { id: '8', nombre: 'Grupo 3B' },
+    { id: '9', nombre: 'Grupo 3C' },
+    { id: '10', nombre: 'Grupo 4A' },
+    { id: '11', nombre: 'Grupo 4B' },
+    { id: '12', nombre: 'Grupo 4C' },
+    { id: '13', nombre: 'Grupo 5A' },
+    { id: '14', nombre: 'Grupo 5B' },
+    { id: '15', nombre: 'Grupo 5C' },
+    { id: '16', nombre: 'Grupo 6A' },
+    { id: '17', nombre: 'Grupo 6B' },
+    { id: '18', nombre: 'Grupo 6C' },
 ];
 
 const MOCK_ASIGNATURAS: Asignatura[] = [
