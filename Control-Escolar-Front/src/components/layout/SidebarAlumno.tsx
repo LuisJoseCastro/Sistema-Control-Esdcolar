@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 // ✅ NUEVA IMPORTACIÓN: ChevronsLeft para el botón de colapsar
-import { Home, BookOpen, ClipboardList, Calendar, LogOut, User as UserIcon, LibraryBig, ChevronsLeft } from 'lucide-react';
+import { Home, BookOpen, ClipboardList, Calendar, LogOut, User as UserIcon, LibraryBig, ChevronsRight } from 'lucide-react';
 // ✅ NUEVA IMPORTACIÓN: Hook del Contexto
 import { useSidebar } from '../../contexts/SidebarContext';
 import { type User } from '../../types/models';
@@ -48,7 +48,7 @@ export const SidebarAlumno: React.FC<SidebarProps> = ({ user, onLogout }) => {
           className={`p-1 rounded-full text-gray-400 hover:bg-gray-700 transition-transform duration-300 ${!isCollapsed ? 'rotate-180' : ''}`}
           title={isCollapsed ? "Expandir" : "Colapsar"}
         >
-          <ChevronsLeft size={24} />
+          <ChevronsRight size={24} />
         </button>
       </header>
 

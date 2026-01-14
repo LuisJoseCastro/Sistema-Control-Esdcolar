@@ -53,10 +53,6 @@ export const SidebarAdmin: React.FC<SidebarProps> = ({ user, onLogout }) => {
 
       {/* PIE DE PÁGINA (Usa user y onLogout) */}
       <div className="pt-4 border-t border-gray-700 w-full flex flex-col items-center">
-        {/* Mostrar el nombre como tooltip envolviendo el icono; lucide-react no acepta prop `title` en sus props tipadas */}
-        <div title={user.nombre}>
-          <UserIcon size={24} className="text-blue-400 mb-2" />
-        </div>
         
         <button
           onClick={onLogout} 
