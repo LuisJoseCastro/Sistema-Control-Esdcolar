@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 // ✅ NUEVA IMPORTACIÓN: ChevronsLeft para el botón de colapsar
 import { Home, BookOpen, ClipboardList, Calendar, LogOut, User as UserIcon, LibraryBig, ChevronsRight, X, Check } from 'lucide-react';
 // ✅ NUEVA IMPORTACIÓN: Hook del Contexto
@@ -80,10 +80,18 @@ export const SidebarAlumno: React.FC<SidebarProps> = ({ user, onLogout }) => {
 
       {/* Área de Usuario y Logout */}
       <div className="pt-4 border-t border-gray-700 w-full flex flex-col items-center">
-        <div title={user.nombre} className={`flex items-center mb-2 w-full ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
+
+        {/* Enlace de perfil */}
+        <Link 
+            to="/alumno/perfil" 
+            title={`Ver perfil de ${user.nombre}`}
+            className={`flex items-center mb-2 w-full p-2 rounded-lg transition-colors ${
+                isCollapsed ? 'justify-center hover:bg-gray-700' : 'justify-start hover:bg-gray-700'
+            }`}
+        >
           <UserIcon size={24} className="text-blue-400 mr-2" />
           {!isCollapsed && <span className="text-sm truncate">{user.nombre}</span>}
-        </div>
+        </Link>
 
         <button
           // 2. Cambiamos el onClick para que abra la modal en lugar de salir directo
