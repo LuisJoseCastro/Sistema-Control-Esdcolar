@@ -1,5 +1,3 @@
-// src/pages/docente/DocenteAsistenciaPage.tsx
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { CalendarCheck, Save, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,14 +5,10 @@ import { useNavigate } from 'react-router-dom';
 // 🛑 IMPORTACIONES DE COMPONENTES ATÓMICOS
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
-// Importamos todos los sub-componentes necesarios
 import Table, { TableRow, TableCell, TableHead } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
-// import Badge from '../../components/ui/Badge'; // Nuevo: Para el estado
 
-// --- Tipos de Datos (Mock) ---
-
-// Tipos de estado de asistencia
+// --- Tipos de Datos ---
 type AsistenciaStatus = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADA' | 'RETARDO';
 
 interface AlumnoAsistencia {
@@ -44,15 +38,13 @@ const MOCK_ALUMNOS: AlumnoAsistencia[] = [
     { id: 'a6', nombre: 'Diego Fernando Ruiz', status: 'AUSENTE' },
 ];
 
-// 🛑 Mapeo de estados a variantes de Badge (Usando la lógica de Badge.tsx)
-const STATUS_BADGE_VARIANT: Record<AsistenciaStatus, 'success' | 'danger' | 'warning' | 'info'> = {
-    PRESENTE: 'success', // Verde
-    AUSENTE: 'danger',   // Rojo
-    JUSTIFICADA: 'warning', // Amarillo
-    RETARDO: 'info',    // Azul
+const STATUS_BADGE_VARIANT: Record<AsistenciaStatus, string> = {
+    PRESENTE: 'text-green-800',
+    AUSENTE: 'text-red-800',
+    JUSTIFICADA: 'text-yellow-800',
+    RETARDO: 'text-blue-800',
 };
 
-// Mapeo de estados a etiquetas en español
 const STATUS_LABELS: Record<AsistenciaStatus, string> = {
     PRESENTE: 'Presente',
     AUSENTE: 'Ausente',
@@ -60,45 +52,27 @@ const STATUS_LABELS: Record<AsistenciaStatus, string> = {
     RETARDO: 'Retardo',
 };
 
+// --- Componentes Atómicos Específicos ---
 
-// --- Componentes Atómicos Específicos de la Página ---
-
-interface AlumnoAsistenciaRowProps {
+const AlumnoAsistenciaRow: React.FC<{
     alumno: AlumnoAsistencia;
     onUpdateStatus: (id: string, status: AsistenciaStatus) => void;
-}
-
-const AlumnoAsistenciaRow: React.FC<AlumnoAsistenciaRowProps> = ({ alumno, onUpdateStatus }) => {
-
+}> = ({ alumno, onUpdateStatus }) => {
     const statusOptions = (Object.keys(STATUS_LABELS) as AsistenciaStatus[]).map(status => ({
         value: status,
         label: STATUS_LABELS[status],
     }));
 
     return (
-        // 🛑 USO DEL SUB-COMPONENTE: TableRow
-        <TableRow key={alumno.id}>
-            {/* Nombre del Alumno */}
-            {/* 🛑 USO DEL SUB-COMPONENTE: TableCell */}
+        <TableRow>
             <TableCell className="font-medium text-gray-900 truncate">
                 {alumno.nombre}
             </TableCell>
-
-            {/* Selector de Asistencia */}
             <TableCell className="w-[180px]">
-                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Select */}
                 <Select
                     value={alumno.status}
                     onChange={(e) => onUpdateStatus(alumno.id, e.target.value as AsistenciaStatus)}
-                    // Aplicamos clases al select interno para darle el estilo de pastilla
-                    selectClassName={`
-                        bg-white border-gray-300 py-1 px-2 rounded-full text-sm font-semibold text-center
-                        ${STATUS_BADGE_VARIANT[alumno.status] === 'success' ? 'text-green-800' : ''}
-                        ${STATUS_BADGE_VARIANT[alumno.status] === 'danger' ? 'text-red-800' : ''}
-                        ${STATUS_BADGE_VARIANT[alumno.status] === 'warning' ? 'text-yellow-800' : ''}
-                        ${STATUS_BADGE_VARIANT[alumno.status] === 'info' ? 'text-blue-800' : ''}
-                        
-                    `}
+                    selectClassName={`bg-white border-gray-300 py-1 px-2 rounded-full text-sm font-semibold text-center ${STATUS_BADGE_VARIANT[alumno.status]}`}
                     className="p-0 m-0 w-full"
                     options={statusOptions}
                 />
@@ -107,213 +81,175 @@ const AlumnoAsistenciaRow: React.FC<AlumnoAsistenciaRowProps> = ({ alumno, onUpd
     );
 };
 
-// Componente de Botón de Día (se mantiene manual ya que es muy específico del diseño de calendario)
-const DayButton: React.FC<{ day: number, isSelected: boolean, onClick: () => void }> = ({ day, isSelected, onClick }) => {
-    const classes = isSelected
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50'
-        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'; // Ajustamos a estética Light Theme (asumimos que la página de asistencia debería seguir el tema general Light, aunque tu código original usaba dark)
-
+const DayButton: React.FC<{ day: number, isSelected: boolean, isToday: boolean, onClick: () => void }> = ({ day, isSelected, isToday, onClick }) => {
     return (
-        // 🛑 USO DE COMPONENTE ATÓMICO: Button (pero con override fuerte de estilo para el calendario)
         <Button
             onClick={onClick}
-            variant='secondary' // Usamos secondary como base, pero sobreescribimos con las clases de DayButton
-            className={`w-10 h-10 p-0 rounded-lg font-bold transition-all duration-150 ${classes}`}
+            variant='secondary'
+            className={`w-10 h-10 p-0 rounded-lg font-bold transition-all duration-150 
+                ${isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/50' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}
+                ${isToday && !isSelected ? 'border-2 border-blue-500' : ''}`}
         >
             {day}
         </Button>
     );
 };
 
-
-// --- PÁGINA PRINCIPAL: DocenteAsistenciaPage ---
+// --- PÁGINA PRINCIPAL ---
 export const DocenteAsistenciaPage: React.FC = () => {
     const navigate = useNavigate();
 
-    // Estado de los filtros y datos
+    // Lógica de Fecha Dinámica
+    const [viewDate, setViewDate] = useState(new Date()); 
+    const [selectedDate, setSelectedDate] = useState<number>(new Date().getDate());
+    
     const [selectedGrupo, setSelectedGrupo] = useState<string>('');
-    const [selectedDate, setSelectedDate] = useState<number>(12);
-    const [currentMonth, setCurrentMonth] = useState<string>('Enero 2026');
     const [alumnos, setAlumnos] = useState<AlumnoAsistencia[]>(MOCK_ALUMNOS);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    // Días del mes mock (simulamos 31 días)
-    const daysInMonth = Array.from({ length: 31 }, (_, i) => i + 1);
+    // Cálculos del Calendario
+    const { daysInMonth, firstDayOffset, monthLabel, isCurrentMonth } = useMemo(() => {
+        const year = viewDate.getFullYear();
+        const month = viewDate.getMonth();
+        
+        const totalDays = new Date(year, month + 1, 0).getDate();
+        const offset = new Date(year, month, 1).getDay();
+        const label = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(viewDate);
+        const current = new Date().getMonth() === month && new Date().getFullYear() === year;
 
-    // Función para actualizar el estado de asistencia de un alumno
+        return {
+            daysInMonth: Array.from({ length: totalDays }, (_, i) => i + 1),
+            firstDayOffset: offset,
+            monthLabel: label.charAt(0).toUpperCase() + label.slice(1),
+            isCurrentMonth: current
+        };
+    }, [viewDate]);
+
+    // Navegación de meses
+    const changeMonth = (offset: number) => {
+        const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1);
+        setViewDate(newDate);
+    };
+
     const handleUpdateStatus = useCallback((id: string, status: AsistenciaStatus) => {
-        setAlumnos(prevAlumnos => prevAlumnos.map(alumno =>
-            alumno.id === id ? { ...alumno, status: status } : alumno
-        ));
+        setAlumnos(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     }, []);
 
-    // Simulación de la acción de Guardar
-    const handleGuardarAsistencia = useCallback(() => {
-        if (!selectedGrupo) {
-            alert('Por favor, selecciona un grupo antes de guardar la asistencia.');
-            return;
-        }
+    const handleGuardarAsistencia = () => {
+        if (!selectedGrupo) return;
         setIsLoading(true);
-        console.log(`Guardando asistencia para el grupo ${selectedGrupo} en el día ${selectedDate}:`, alumnos);
         setTimeout(() => {
             setIsLoading(false);
-            alert('Asistencia guardada exitosamente (Simulación).');
-        }, 1500);
-    }, [alumnos, selectedGrupo, selectedDate]);
-
-    const isReadyToSave = useMemo(() => selectedGrupo !== '', [selectedGrupo]);
-
-    // Opciones para el Select atómico (transformación de Mock Data)
-    const grupoOptions = MOCK_GRUPOS.map(g => ({ value: g.id, label: g.nombre }));
-
+            alert('Asistencia guardada correctamente.');
+        }, 1000);
+    };
 
     return (
-        // 🛑 AJUSTE: Volvemos a un fondo Light (bg-gray-50) para consistencia con el tema atómico
         <div className="p-4 md:p-8 bg-gray-50 min-h-full">
-
-            {/* Header: Título y Navegación */}
             <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                    <CalendarCheck className="w-7 h-7 mr-3 text-main-900" />
+                    <CalendarCheck className="w-7 h-7 mr-3 text-blue-600" />
                     Registro de Asistencia
                 </h1>
-                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: ghost) */}
-                <Button
-                    variant='ghost'
-                    onClick={() => navigate('/docente/dashboard')}
-                    icon={<ArrowLeft className="w-4 h-4" />}
-                    className="text-sm px-3 py-2"
-                >
-                    Volver a Inicio
+                <Button variant='ghost' onClick={() => navigate(-1)} icon={<ArrowLeft className="w-4 h-4" />}>
+                    Volver
                 </Button>
             </header>
 
-            <p className="text-gray-600 mb-6 text-lg">
-                Selecciona el grupo y la fecha para empezar a registrar la asistencia de los alumnos.
-            </p>
-
-            {/* CONTENEDOR PRINCIPAL: Grid de 2 Columnas */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* COLUMNA IZQUIERDA: Filtros y Lista de Estudiantes (ocupa 2/3) */}
+                {/* Columna Estudiantes */}
                 <div className="lg:col-span-2 space-y-8">
-
-                    {/* Sección: Seleccionar Grupo */}
-                    {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card (variant: flat) */}
-                    <Card header="Seleccionar Grupo" variant="flat">
-                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Select */}
+                    <Card header="Configuración">
                         <Select
-                            label="Grupos" // Label se usa aquí
+                            label="Grupo"
                             value={selectedGrupo}
                             onChange={(e) => setSelectedGrupo(e.target.value)}
-                            placeholder="Seleccionar Grupos"
-                            options={grupoOptions}
+                            placeholder="Seleccionar un grupo"
+                            options={MOCK_GRUPOS.map(g => ({ value: g.id, label: g.nombre }))}
                         />
                     </Card>
 
-                    {/* Sección: Lista de Estudiantes */}
-                    {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card */}
                     <Card header="Lista de Estudiantes">
-
-                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Table */}
-                        <Table className="shadow-none border border-gray-200">
-                            {/* 🛑 USO DEL SUB-COMPONENTE: Table.Header */}
+                        <Table>
                             <Table.Header>
-                                {/* 🛑 USO DEL SUB-COMPONENTE: TableRow */}
                                 <TableRow>
-                                    {/* 🛑 USO DEL SUB-COMPONENTE: TableHead */}
-                                    <TableHead className="w-1/2">Nombre Completo</TableHead>
-                                    <TableHead className="w-1/2 text-center">Asistencia</TableHead>
+                                    <TableHead>Nombre Completo</TableHead>
+                                    <TableHead className="text-center">Asistencia</TableHead>
                                 </TableRow>
                             </Table.Header>
-
-                            {/* 🛑 USO DEL SUB-COMPONENTE: Table.Body */}
                             <Table.Body>
                                 {selectedGrupo ? (
                                     alumnos.map(alumno => (
-                                        <AlumnoAsistenciaRow
-                                            key={alumno.id}
-                                            alumno={alumno}
-                                            onUpdateStatus={handleUpdateStatus}
-                                        />
+                                        <AlumnoAsistenciaRow key={alumno.id} alumno={alumno} onUpdateStatus={handleUpdateStatus} />
                                     ))
                                 ) : (
-                                    // Fila de mensaje si no hay grupo seleccionado
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-gray-500 py-6 font-medium">
-                                            Por favor, selecciona un grupo para ver la lista de alumnos.
+                                        <TableCell colSpan={2} className="text-center py-10 text-gray-400">
+                                            Selecciona un grupo para cargar la lista.
                                         </TableCell>
                                     </TableRow>
                                 )}
                             </Table.Body>
                         </Table>
                     </Card>
-                    
-                    {/* 3. BOTÓN DE GUARDAR */}
-                    {isReadyToSave && (
-                        <div className="flex justify-start">
-                            {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (variant: gradient) */}
-                            <Button
-                                variant='primary'
-                                onClick={handleGuardarAsistencia}
-                                disabled={!isReadyToSave || isLoading}
-                                isLoading={isLoading}
-                                icon={<Save className="w-5 h-5" />}
-                            >
-                                Guardar Asistencia
-                            </Button>
-                        </div>
+
+                    {selectedGrupo && (
+                        <Button variant='primary' onClick={handleGuardarAsistencia} isLoading={isLoading} icon={<Save className="w-5 h-5" />}>
+                            Guardar Asistencia
+                        </Button>
                     )}
                 </div>
 
-                {/* COLUMNA DERECHA: Calendario (ocupa 1/3) */}
-                {/* 🛑 USO DEL COMPONENTE ATÓMICO: Card */}
-                <Card header="Seleccionar Día" className="lg:col-span-1 flex flex-col h-full">
-
-                    {/* Header del Calendario */}
+                {/* Columna Calendario */}
+                <Card header="Fecha de Registro">
                     <div className="flex justify-between items-center mb-6">
-                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
-                        <Button
-                            variant='primary'
-                            onClick={() => console.log('Anterior Mes')}
-                            className="p-2 rounded-full h-auto w-auto"
+                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
+                        <Button 
+                            variant='secondary' 
+                            onClick={() => changeMonth(-1)} 
+                            className="p-2 rounded-full h-9 w-9" 
                             icon={<ChevronLeft className="w-5 h-5" />}
                         >
-                            {/* Vacio */}
+                            {""}
                         </Button>
-                        <h3 className="text-xl font-semibold text-gray-800">{currentMonth}</h3>
-                        {/* 🛑 USO DEL COMPONENTE ATÓMICO: Button (navegación del calendario) */}
-                        <Button
-                            variant='primary'
-                            onClick={() => console.log('Siguiente Mes')}
-                            className="p-2 rounded-full h-auto w-auto"
+                        
+                        <h3 className="font-bold text-gray-700">{monthLabel}</h3>
+                        
+                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
+                        <Button 
+                            variant='secondary' 
+                            onClick={() => changeMonth(1)} 
+                            className="p-2 rounded-full h-9 w-9" 
                             icon={<ChevronRight className="w-5 h-5" />}
                         >
-                            {/* Vacio */}
+                            {""}
                         </Button>
                     </div>
 
-                    {/* Vista de Días */}
-                    <div className="grid grid-cols-7 text-center gap-2">
-                        {/* Días de la semana (Encabezado) */}
-                        {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(day => (
-                            <div key={day} className="text-sm font-bold text-gray-900">{day}</div>
+                    <div className="grid grid-cols-7 gap-2 text-center">
+                        {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => (
+                            <span key={d} className="text-xs font-black text-gray-400 mb-2">{d}</span>
+                        ))}
+                        
+                        {Array.from({ length: firstDayOffset }).map((_, i) => (
+                            <div key={`empty-${i}`} />
                         ))}
 
-                        {/* Relleno inicial (mock) */}
-                        {Array.from({ length: 3 }, (_, i) => (
-                            <div key={`fill-${i}`} className="w-10 h-10"></div>
-                        ))}
-
-                        {/* Botones de Días del Mes */}
                         {daysInMonth.map(day => (
                             <DayButton
                                 key={day}
                                 day={day}
                                 isSelected={day === selectedDate}
+                                isToday={isCurrentMonth && day === new Date().getDate()}
                                 onClick={() => setSelectedDate(day)}
                             />
                         ))}
+                    </div>
+                    <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <p className="text-sm text-blue-800 text-center">
+                            Registrando para el: <br/>
+                            <strong>{selectedDate} de {monthLabel}</strong>
+                        </p>
                     </div>
                 </Card>
             </div>
