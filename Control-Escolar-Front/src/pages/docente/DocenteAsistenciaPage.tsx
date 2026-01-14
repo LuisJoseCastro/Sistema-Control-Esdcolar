@@ -100,7 +100,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
     const navigate = useNavigate();
 
     // Lógica de Fecha Dinámica
-    const [viewDate, setViewDate] = useState(new Date()); // Fecha para controlar el mes que vemos
+    const [viewDate, setViewDate] = useState(new Date()); 
     const [selectedDate, setSelectedDate] = useState<number>(new Date().getDate());
     
     const [selectedGrupo, setSelectedGrupo] = useState<string>('');
@@ -203,9 +203,27 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 {/* Columna Calendario */}
                 <Card header="Fecha de Registro">
                     <div className="flex justify-between items-center mb-6">
-                        <Button variant='secondary' onClick={() => changeMonth(-1)} className="p-2 rounded-full h-9 w-9" icon={<ChevronLeft />} />
+                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
+                        <Button 
+                            variant='secondary' 
+                            onClick={() => changeMonth(-1)} 
+                            className="p-2 rounded-full h-9 w-9" 
+                            icon={<ChevronLeft className="w-5 h-5" />}
+                        >
+                            {""}
+                        </Button>
+                        
                         <h3 className="font-bold text-gray-700">{monthLabel}</h3>
-                        <Button variant='secondary' onClick={() => changeMonth(1)} className="p-2 rounded-full h-9 w-9" icon={<ChevronRight />} />
+                        
+                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
+                        <Button 
+                            variant='secondary' 
+                            onClick={() => changeMonth(1)} 
+                            className="p-2 rounded-full h-9 w-9" 
+                            icon={<ChevronRight className="w-5 h-5" />}
+                        >
+                            {""}
+                        </Button>
                     </div>
 
                     <div className="grid grid-cols-7 gap-2 text-center">
@@ -213,7 +231,6 @@ export const DocenteAsistenciaPage: React.FC = () => {
                             <span key={d} className="text-xs font-black text-gray-400 mb-2">{d}</span>
                         ))}
                         
-                        {/* Espacios vacíos para alinear el día 1 correctamente */}
                         {Array.from({ length: firstDayOffset }).map((_, i) => (
                             <div key={`empty-${i}`} />
                         ))}
