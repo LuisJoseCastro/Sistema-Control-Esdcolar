@@ -58,74 +58,9 @@ const DocenteGruposPage: React.FC = () => {
   const selectedGrupo = MOCK_GRUPOS.find(g => g.id === selectedGrupoId)?.nombre ?? '';
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
-      {/* HEADER SUPERIOR */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-300 flex items-center justify-between px-8 z-50">
-        <h1 className="text-xl font-semibold text-gray-800">Académico</h1>
-        
-        {/* Iconos derechos */}
-        <div className="flex items-center space-x-6">
-          <button
-            onClick={() => navigate('/docente/dashboard')}
-            className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition"
-            title="Ir a Inicio"
-          >
-            <Home className="w-5 h-5" />
-            <span className="text-sm font-medium">Inicio</span>
-          </button>
-          
-          <div className="w-6 h-6 text-gray-600">🔔</div>
-          
-          <div className="flex items-center space-x-2 text-gray-700">
-            <div className="w-5 h-5">👤</div>
-            <span className="text-sm font-medium">Rodolfo docente</span>
-          </div>
-        </div>
-      </div>
-
-      {/* SIDEBAR IZQUIERDO */}
-      <aside className="fixed left-0 top-16 bottom-0 w-56 bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 overflow-y-auto flex flex-col">
-        <h2 className="text-xl font-bold mb-6 text-center">Grupos</h2>
-        <div className="space-y-3 flex-grow">
-          {MOCK_GRUPOS.map(grupo => (
-            <button
-              key={grupo.id}
-              onClick={() => setSelectedGrupoId(grupo.id)}
-              className={`w-full text-left py-3 px-4 rounded-2xl transition font-medium text-sm ${
-                selectedGrupoId === grupo.id
-                  ? 'bg-white text-gray-800 shadow-lg'
-                  : 'bg-gray-700 text-white hover:bg-gray-600'
-              }`}
-            >
-              {grupo.nombre}
-            </button>
-          ))}
-        </div>
-        
-        {/* 🟢 NUEVO BOTÓN DE REGRESAR - MÁS VISIBLE (SOLUCIÓN PROBLEMA 15) */}
-        <div className="mt-8 pt-6 border-t border-gray-700">
-          <button
-            onClick={() => navigate('/docente/dashboard')}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Regresar al Inicio</span>
-          </button>
-          
-          {/* También mantener la versión alternativa en el header pero más visible */}
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => navigate('/docente/dashboard')}
-              className="text-sm text-blue-300 hover:text-white underline transition-colors"
-            >
-              ← Volver al Dashboard
-            </button>
-          </div>
-        </div>
-      </aside>
-
+    <div className='h-full'>
       {/* CONTENIDO PRINCIPAL */}
-      <main className="ml-56 mt-16 flex-1 bg-gray-100 p-8">
+      <main className="h-full bg-gray-100 p-8">
         {/* Encabezado de la sección */}
         <div className="mb-6">
           <h1 className="text-4xl font-serif italic text-gray-800 mb-2">
@@ -134,17 +69,6 @@ const DocenteGruposPage: React.FC = () => {
           <p className="text-gray-600">
             Lista de alumnos inscritos en el grupo
           </p>
-          
-          {/* 🟢 BOTÓN ALTERNATIVO EN EL CONTENIDO PRINCIPAL TAMBIÉN */}
-          <div className="mt-4 mb-6">
-            <button
-              onClick={() => navigate('/docente/dashboard')}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Volver al panel principal</span>
-            </button>
-          </div>
         </div>
 
         {/* Barra de búsqueda */}
@@ -156,7 +80,7 @@ const DocenteGruposPage: React.FC = () => {
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
                 placeholder="nombre, matrícula .."
-                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-main-500 focus:border-transparent"
               />
             </div>
           </div>
