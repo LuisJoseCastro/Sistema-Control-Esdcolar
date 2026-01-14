@@ -13,7 +13,7 @@ import {
   MessageSquare,
   LogOut,
   User as UserIcon,
-  ChevronsLeft 
+  ChevronsRight
 } from 'lucide-react';
 
 // Interfaz de Props ajustada
@@ -52,7 +52,7 @@ export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
           className={`p-1 rounded-full text-gray-400 hover:bg-gray-700 transition-transform duration-300 ${!isCollapsed ? 'rotate-180' : ''}`}
           title={isCollapsed ? "Expandir" : "Colapsar"}
         >
-          <ChevronsLeft size={24} />
+          <ChevronsRight size={24} />
         </button>
       </header>
 
