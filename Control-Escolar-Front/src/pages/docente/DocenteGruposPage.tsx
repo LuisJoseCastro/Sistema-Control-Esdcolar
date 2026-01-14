@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Home } from 'lucide-react';
+import { Search, Home, ArrowLeft } from 'lucide-react'; // Añadí ArrowLeft
 import { useNavigate } from 'react-router-dom';
 import Table from '../../components/ui/Table';
 
@@ -84,9 +84,9 @@ const DocenteGruposPage: React.FC = () => {
       </div>
 
       {/* SIDEBAR IZQUIERDO */}
-      <aside className="fixed left-0 top-16 bottom-0 w-56 bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 overflow-y-auto">
+      <aside className="fixed left-0 top-16 bottom-0 w-56 bg-gradient-to-b from-gray-800 to-gray-900 text-white p-6 overflow-y-auto flex flex-col">
         <h2 className="text-xl font-bold mb-6 text-center">Grupos</h2>
-        <div className="space-y-3">
+        <div className="space-y-3 flex-grow">
           {MOCK_GRUPOS.map(grupo => (
             <button
               key={grupo.id}
@@ -101,6 +101,27 @@ const DocenteGruposPage: React.FC = () => {
             </button>
           ))}
         </div>
+        
+        {/* 🟢 NUEVO BOTÓN DE REGRESAR - MÁS VISIBLE (SOLUCIÓN PROBLEMA 15) */}
+        <div className="mt-8 pt-6 border-t border-gray-700">
+          <button
+            onClick={() => navigate('/docente/dashboard')}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Regresar al Inicio</span>
+          </button>
+          
+          {/* También mantener la versión alternativa en el header pero más visible */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => navigate('/docente/dashboard')}
+              className="text-sm text-blue-300 hover:text-white underline transition-colors"
+            >
+              ← Volver al Dashboard
+            </button>
+          </div>
+        </div>
       </aside>
 
       {/* CONTENIDO PRINCIPAL */}
@@ -111,8 +132,19 @@ const DocenteGruposPage: React.FC = () => {
             {selectedGrupo}
           </h1>
           <p className="text-gray-600">
-            Lista de alumnos inscritos el grupo
+            Lista de alumnos inscritos en el grupo
           </p>
+          
+          {/* 🟢 BOTÓN ALTERNATIVO EN EL CONTENIDO PRINCIPAL TAMBIÉN */}
+          <div className="mt-4 mb-6">
+            <button
+              onClick={() => navigate('/docente/dashboard')}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Volver al panel principal</span>
+            </button>
+          </div>
         </div>
 
         {/* Barra de búsqueda */}

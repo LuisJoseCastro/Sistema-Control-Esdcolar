@@ -110,12 +110,71 @@ export const DocenteMensajesPage: React.FC = () => {
     // Campos del formulario de nuevo mensaje
     const [to, setTo] = useState<string>('');
     const [messageBody, setMessageBody] = useState<string>('');
+    // Estado para controlar el envío
+    const [isSending, setIsSending] = useState<boolean>(false);
+    // Estado para mostrar errores de validación
+    const [errors, setErrors] = useState<{to?: string, messageBody?: string}>({});
 
     // Función para cambiar el mensaje seleccionado
     const handleMessageClick = useCallback((id: string) => {
         setSelectedMessageId(id);
         // Simular marcar como leído (aquí iría la lógica real)
     }, []);
+
+    // Función para validar campos del mensaje
+    const validateFields = (): boolean => {
+        const newErrors: {to?: string, messageBody?: string} = {};
+        
+        if (!to.trim()) {
+            newErrors.to = 'El campo "Para" es requerido';
+        }
+        
+        if (!messageBody.trim()) {
+            newErrors.messageBody = 'El mensaje no puede estar vacío';
+        }
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // Función para enviar mensaje
+    const handleSendMessage = useCallback(() => {
+        // Validar campos (Problema 13)
+        if (!validateFields()) {
+            alert('❌ Por favor, completa todos los campos requeridos antes de enviar.');
+            return;
+        }
+        
+        setIsSending(true);
+        
+        // Simular envío a API
+        setTimeout(() => {
+            console.log('Enviando mensaje a', to, 'con contenido:', messageBody);
+            
+            // Mostrar alerta de confirmación (Problema 14)
+            alert('✅ Mensaje enviado exitosamente.');
+            
+            // Resetear estado
+            setIsSending(false);
+            setIsNewMessageOpen(false);
+            setTo('');
+            setMessageBody('');
+            setErrors({});
+        }, 800);
+    }, [to, messageBody]);
+
+    // Función para limpiar el formulario
+    const handleClearForm = () => {
+        setTo('');
+        setMessageBody('');
+        setErrors({});
+    };
+
+    // Función para cerrar modal y limpiar
+    const handleCloseModal = () => {
+        setIsNewMessageOpen(false);
+        handleClearForm();
+    };
 
     // Filtrar los mensajes según la pestaña activa y el término de búsqueda
     const filteredMessages = MOCK_MESSAGES.filter(msg => {
@@ -223,7 +282,7 @@ export const DocenteMensajesPage: React.FC = () => {
             {/* Modal Nuevo Mensaje */}
             <Modal
                 isOpen={isNewMessageOpen}
-                onClose={() => setIsNewMessageOpen(false)}
+                onClose={handleCloseModal}
                 title="Nuevo Mensaje"
                 size="sm"
             >
@@ -231,32 +290,60 @@ export const DocenteMensajesPage: React.FC = () => {
                     <div>
                         <label className="block text-sm text-gray-600 mb-2">Para:</label>
                         <Input
-                            placeholder="Destinatario"
+                            placeholder="Destinatario (ejemplo: director@escuela.edu)"
                             value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                            className="bg-whiteBg-300"
+                            onChange={(e) => {
+                                setTo(e.target.value);
+                                // Limpiar error cuando el usuario empieza a escribir
+                                if (errors.to) {
+                                    setErrors(prev => ({ ...prev, to: undefined }));
+                                }
+                            }}
+                            className={`bg-whiteBg-300 ${errors.to ? 'border-red-500' : ''}`}
                         />
+                        {errors.to && (
+                            <p className="mt-1 text-xs text-red-500">{errors.to}</p>
+                        )}
                     </div>
 
                     <div className="relative">
+                        <label className="block text-sm text-gray-600 mb-2">Mensaje:</label>
                         <textarea
                             placeholder="Escribe tu mensaje aquí..."
                             value={messageBody}
-                            onChange={(e) => setMessageBody(e.target.value)}
-                            className="w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500"
+                            onChange={(e) => {
+                                setMessageBody(e.target.value);
+                                // Limpiar error cuando el usuario empieza a escribir
+                                if (errors.messageBody) {
+                                    setErrors(prev => ({ ...prev, messageBody: undefined }));
+                                }
+                            }}
+                            className={`w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500 ${
+                                errors.messageBody ? 'border-red-500' : ''
+                            }`}
                         />
-                        <div className="absolute right-3 top-3 text-gray-500">
-                            <button type="button" className="p-1 rounded-md hover:bg-whiteBg-400 transition">
+                        <div className="absolute right-3 top-8 text-gray-500">
+                            <button 
+                                type="button" 
+                                className="p-1 rounded-md hover:bg-whiteBg-400 transition"
+                                onClick={() => {
+                                    // Aquí se puede implementar la funcionalidad de adjuntar archivos
+                                    console.log('Adjuntar archivo');
+                                }}
+                            >
                                 <Paperclip className="w-5 h-5" />
                             </button>
                         </div>
+                        {errors.messageBody && (
+                            <p className="mt-1 text-xs text-red-500">{errors.messageBody}</p>
+                        )}
                     </div>
 
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                         <div>
                             <Button
                                 variant="secondary"
-                                onClick={() => { setTo(''); setMessageBody(''); }}
+                                onClick={handleClearForm}
                                 className="px-4 py-2 rounded-full"
                             >
                                 Limpiar
@@ -267,16 +354,12 @@ export const DocenteMensajesPage: React.FC = () => {
                             <span className="w-auto text-sm text-gray-500 ms-8 me-2">Adjuntar archivos (opcional)</span>
                             <Button
                                 variant="primary"
-                                onClick={() => {
-                                    console.log('Enviando mensaje a', to, messageBody);
-                                    setIsNewMessageOpen(false);
-                                    setTo('');
-                                    setMessageBody('');
-                                }}
-                                icon={<Send className="w-4 h-4" />}
+                                onClick={handleSendMessage}
+                                disabled={isSending}
+                                icon={isSending ? null : <Send className="w-4 h-4" />}
                                 className="px-4 py-2 rounded-full"
                             >
-                                Enviar
+                                {isSending ? 'Enviando...' : 'Enviar'}
                             </Button>
                         </div>
                     </div>
