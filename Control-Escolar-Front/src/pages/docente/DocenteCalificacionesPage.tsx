@@ -561,7 +561,7 @@ export const DocenteCalificacionesPage: React.FC = () => {
                             <span className="text-sm text-gray-600">Campo válido</span>
                         </div>
                         <div className="flex items-center">
-                            <div className="w-4 h-4 bg-red-50 border-2 border-red-200 rounded mr-2 italic text-gray-500">NA</div>
+                            <div className="w-8 h-6 bg-red-50 outline-2 outline-red-200 rounded mr-2 pl-1.5 italic text-gray-500">NA</div>
                             <span className="text-sm text-gray-600">No Aplicable</span>
                         </div>
                     </div>
