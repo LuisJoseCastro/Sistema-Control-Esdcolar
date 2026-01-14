@@ -119,7 +119,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
     ].join('\n');
 
     // Crear blob y descargar archivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\ufeff',csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
