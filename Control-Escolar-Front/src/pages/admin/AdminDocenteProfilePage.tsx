@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Edit, BookOpen, Clock, PlusCircle, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Edit, BookOpen, Clock, PlusCircle, Trash2, CheckCircle } from 'lucide-react';
 
 // Importación de Componentes UI
 import { Card } from '../../components/ui/Card';
@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import Modal from '../../components/ui/Modal';
 
-// Servicio y Tipos (Asegúrate de importar updateDocenteProfile)
+// Servicio y Tipos
 import { getDocenteProfileById, updateDocenteProfile } from '../../services/admin.service';
 import { type DocenteProfile, type MateriaAsignada, type HorarioType } from '../../types/models';
 
@@ -22,7 +22,6 @@ interface MateriaHorarioItem extends MateriaAsignada {
     scheduleKey: string;
 }
 
-
 // =========================================================
 // 1. Componente Modal: Datos Personales
 // =========================================================
@@ -31,18 +30,18 @@ interface PersonalDataModalProps {
     profile: DocenteProfile;
     isOpen: boolean;
     onClose: () => void;
-    onSave: (newProfile: DocenteProfile) => void;
+    onSave: (newProfile: DocenteProfile) => Promise<void>; // Cambiado a Promise para manejar el loading
 }
 
 const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, onClose, onSave }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [clave, setClave] = useState(profile.clave);
     const [nombre, setNombre] = useState(profile.nombre);
     const [email, setEmail] = useState(profile.email);
     const [telefono, setTelefono] = useState(profile.telefono);
     const [especialidad, setEspecialidad] = useState(profile.especialidad);
-    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -58,10 +57,7 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
-
-        // Simular pequeño delay visual
-        await new Promise(resolve => setTimeout(resolve, 500));
-
+        
         const updatedProfile: DocenteProfile = {
             ...profile,
             clave,
@@ -71,10 +67,15 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
             especialidad
         };
 
-        onSave(updatedProfile);
-        setIsSaving(false);
-        setIsEditing(false);
-        onClose();
+        try {
+            await onSave(updatedProfile);
+            setIsEditing(false);
+            onClose();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const fields = [
@@ -138,11 +139,11 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
 
 
 // =========================================================
-// 2. Componente Modal: Materias Asignadas (CORREGIDO)
+// 2. Componente Modal: Materias Asignadas
 // =========================================================
 interface AssignedSubjectsModalProps {
     profile: DocenteProfile;
-    onSave: (newProfile: DocenteProfile) => void;
+    onSave: (newProfile: DocenteProfile) => Promise<void>;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -151,7 +152,6 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
     const [localSchedule, setLocalSchedule] = useState<MateriaHorarioItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Estados para la nueva entrada
     const [newMateriaNombre, setNewMateriaNombre] = useState('');
     const [newMateriaGrupo, setNewMateriaGrupo] = useState('');
     const [newDay, setNewDay] = useState<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes'>('Lunes');
@@ -165,12 +165,9 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 
     const rehydrateSchedule = useCallback((p: DocenteProfile) => {
         const schedule: MateriaHorarioItem[] = [];
-
-        // 1. Extraer del Horario
         daysOptions.forEach(day => {
             const dayKey = day as keyof HorarioType;
             Object.entries(p.horario[dayKey]).forEach(([timeStart, description]) => {
-
                 const fullMatch = description.match(/(.*) \((.*)\) \[(.*)-(.*)\]/);
                 const simpleMatch = description.match(/(.*) \((.*)\)/);
                 const match = fullMatch || simpleMatch;
@@ -184,29 +181,18 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                     const scheduleKey = `${dayKey}-${start}-${materiaId}`;
 
                     schedule.push({
-                        id: materiaId,
-                        nombre: nombre,
-                        grupo: grupo,
-                        day: dayKey,
-                        timeStart: start,
-                        timeEnd: end,
-                        scheduleKey: scheduleKey
+                        id: materiaId, nombre, grupo, day: dayKey, timeStart: start, timeEnd: end, scheduleKey
                     });
                 }
             });
         });
-
-        // 2. Añadir materias sin horario asignado (opcional)
-        // ... (Tu lógica anterior si deseas mantener materias "huerfanas")
-
         setLocalSchedule(schedule);
-    }, []); // Eliminé dependencias innecesarias para simplificar
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
             rehydrateSchedule(profile);
             setEditingKey(null);
-            // Limpiar formulario
             setNewMateriaNombre('');
             setNewMateriaGrupo('');
         }
@@ -220,14 +206,12 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
     };
 
     const handleDelete = (scheduleKey: string) => {
-        console.log("Eliminando item:", scheduleKey);
         setLocalSchedule(prev => prev.filter(item => item.scheduleKey !== scheduleKey));
     };
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMateriaNombre.trim() || !newMateriaGrupo.trim() || !newTimeStart || !newTimeEnd) return;
-
         if (newTimeStart >= newTimeEnd) {
             alert('La hora de inicio debe ser anterior a la hora de fin.');
             return;
@@ -244,30 +228,23 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
             scheduleKey: `${newDay}-${newTimeStart}-${newMateriaId}`
         };
 
-        // Verificamos conflictos
-        const isConflict = localSchedule.some(item =>
-            item.day === newDay && item.timeStart === newTimeStart
-        );
-        if (isConflict) {
+        if (localSchedule.some(item => item.day === newDay && item.timeStart === newTimeStart)) {
             alert(`¡Conflicto! Ya hay clase el ${newDay} a las ${newTimeStart}.`);
             return;
         }
 
         setLocalSchedule(prev => [...prev, newItem]);
-        // Limpiar inputs
         setNewMateriaNombre('');
         setNewMateriaGrupo('');
     };
 
     const handleSave = async () => {
-        setIsSaving(true);
         if (editingKey) {
-            alert('Por favor, termine la edición del horario actual (botón Guardar en la tabla) antes de guardar todo.');
-            setIsSaving(false);
+            alert('Por favor, termine la edición del horario actual antes de guardar.');
             return;
         }
 
-        // Construir datos
+        setIsSaving(true);
         const uniqueMateriasMap = new Map<string, MateriaAsignada>();
         const newHorario: Record<string, Record<string, string>> = {
             'Lunes': {}, 'Martes': {}, 'Miercoles': {}, 'Jueves': {}, 'Viernes': {}
@@ -275,33 +252,30 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 
         localSchedule.forEach(item => {
             if (item.day && item.timeStart && item.timeEnd) {
-                // Materias únicas
                 uniqueMateriasMap.set(`${item.nombre}-${item.grupo}`, { id: item.id, nombre: item.nombre, grupo: item.grupo });
-
-                // Horario
-                const dayKey = item.day;
-                newHorario[dayKey][item.timeStart] = `${item.nombre} (${item.grupo}) [${item.timeStart}-${item.timeEnd}]`;
+                newHorario[item.day][item.timeStart] = `${item.nombre} (${item.grupo}) [${item.timeStart}-${item.timeEnd}]`;
             }
         });
 
-        const newMaterias: MateriaAsignada[] = Array.from(uniqueMateriasMap.values());
-
         const updatedProfile: DocenteProfile = {
             ...profile,
-            materiasAsignadas: newMaterias,
+            materiasAsignadas: Array.from(uniqueMateriasMap.values()),
             horario: newHorario as DocenteProfile['horario'],
         };
 
-        onSave(updatedProfile);
-        setIsSaving(false);
-        onClose();
+        try {
+            await onSave(updatedProfile);
+            onClose();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Administrar Materias y Horario" size="lg">
             <div className="space-y-6">
-
-                {/* Formulario Añadir */}
                 <Card header="Asignar Nueva Clase" variant="flat" className='bg-whiteBg-100'>
                     <form onSubmit={handleAdd} className="grid grid-cols-6 gap-3 items-end">
                         <div className="col-span-2">
@@ -341,7 +315,6 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                     </form>
                 </Card>
 
-                {/* Tabla */}
                 <div className="bg-whiteBg-100 p-4">
                     <h3 className="text-xl font-bold border-b mb-4 text-main-800">Horario Asignado</h3>
                     <div className="overflow-x-auto border border-grayDark-300 rounded-lg max-h-64 overflow-y-auto">
@@ -386,19 +359,11 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                                                     </td>
                                                     <td className="p-3 text-right space-x-2 flex">
                                                         {editingKey === item.scheduleKey ? (
-                                                            <Button type="button" variant="primary" className="p-1 px-2 text-sm" onClick={() => setEditingKey(null)}>
-                                                                OK
-                                                            </Button>
+                                                            <Button type="button" variant="primary" className="p-1 px-2 text-sm" onClick={() => setEditingKey(null)}>OK</Button>
                                                         ) : (
                                                             <>
-                                                                {/* 🟢 CORRECCIÓN: type="button" agregado */}
-                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => setEditingKey(item.scheduleKey)}>
-                                                                    <Edit size={18} />
-                                                                </Button>
-                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => handleDelete(item.scheduleKey)}>
-                                                                    <Trash2 size={18} />
-                                                                </Button>
-                                                                
+                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => setEditingKey(item.scheduleKey)}><Edit size={18} /></Button>
+                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => handleDelete(item.scheduleKey)}><Trash2 size={18} /></Button>
                                                             </>
                                                         )}
                                                     </td>
@@ -414,7 +379,7 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                 </div>
             </div>
             <div className="flex justify-end pt-4 border-t mt-6 gap-3">
-                <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                <Button variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
                 <Button variant="primary" onClick={handleSave} isLoading={isSaving} disabled={isSaving || !!editingKey}>
                     {isSaving ? 'Guardando...' : 'Guardar Asignaciones'}
                 </Button>
@@ -422,7 +387,6 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
         </Modal>
     );
 };
-
 
 // =========================================================
 // 3. Componente Principal AdminDocenteProfilePage
@@ -434,23 +398,28 @@ export const AdminDocenteProfilePage: React.FC = () => {
     const [profile, setProfile] = useState<DocenteProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const [isPersonalModalOpen, setPersonalModalOpen] = useState(false);
     const [isMateriasModalOpen, setMateriasModalOpen] = useState(false);
 
-    // 🟢 FUNCIÓN DE GUARDADO CONECTADA AL SERVICIO
     const handleProfileUpdate = useCallback(async (updatedProfile: DocenteProfile) => {
         try {
-            // Actualización optimista
+            // Llamada al servicio real
+            await updateDocenteProfile(updatedProfile);
+            
+            // Actualización del estado local
             setProfile(updatedProfile);
 
-            // Persistencia en el servicio (Mock)
-            await updateDocenteProfile(updatedProfile);
-
-            console.log("Perfil actualizado y persistido.");
+            // Retroalimentación visual de éxito
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
+            
+            console.log("Perfil actualizado y persistido con éxito.");
         } catch (err) {
             console.error("Error al guardar:", err);
-            alert("Error al guardar los datos en el servidor.");
+            alert("No se pudieron guardar los cambios. Intente de nuevo.");
+            throw err; // Re-lanzar para que el modal sepa que falló
         }
     }, []);
 
@@ -465,11 +434,8 @@ export const AdminDocenteProfilePage: React.FC = () => {
             setLoading(true);
             try {
                 const data = await getDocenteProfileById(docenteId);
-                if (data) {
-                    setProfile(data);
-                } else {
-                    setError('Perfil de Docente no encontrado.');
-                }
+                if (data) setProfile(data);
+                else setError('Perfil de Docente no encontrado.');
             } catch (err) {
                 setError('Error al cargar el perfil.');
             } finally {
@@ -493,16 +459,22 @@ export const AdminDocenteProfilePage: React.FC = () => {
         if (!profile) return false;
         const match = materiaDescription.match(/(.*) \((.*)\)/);
         if (!match) return false;
-        const nombre = match[1].trim();
-        const grupo = match[2].trim();
-        return profile.materiasAsignadas.some(m => m.nombre === nombre && m.grupo === grupo);
+        return profile.materiasAsignadas.some(m => m.nombre === match[1].trim() && m.grupo === match[2].trim());
     }, [profile]);
 
     if (loading) return <div className="p-8 flex justify-center items-center h-[calc(100vh-100px)]"><LoadingSpinner text="Cargando perfil..." /></div>;
     if (error || !profile) return <div className="p-8 text-center"><h1 className="text-3xl text-red-600">Error</h1><p>{error}</p><Button onClick={() => navigate('/admin/docentes')} className="mt-4">Volver</Button></div>;
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans">
+        <div className="p-8 bg-white min-h-full font-sans relative">
+            {/* Mensaje de éxito flotante */}
+            {showSuccess && (
+                <div className="fixed top-20 right-8 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-2 z-50 animate-bounce">
+                    <CheckCircle size={20} />
+                    ¡Cambios guardados correctamente!
+                </div>
+            )}
+
             <header className="mb-8">
                 <h1 className="text-5xl text-black border-b border-gray-400 pb-2" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     perfil docente
@@ -570,10 +542,9 @@ export const AdminDocenteProfilePage: React.FC = () => {
                                         const lesson = profile.horario[day as keyof typeof profile.horario]?.[time];
                                         const showLesson = lesson && isMateriaAssigned(lesson);
                                         const timeMatch = lesson ? lesson.match(/\[(\d{2}:\d{2}-\d{2}:\d{2})\]/) : null;
-                                        const timeDisplay = timeMatch ? timeMatch[1] : time;
                                         return (
                                             <td key={day} className={`p-3 text-sm border-b border-gray-100 ${showLesson ? 'bg-teal-50 font-medium text-gray-700' : 'text-gray-400'}`}>
-                                                {showLesson ? lesson.replace(/\[.*\]/, timeDisplay) : '-'}
+                                                {showLesson ? lesson.replace(/\[.*\]/, timeMatch ? timeMatch[1] : time) : '-'}
                                             </td>
                                         );
                                     })}

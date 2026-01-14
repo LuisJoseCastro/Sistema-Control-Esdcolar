@@ -63,14 +63,16 @@ export const AdminDocentesPage: React.FC = () => {
         fetchDocentes();
     }, [config]);
 
-    // 2. Lógica de búsqueda/filtrado
+    // 2. Lógica de búsqueda/filtrado ACTUALIZADA
     useEffect(() => {
         const lowerCaseSearch = searchTerm.toLowerCase();
         
         const results = docentes.filter(docente =>
             docente.nombre.toLowerCase().includes(lowerCaseSearch) ||
             docente.email.toLowerCase().includes(lowerCaseSearch) ||
-            docente.clave.toLowerCase().includes(lowerCaseSearch) 
+            docente.clave.toLowerCase().includes(lowerCaseSearch) ||
+            // Se agrega búsqueda por especialidad, verificando que el campo exista
+            (docente.especialidad && docente.especialidad.toLowerCase().includes(lowerCaseSearch))
         );
         
         setFilteredDocentes(results);
@@ -150,7 +152,7 @@ export const AdminDocentesPage: React.FC = () => {
                 <div className="md:w-1/3 w-full max-w-sm">
                     <Input
                         type="text"
-                        placeholder="Buscar"
+                        placeholder="Buscar por nombre, email, clave o especialidad..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         endIcon={Search} 

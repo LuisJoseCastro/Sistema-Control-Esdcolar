@@ -10,11 +10,11 @@ import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 
 // ----------------------------------------------------------------------
-// 1. TIPOS DE DATOS Y MOCKS
+// 1. TIPOS DE DATOS (Actualizados para IDs únicos)
 // ----------------------------------------------------------------------
 
 interface PlanEstudio {
-    id: number;
+    id: string | number; // Acepta string para UUIDs
     nombre: string;
     codigo: string;
     fechaInicio: string;
@@ -28,7 +28,7 @@ interface AsignaturaSimple {
 }
 
 interface Asignatura {
-    id: number;
+    id: string | number; // Acepta string para UUIDs
     materia: string;
     codigo: string;
     planEstudio: string;
@@ -172,27 +172,29 @@ const AdminGestionPage: React.FC = () => {
     const [editingPlan, setEditingPlan] = useState<PlanEstudio | null>(null);
     const [editingAsignatura, setEditingAsignatura] = useState<Asignatura | null>(null);
     const [searchTerm, setSearchTerm] = useState(''); 
-    const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | number | null>(null);
 
     // Handlers
     const handleSavePlan = (data: Omit<PlanEstudio, 'id'>) => {
         if (editingPlan) {
             setPlanes(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...data, id: editingPlan.id } : p));
         } else {
-            setPlanes(prev => [...prev, { id: Date.now(), ...data }]);
+            // ✅ CORRECCIÓN: Uso de UUID para evitar colisiones
+            const newId = crypto.randomUUID();
+            setPlanes(prev => [...prev, { id: newId, ...data }]);
         }
         setIsPlanModalOpen(false);
         setEditingPlan(null);
     };
 
-    const handleDeletePlan = (id: number) => {
+    const handleDeletePlan = (id: string | number) => {
         if (window.confirm('¿Eliminar este plan?')) {
             setPlanes(prev => prev.filter(p => p.id !== id));
             if (selectedPlanId === id) setSelectedPlanId(null);
         }
     };
 
-    const handleSelectPlan = (id: number) => {
+    const handleSelectPlan = (id: string | number) => {
         setSelectedPlanId(prev => prev === id ? null : id);
     };
 
@@ -200,7 +202,9 @@ const AdminGestionPage: React.FC = () => {
         if (editingAsignatura) {
             setAsignaturas(prev => prev.map(a => a.id === editingAsignatura.id ? { ...a, ...data, id: editingAsignatura.id } : a));
         } else {
-            setAsignaturas(prev => [...prev, { id: Date.now(), ...data }]);
+            // ✅ CORRECCIÓN: Uso de UUID para evitar colisiones
+            const newId = crypto.randomUUID();
+            setAsignaturas(prev => [...prev, { id: newId, ...data }]);
         }
         setIsMateriaModalOpen(false);
         setEditingAsignatura(null);
@@ -221,7 +225,6 @@ const AdminGestionPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-whiteBg-50 p-8">
             
-            {/* 🛑 SECCIÓN 1: HEADER (SOLO TÍTULO) */}
             <header className="mb-6">
                 <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
                     <GraduationCap size={32} className="mr-3 text-main-800" />
@@ -230,7 +233,6 @@ const AdminGestionPage: React.FC = () => {
                 <p className="text-gray-600 ml-10">Administración de planes y asignaturas</p>
             </header>
 
-            {/* 🛑 SECCIÓN 2: BARRA DE BOTONES (SEPARADA Y ABAJO DEL TÍTULO) */}
             <div className="flex justify-end space-x-3 mb-8">
                 <Button 
                     variant="secondary" 
@@ -248,7 +250,7 @@ const AdminGestionPage: React.FC = () => {
                 </Button>
             </div>
 
-            {/* TABLAS */}
+            {/* TABLA PLANES */}
             <Card className="p-6 bg-white shadow-xl shadow-grayDark-200 mb-10 border-2 border-gray-400">
                 <div className="flex justify-between items-end mb-4 border-b pb-2">
                     <div>
@@ -265,7 +267,7 @@ const AdminGestionPage: React.FC = () => {
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-grayDark-200 text-sm font-semibold text-gray-700">
                             <tr>
-                                <th className="p-3 text-center text-xl">#</th>
+                                <th className="p-3 text-center text-xl">ID</th>
                                 <th className="p-3 text-left text-xl">Nombre del Plan</th>
                                 <th className="p-3 text-left text-xl">Código</th>
                                 <th className="p-3 text-left text-xl">Inicio</th>
@@ -286,7 +288,9 @@ const AdminGestionPage: React.FC = () => {
                                                 : 'hover:bg-whiteBg-100 border-l-4 border-l-transparent'
                                         }`}
                                     >
-                                        <td className="p-3 text-center text-gray-500">{plan.id}</td>
+                                        <td className="p-3 text-center text-gray-500 text-[10px] font-mono">
+                                            {typeof plan.id === 'string' ? plan.id.slice(0, 8) : plan.id}
+                                        </td>
                                         <td className={`p-3 font-medium ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>{plan.nombre}</td>
                                         <td className="p-3 text-gray-500 font-mono text-xs">{plan.codigo}</td>
                                         <td className="p-3 text-sm">{plan.fechaInicio}</td>
@@ -307,6 +311,7 @@ const AdminGestionPage: React.FC = () => {
                 </div>
             </Card>
 
+            {/* TABLA ASIGNATURAS */}
             <Card className="p-6 bg-white shadow-xl  border-2 border-gray-400">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <div className="flex items-center gap-3">
@@ -320,18 +325,13 @@ const AdminGestionPage: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    {selectedPlanId && (
-                         <Button variant="ghost" onClick={() => setSelectedPlanId(null)} className="text-sm text-gray-500 underline">
-                            Ver todas las materias
-                         </Button>
-                    )}
                 </div>
 
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-grayDark-200 text-xl font-semibold text-gray-700">
                             <tr>
-                                <th className="p-3 text-center text-xl">#</th>
+                                <th className="p-3 text-center text-xl">ID</th>
                                 <th className="p-3 text-left text-xl">Materia</th>
                                 <th className="p-3 text-left text-xl">Código</th>
                                 <th className="p-3 text-left text-xl">Plan de Estudio</th>
@@ -342,7 +342,9 @@ const AdminGestionPage: React.FC = () => {
                             {filteredAsignaturas.length > 0 ? (
                                 filteredAsignaturas.map((asig) => (
                                     <tr key={asig.id} className="border-b hover:bg-whiteBg-100">
-                                        <td className="p-3 text-center text-gray-500">{asig.id}</td>
+                                        <td className="p-3 text-center text-gray-500 text-[10px] font-mono">
+                                            {typeof asig.id === 'string' ? asig.id.slice(0, 8) : asig.id}
+                                        </td>
                                         <td className="p-3 font-medium text-gray-800">{asig.materia}</td>
                                         <td className="p-3 font-mono text-xs text-gray-500">{asig.codigo}</td>
                                         <td className="p-3 text-sm text-blue-600 bg-blue-50/50 rounded">{asig.planEstudio}</td>
