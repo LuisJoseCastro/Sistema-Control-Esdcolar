@@ -187,7 +187,7 @@ const DocentePerfilPage: React.FC = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <Input label="Correo Electrónico" name="correo" value={displayData.correo} readOnly={!isEditing} onChange={handleChange} />
-                            <Input label="Teléfono" name="telefono" value={displayData.telefono} readOnly={!isEditing} onChange={handleChange} />
+                            <Input label="Teléfono" type='number' name="telefono" value={displayData.telefono} readOnly={!isEditing} onChange={handleChange} />
                         </div>
                         <Input label="Ciudad" name="ciudad" value={displayData.ciudad} readOnly={!isEditing} onChange={handleChange} />
                         <Input label="Dirección" name="direccion" value={displayData.direccion} readOnly={!isEditing} onChange={handleChange} />
