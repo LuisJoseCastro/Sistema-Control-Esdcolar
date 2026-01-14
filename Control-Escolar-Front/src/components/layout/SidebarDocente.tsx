@@ -1,9 +1,11 @@
 // src/components/layout/SidebarDocente.tsx (VERSIÓN FINAL CON ENLACE DE PERFIL)
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom'; // 🚨 Importamos 'Link' para el perfil
 import { useSidebar } from '../../contexts/SidebarContext'; 
 import { type User } from '../../types/models';
+import Modal from '../../components/ui/Modal';
+import Button from '../../components/ui/Button';
 import {
   Home,
   ClipboardList,
@@ -13,7 +15,9 @@ import {
   MessageSquare,
   LogOut,
   User as UserIcon,
-  ChevronsRight
+  ChevronsRight,
+  X,
+  Check
 } from 'lucide-react';
 
 // Interfaz de Props ajustada
@@ -35,6 +39,9 @@ const docenteNavItems = [
 export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
   const { isCollapsed, toggleCollapse, collapsedWidth, expandedWidth } = useSidebar();
 
+  // Estado para controlar la apertura de la modal de logout
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
   const activeLinkClasses = 'bg-blue-600 text-white shadow-lg';
   const inactiveLinkClasses = 'text-gray-300 hover:bg-gray-700';
 
@@ -77,10 +84,10 @@ export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
         </ul>
       </nav>
 
-      {/* Área de Usuario y Logout (MODIFICADA) */}
+      {/* Área de Usuario y Logout */}
       <div className="pt-4 border-t border-gray-700 w-full flex flex-col items-center">
         
-        {/* 🚨 ENLACE DE PERFIL DEL DOCENTE */}
+        {/* Enlace de perfil */}
         <Link 
             to="/docente/perfil" 
             title={`Ver perfil de ${user.nombre}`}
@@ -89,13 +96,12 @@ export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
             }`}
         >
           <UserIcon size={24} className="text-blue-400 mr-2" />
-          {/* Mostramos el nombre solo si NO está colapsado */}
           {!isCollapsed && <span className="text-sm truncate">{user.nombre}</span>}
         </Link>
         
         <button
-          onClick={onLogout}
-          // Centramos el botón en el modo colapsado
+          // CAMBIO: Ahora abre la modal en lugar de ejecutar onLogout directamente
+          onClick={() => setIsLogoutModalOpen(true)}
           className={`p-2 rounded-lg hover:bg-red-600 transition-colors w-full ${isCollapsed ? 'flex justify-center' : 'flex justify-start items-center'}`}
           title="Salir"
         >
@@ -103,6 +109,42 @@ export const SidebarDocente: React.FC<SidebarProps> = ({ user, onLogout }) => {
           {!isCollapsed && <span className="text-sm font-medium">Salir</span>}
         </button>
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        title="Confirmar Salida"
+        size="sm"
+      >
+        <div className="space-y-6 py-4">
+          <p className="text-center text-gray-700 text-lg">
+            Hola <span className="font-bold">{user.nombre.split(' ')[0]}</span>, ¿estás seguro de que deseas cerrar sesión?
+          </p>
+
+          <div className="flex justify-center gap-4">
+            {/* Botón para Cancelar */}
+            <Button
+              variant="secondary"
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="flex items-center gap-2 px-6"
+            >
+              <X className="w-5 h-5" />
+              Cancelar
+            </Button>
+
+            {/* Botón para Confirmar Salida */}
+            <Button
+              variant="primary"
+              onClick={onLogout}
+              className="flex items-center gap-2 px-6 bg-red-600 hover:bg-red-700 border-none"
+            >
+              <Check className="w-5 h-5" />
+              Sí, cerrar sesión
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
