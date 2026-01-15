@@ -78,7 +78,7 @@ export const PlansPage: React.FC = () => {
           {/* PLAN GRATUITO */}
           <Card 
             className={`bg-whiteBg-100 shadow-grayDark-300 shadow-xl w-full md:w-1/2 transition-all duration-300 ${selectedPlan === 'gratuito' ? 'ring-4 ring-main-600 scale-105' : 'bg-blue-50/30'}`}
-            header={<div className="text-center w-full">Plan Gratuito</div>}
+            header={<div className="text-center w-full">BASIC</div>}
           >
             <ul className="space-y-4 mb-8 text-left">
               <li className="flex items-center text-gray-500"><X className="text-red-500 mr-2 w-5 h-5" /> Reportes completos (PDF, Excel)</li>
@@ -99,7 +99,7 @@ export const PlansPage: React.FC = () => {
           {/* PLAN DE PAGO */}
           <Card 
             className={`w-full bg-whiteBg-100 shadow-grayDark-300 shadow-xl md:w-1/2 transition-all duration-300 ${selectedPlan === 'pago' ? 'ring-4 ring-main-600 scale-105' : ''}`}
-            header={<div className="text-center w-full">Plan De Pago</div>}
+            header={<div className="text-center w-full">PRO</div>}
           >
             <ul className="space-y-4 mb-8 text-left">
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Reportes completos (PDF, Excel)</li>

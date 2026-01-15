@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  School, Globe, Mail, CreditCard, 
-  Calendar, User, CheckCircle2 
+import {
+  School, Globe, Mail, CreditCard,
+  Calendar, User, CheckCircle2
 } from 'lucide-react';
 
 // Importación de tus componentes atómicos
@@ -14,7 +14,7 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
 export const RegisterSchoolPage: React.FC = () => {
   const navigate = useNavigate();
-  
+
   // --- ESTADOS ---
   const [isVerifying, setIsVerifying] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -35,7 +35,7 @@ export const RegisterSchoolPage: React.FC = () => {
   const handleConfirmPayment = (e: React.FormEvent) => {
     e.preventDefault();
     setIsVerifying(true);
-    
+
     // Simulación de verificación de pago (3 segundos)
     setTimeout(() => {
       setIsVerifying(false);
@@ -48,7 +48,7 @@ export const RegisterSchoolPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen bg-whiteBg-50 pb-12">
       {/* Header */}
       <header className="px-12 py-6 bg-white border-b mb-10">
         <h1 className="text-3xl font-serif italic font-bold tracking-tighter">
@@ -63,15 +63,14 @@ export const RegisterSchoolPage: React.FC = () => {
         </div>
 
         <form onSubmit={handleConfirmPayment} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
+          <div className="flex justi">
             {/* SECCIÓN: DATOS DE LA ESCUELA */}
-            <section className="space-y-6">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-teal-700">
+            <section className="w-200">
+              <h3 className="text-lg font-semibold flex items-center gap-2 text-main-700">
                 <School size={20} /> Información Escolar
               </h3>
-              
-              <Card className="p-6 space-y-4">
+
+              <Card className="p-6 space-y-4 bg-whiteBg-100 shadow-grayDark-300 shadow-xl">
                 <Input
                   label="Nombre de la escuela"
                   name="schoolName"
@@ -79,7 +78,7 @@ export const RegisterSchoolPage: React.FC = () => {
                   required
                   onChange={handleChange}
                 />
-                
+
                 <Input
                   label="Dominio de la escuela"
                   name="domain"
@@ -100,57 +99,11 @@ export const RegisterSchoolPage: React.FC = () => {
                 />
               </Card>
             </section>
-
-            {/* SECCIÓN: DATOS DE PAGO */}
-            <section className="space-y-6">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-teal-700">
-                <CreditCard size={20} /> Detalles de Facturación
-              </h3>
-              
-              <Card className="p-6 space-y-4 border-t-4 border-teal-500">
-                <Input
-                  label="Número de la tarjeta"
-                  name="cardNumber"
-                  placeholder="0000 0000 0000 0000"
-                  icon={<CreditCard size={18} />}
-                  required
-                  onChange={handleChange}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    label="Fecha de vencimiento"
-                    name="expiryDate"
-                    placeholder="MM/AA"
-                    icon={<Calendar size={18} />}
-                    required
-                    onChange={handleChange}
-                  />
-                  <Input
-                    label="CVV"
-                    name="cvv"
-                    type="password"
-                    placeholder="***"
-                    maxLength={3}
-                    required
-                  />
-                </div>
-
-                <Input
-                  label="Nombre del titular"
-                  name="cardHolder"
-                  placeholder="Como aparece en la tarjeta"
-                  icon={<User size={18} />}
-                  required
-                  onChange={handleChange}
-                />
-              </Card>
-            </section>
           </div>
 
           <div className="flex justify-center pt-6">
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               type="submit"
               className="px-16 py-4 text-lg shadow-xl"
             >
@@ -161,7 +114,7 @@ export const RegisterSchoolPage: React.FC = () => {
       </main>
 
       {/* MODAL DE VERIFICACIÓN (Loading) */}
-      <Modal isOpen={isVerifying} onClose={() => {}} title="Verificando Pago">
+      <Modal isOpen={isVerifying} onClose={() => { }} title="Verificando Pago">
         <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner className="w-16 h-16 text-teal-600 mb-6" />
           <p className="text-xl font-medium text-gray-700">Procesando su pago...</p>
@@ -179,8 +132,8 @@ export const RegisterSchoolPage: React.FC = () => {
           <p className="text-gray-600 max-w-xs mx-auto mb-8">
             La escuela <strong>{formData.schoolName}</strong> ha sido activada correctamente. Ya puedes iniciar sesión.
           </p>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleFinalRedirect}
             className="w-full py-3"
           >
