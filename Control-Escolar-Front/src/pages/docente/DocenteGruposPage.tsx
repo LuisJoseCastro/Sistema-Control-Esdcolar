@@ -1,11 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { Search, Home, ArrowLeft } from 'lucide-react'; // Añadí ArrowLeft
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Home, ArrowLeft } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
 import Table from '../../components/ui/Table';
 
+// ⚠️ CONFIGURACIÓN API
+// Si usas Tailscale, cambia localhost por la IP del líder (ej: 100.77.114.87)
+const API_URL = 'http://localhost:3000';
+
 interface Grupo {
-  id: string;
-  nombre: string;
+  id: string; // ID del Curso (Course ID)
+  nombre: string; // Nombre compuesto (Grupo - Materia)
 }
 
 interface Alumno {
@@ -18,33 +22,83 @@ interface Alumno {
   comentarios?: string;
 }
 
-const MOCK_GRUPOS: Grupo[] = [
-  { id: 'g1', nombre: 'Grupo A - Matemáticas' },
-  { id: 'g2', nombre: 'Grupo B - Física' },
-  { id: 'g3', nombre: 'Grupo C - Química' },
-  { id: 'g4', nombre: 'Grupo A - Historia' },
-];
-
-const MOCK_ALUMNOS: Record<string, Alumno[]> = {
-  g1: [
-    { id: 'a1', nombre: 'Juan Pablo Guzmán', matricula: '2023565', email: 'juanpablo565@gmail.com', calificacion: 90, asistencia: 'Ausente', comentarios: '' },
-    { id: 'a2', nombre: 'María José López', matricula: '2023750', email: 'mariajose@gmail.com', calificacion: 75, asistencia: 'Presente', comentarios: '' },
-    { id: 'a3', nombre: 'Brandon Jael Ramos', matricula: '2023230', email: 'brandonj@gmail.com', calificacion: 85, asistencia: 'Falta Justificada', comentarios: '' },
-    { id: 'a4', nombre: 'Miguel Ángel Torres', matricula: '2023640', email: 'miguelt@gmail.com', calificacion: 70, asistencia: 'Retardo', comentarios: '' },
-    { id: 'a5', nombre: 'Brenda Sofía García', matricula: '2023145', email: 'brendasofia@gmail.com', calificacion: 100, asistencia: 'Presente', comentarios: '' },
-  ],
-  g2: [],
-  g3: [],
-  g4: [],
-};
-
 const DocenteGruposPage: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedGrupoId, setSelectedGrupoId] = useState<string>(MOCK_GRUPOS[0].id);
+  const token = localStorage.getItem('token');
+
+  // --- ESTADOS DE DATOS REALES ---
+  // Inicializamos como arrays vacíos para evitar errores de renderizado
+  const [cursos, setCursos] = useState<Grupo[]>([]);
+  const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
+  const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [filter, setFilter] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const alumnos = useMemo(() => MOCK_ALUMNOS[selectedGrupoId] ?? [], [selectedGrupoId]);
+  // 1. CARGAR CURSOS (Grupos asignados) AL INICIO
+  useEffect(() => {
+    fetch(`${API_URL}/academic/teacher-load`, { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+    })
+      .then(res => {
+          if (!res.ok) throw new Error('Error al cargar cursos');
+          return res.json();
+      })
+      .then(data => {
+          if (Array.isArray(data)) {
+              // Mapeamos la respuesta del backend a la estructura visual
+              const mappedCursos = data.map((c: any) => ({
+                  id: c.id, // Usamos el ID del Curso para buscar calificaciones
+                  // Construimos el nombre visual: "3ro A - Matemáticas"
+                  nombre: `${c.group ? c.group.nombre : 'Sin Grupo'} - ${c.subject ? c.subject.nombre : 'Materia'}`
+              }));
+              
+              setCursos(mappedCursos);
+              
+              // Seleccionamos el primer curso por defecto si existe
+              if (mappedCursos.length > 0) {
+                  setSelectedGrupoId(mappedCursos[0].id);
+              }
+          } else {
+              setCursos([]);
+          }
+      })
+      .catch(err => console.error("Error fetching groups:", err));
+  }, [token]);
 
+  // 2. CARGAR ALUMNOS DEL CURSO SELECCIONADO
+  useEffect(() => {
+    if (!selectedGrupoId) {
+        setAlumnos([]);
+        return;
+    }
+
+    setIsLoading(true);
+    // Usamos el endpoint de calificaciones para obtener la lista
+    fetch(`${API_URL}/academic/grades/list/${selectedGrupoId}`, { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+            const mappedAlumnos = data.map((grade: any) => ({
+                id: grade.id, // ID de la boleta/calificación
+                nombre: grade.nombre,
+                matricula: grade.matricula,
+                email: "registrado@escuela.edu", // Dato pendiente en backend, placeholder seguro
+                calificacion: Number(grade.final || 0),
+                asistencia: "-", // Dato pendiente en este endpoint
+                comentarios: grade.extraordinario ? `Extra: ${grade.extraordinario}` : ''
+            }));
+            setAlumnos(mappedAlumnos);
+        } else {
+            setAlumnos([]);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [selectedGrupoId, token]);
+
+  // Filtrado en Frontend (Búsqueda)
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return alumnos;
@@ -55,20 +109,39 @@ const DocenteGruposPage: React.FC = () => {
     );
   }, [alumnos, filter]);
 
-  const selectedGrupo = MOCK_GRUPOS.find(g => g.id === selectedGrupoId)?.nombre ?? '';
+  // Encontrar el nombre del grupo seleccionado para el título
+  const selectedGrupoNombre = cursos.find(g => g.id === selectedGrupoId)?.nombre ?? 'Cargando...';
 
   return (
     <div className='h-full'>
       {/* CONTENIDO PRINCIPAL */}
       <main className="h-full bg-gray-100 p-8">
         {/* Encabezado de la sección */}
-        <div className="mb-6">
-          <h1 className="text-4xl font-serif italic text-gray-800 mb-2">
-            {selectedGrupo}
-          </h1>
-          <p className="text-gray-600">
-            Lista de alumnos inscritos en el grupo
-          </p>
+        <div className="mb-6 flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-4">
+                <h1 className="text-4xl font-serif italic text-gray-800 mb-2">
+                {selectedGrupoNombre}
+                </h1>
+                {/* SELECTOR DE GRUPOS DISCRETO */}
+                {/* Se muestra solo si hay más de 1 grupo para no ensuciar la UI si es único */}
+                {cursos.length > 0 && (
+                    <select 
+                        className="mt-1 ml-2 p-1 text-sm bg-gray-200 border-none rounded text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-500"
+                        value={selectedGrupoId}
+                        onChange={(e) => setSelectedGrupoId(e.target.value)}
+                        title="Cambiar grupo"
+                    >
+                        {cursos.map(c => (
+                            <option key={c.id} value={c.id}>Ir a: {c.nombre}</option>
+                        ))}
+                    </select>
+                )}
+            </div>
+            <p className="text-gray-600">
+              Lista de alumnos inscritos en el grupo
+            </p>
+          </div>
         </div>
 
         {/* Barra de búsqueda */}
@@ -102,21 +175,31 @@ const DocenteGruposPage: React.FC = () => {
             </Table.Header>
 
             <Table.Body>
-              {filtered.map(al => (
-                <Table.Row key={al.id} className="hover:bg-gray-50">
-                  <Table.Cell className="font-medium text-gray-900">{al.nombre}</Table.Cell>
-                  <Table.Cell className="text-gray-700">{al.matricula}</Table.Cell>
-                  <Table.Cell className="text-gray-700">{al.email}</Table.Cell>
-                  <Table.Cell className="text-gray-700 font-semibold">{al.calificacion}</Table.Cell>
-                  <Table.Cell className="text-gray-700">{al.asistencia}</Table.Cell>
-                  <Table.Cell className="text-gray-700">{al.comentarios ?? '-'}</Table.Cell>
-                  <Table.Cell>
-                    <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                      Ver perfil ...
-                    </button>
-                  </Table.Cell>
-                </Table.Row>
-              ))}
+              {isLoading ? (
+                  <Table.Row>
+                      <Table.Cell colSpan={7} className="text-center py-10 text-gray-500">Cargando datos...</Table.Cell>
+                  </Table.Row>
+              ) : filtered.length > 0 ? (
+                  filtered.map(al => (
+                    <Table.Row key={al.id} className="hover:bg-gray-50">
+                      <Table.Cell className="font-medium text-gray-900">{al.nombre}</Table.Cell>
+                      <Table.Cell className="text-gray-700">{al.matricula}</Table.Cell>
+                      <Table.Cell className="text-gray-700">{al.email}</Table.Cell>
+                      <Table.Cell className="text-gray-700 font-semibold">{al.calificacion}</Table.Cell>
+                      <Table.Cell className="text-gray-700">{al.asistencia}</Table.Cell>
+                      <Table.Cell className="text-gray-700">{al.comentarios || '-'}</Table.Cell>
+                      <Table.Cell>
+                        <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                          Ver perfil ...
+                        </button>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))
+              ) : (
+                  <Table.Row>
+                      <Table.Cell colSpan={7} className="text-center py-10 text-gray-500">No se encontraron alumnos en este grupo.</Table.Cell>
+                  </Table.Row>
+              )}
             </Table.Body>
           </Table>
         </div>
