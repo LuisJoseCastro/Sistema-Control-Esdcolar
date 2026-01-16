@@ -1,8 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
+// ... (Tus imports de páginas se mantienen igual, no los borres) ...
 // === Páginas públicas ===
 import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
@@ -10,10 +12,10 @@ import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage';
 import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
 
-// === Layout principal ===
+// === Layout ===
 import { AppLayout } from '../components/layout/AppLayout';
 
-// === Dashboards principales y vistas del ADMINISTRADOR ===
+// === Dashboards y Admin Pages ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
 import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
@@ -40,17 +42,34 @@ import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
 import { AlumnoAsistenciaPage } from '../pages/alumno/AlumnoAsistenciaPage';
 import { AlumnoAsistenciaDetallesPage } from '../pages/alumno/AlumnoAsistenciaDetallesPage';
-import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage'; // ✅ CORREGIDO (Sin error de dedo)
+import { AlumnoHistorialAcademicoPage } from '../pages/alumno/AlumnoHistorialAcademicoPage';
 import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
-// === PrivateRoute: protege rutas según el rol ===
+
+// === PrivateRoute: INTELIGENTE ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
-  const { isLoggedIn, role } = useAuth();
+  const { isLoggedIn, role, isLoading } = useAuth();
+  const location = useLocation(); // 1. Obtenemos dónde está el usuario ahora
 
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
+  // 2. Si está cargando, ESPERA. No redirijas.
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+        <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
+        <p className="text-gray-500 font-medium animate-pulse">Verificando acceso...</p>
+      </div>
+    );
+  }
 
+  // 3. Si terminó de cargar y no hay usuario, vamos al Login.
+  // IMPORTANTE: Pasamos "state={{ from: location }}" para recordar esta página.
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // 4. Validación de Roles
   if (!allowedRoles.includes((role ?? 'ALUMNO') as Role)) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -62,7 +81,6 @@ const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   return <Outlet />;
 };
 
-// === Configuración principal de rutas ===
 export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
@@ -71,21 +89,19 @@ export const AppRouter: React.FC = () => {
         <Route path="/" element={<PlansPage />} /> 
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
-        
-        {/* ✅ NUEVA RUTA DE REGISTRO DE ESCUELA */}
         <Route path="/register-school" element={<RegisterSchoolPage />} />
         <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
 
-        {/* Redirecciones rápidas */}
+        {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/docente/login" element={<Navigate to="/login" replace />} />
         <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
-        {/* RUTAS PROTEGIDAS (Requieren Login y Layout) */}
+        {/* RUTAS PROTEGIDAS */}
         <Route element={<AppLayout />}>
           
-          {/* SECCIÓN ADMINISTRADOR */}
+          {/* ADMINISTRADOR */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
@@ -99,7 +115,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
           </Route>
 
-          {/* SECCIÓN DOCENTE */}
+          {/* DOCENTE */}
           <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
             <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
@@ -110,7 +126,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/perfil" element={<DocentePerfilPage />} />
           </Route>
 
-          {/* SECCIÓN ALUMNO */}
+          {/* ALUMNO */}
           <Route element={<PrivateRoute allowedRoles={['ALUMNO']} />}>
             <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
             <Route path="/alumno/asignaturas" element={<AlumnoAsignaturasPage />} />
@@ -118,19 +134,13 @@ export const AppRouter: React.FC = () => {
             <Route path="/alumno/asistencia" element={<AlumnoAsistenciaPage />} />
             <Route path="/alumno/mensajes" element={<AlumnoMensajesPage />} />
             <Route path="/alumno/asistencia/detalles" element={<AlumnoAsistenciaDetallesPage />} />
-            {/* ✅ CORREGIDO: historial-academico */}
             <Route path="/alumno/historial-academico" element={<AlumnoHistorialAcademicoPage />} />
             <Route path="/alumno/perfil" element={<AlumnoPerfilPage />} />
             <Route path="/alumno/documentos-pagos" element={<AlumnoDocumentosPage />} />
           </Route>
         </Route>
 
-        {/* 404 - No Encontrado */}
-        <Route path="*" element={
-          <div className="flex items-center justify-center h-screen">
-            <h1 className="text-2xl font-bold">404 | Página no encontrada</h1>
-          </div>
-        } />
+        <Route path="*" element={<div className="flex items-center justify-center h-screen"><h1 className="text-2xl font-bold">404 | Página no encontrada</h1></div>} />
       </Routes>
     </BrowserRouter>
   );
