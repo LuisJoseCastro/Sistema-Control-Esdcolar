@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     School, Globe, Mail,
     CheckCircle2, Lock, Eye, EyeOff,
-    CreditCard, User, XCircle, CheckCircle // <--- 1. Agregamos iconos para validación
+    CreditCard, User, XCircle, CheckCircle
 } from 'lucide-react';
 
 // Importación de tus componentes
@@ -47,23 +47,46 @@ export const RegisterSchoolProPage: React.FC = () => {
         cardHolder: ''
     });
 
-    // --- 2. LÓGICA DE VALIDACIÓN (REGEX) ---
+    // --- LÓGICA DE VALIDACIÓN DE CONTRASEÑA ---
     const hasMinLength = formData.password.length >= 8;
     const hasUpperCase = /[A-Z]/.test(formData.password);
     const hasLowerCase = /[a-z]/.test(formData.password);
     const hasNumber = /\d/.test(formData.password);
-    // Busca cualquier caracter que NO sea letra ni número
     const hasSpecialChar = /[^a-zA-Z0-9]/.test(formData.password);
 
-    // Todas las condiciones deben cumplirse
     const isPasswordStrong = hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
 
 
-    // --- MANEJADORES ---
+    // --- MANEJADOR DE CAMBIOS CON MÁSCARAS ---
     const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
+        
+        // 1. Máscara para Número de Tarjeta (#### #### #### ####)
+        if (name === 'cardNumber') {
+            const cleanValue = value.replace(/\D/g, ''); // Solo números
+            const limitedValue = cleanValue.slice(0, 16); // Max 16 dígitos
+            const formattedValue = limitedValue.match(/.{1,4}/g)?.join(' ') || limitedValue;
+            
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+            return;
+        }
+
+        // 2. Máscara para Vencimiento (MM/AA)
+        if (name === 'expiryDate') {
+            const cleanValue = value.replace(/\D/g, '');
+            let formattedValue = cleanValue;
+
+            if (cleanValue.length > 2) {
+                formattedValue = `${cleanValue.slice(0, 2)}/${cleanValue.slice(2, 4)}`;
+            }
+            
+            if (formattedValue.length <= 5) {
+                setFormData(prev => ({ ...prev, [name]: formattedValue }));
+            }
+            return;
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Limpiar error al escribir
         if (error) setError(null);
     };
 
@@ -75,9 +98,14 @@ export const RegisterSchoolProPage: React.FC = () => {
             return;
         }
 
-        // 3. Validar fuerza antes de enviar
         if (!isPasswordStrong) {
             setError("La contraseña no es lo suficientemente segura.");
+            return;
+        }
+
+        // Validar que la tarjeta y fecha estén completas
+        if (formData.cardNumber.length < 19 || formData.expiryDate.length < 5) {
+            setError("Por favor, completa los datos de facturación.");
             return;
         }
 
@@ -94,7 +122,6 @@ export const RegisterSchoolProPage: React.FC = () => {
         navigate('/login');
     };
 
-    // --- COMPONENTE AUXILIAR PARA LA LISTA ---
     const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
         <div className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
             {met ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
@@ -157,7 +184,6 @@ export const RegisterSchoolProPage: React.FC = () => {
                                     />
                                 </div>
 
-                                {/* Inputs de Contraseña */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="relative">
                                         <Input
@@ -169,7 +195,6 @@ export const RegisterSchoolProPage: React.FC = () => {
                                             icon={<Lock size={18} />}
                                             required
                                             onChange={handleChange}
-                                            // Feedback visual en el borde
                                             className={formData.password && !isPasswordStrong ? "border-orange-300 focus:ring-orange-200" : ""}
                                         />
                                         <button
@@ -204,7 +229,6 @@ export const RegisterSchoolProPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* 4. LISTA DE REQUISITOS VISUAL (Se muestra al escribir) */}
                                 {formData.password.length > 0 && (
                                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mt-2">
                                         <p className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wide">
@@ -243,7 +267,8 @@ export const RegisterSchoolProPage: React.FC = () => {
                                     name="cardNumber"
                                     value={formData.cardNumber}
                                     placeholder="0000 0000 0000 0000"
-                                    type="number"
+                                    type="text"
+                                    maxLength={19}
                                     icon={<CreditCard size={18} />}
                                     required
                                     onChange={handleChange}
@@ -255,7 +280,8 @@ export const RegisterSchoolProPage: React.FC = () => {
                                         name="expiryDate"
                                         value={formData.expiryDate}
                                         placeholder="MM/AA"
-                                        type="date"
+                                        type="text"
+                                        maxLength={5}
                                         required
                                         onChange={handleChange}
                                     />
@@ -287,7 +313,6 @@ export const RegisterSchoolProPage: React.FC = () => {
                         <Button
                             variant="primary"
                             type="submit"
-                            // Deshabilitamos visualmente si la contraseña no es segura (opcional)
                             className={`w-full md:w-auto md:px-20 py-4 text-lg shadow-xl transition-all ${!isPasswordStrong && formData.password.length > 0 ? 'opacity-75' : ''
                                 }`}
                         >
