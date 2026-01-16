@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { CalendarCheck, Save, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,11 +8,15 @@ import Select from '../../components/ui/Select';
 import Table, { TableRow, TableCell, TableHead } from '../../components/ui/Table';
 import { Card } from '../../components/ui/Card';
 
+// ⚠️ CONFIGURACIÓN API
+// Si estás usando Tailscale, cambia localhost por la IP del líder
+const API_URL = 'http://localhost:3000';
+
 // --- Tipos de Datos ---
 type AsistenciaStatus = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADA' | 'RETARDO';
 
 interface AlumnoAsistencia {
-    id: string;
+    id: string; // ID de la inscripción
     nombre: string;
     status: AsistenciaStatus;
 }
@@ -21,22 +25,6 @@ interface Grupo {
     id: string;
     nombre: string;
 }
-
-// --- MOCK DATA ---
-const MOCK_GRUPOS: Grupo[] = [
-    { id: '1', nombre: 'Grupo 3A - Matemáticas' },
-    { id: '2', nombre: 'Grupo 5B - Español' },
-    { id: '3', nombre: 'Grupo 1C - Historia' },
-];
-
-const MOCK_ALUMNOS: AlumnoAsistencia[] = [
-    { id: 'a1', nombre: 'Juan Pablo Guzmán', status: 'AUSENTE' },
-    { id: 'a2', nombre: 'María José López', status: 'PRESENTE' },
-    { id: 'a3', nombre: 'Brandon Jael Ramos', status: 'JUSTIFICADA' },
-    { id: 'a4', nombre: 'Miguel Ángel Torres', status: 'RETARDO' },
-    { id: 'a5', nombre: 'Sofía Isabel García', status: 'PRESENTE' },
-    { id: 'a6', nombre: 'Diego Fernando Ruiz', status: 'AUSENTE' },
-];
 
 const STATUS_BADGE_VARIANT: Record<AsistenciaStatus, string> = {
     PRESENTE: 'text-green-800',
@@ -98,20 +86,83 @@ const DayButton: React.FC<{ day: number, isSelected: boolean, isToday: boolean, 
 // --- PÁGINA PRINCIPAL ---
 export const DocenteAsistenciaPage: React.FC = () => {
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
 
     // Lógica de Fecha Dinámica
-    const [viewDate, setViewDate] = useState(new Date()); 
+    const [viewDate, setViewDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<number>(new Date().getDate());
-    
+
+    // Estado de Datos Reales (Inicializados como array vacío para evitar pantalla blanca)
+    const [grupos, setGrupos] = useState<Grupo[]>([]);
     const [selectedGrupo, setSelectedGrupo] = useState<string>('');
-    const [alumnos, setAlumnos] = useState<AlumnoAsistencia[]>(MOCK_ALUMNOS);
+    const [alumnos, setAlumnos] = useState<AlumnoAsistencia[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    // 1. CARGAR GRUPOS AL INICIO (Backend)
+    useEffect(() => {
+        fetch(`${API_URL}/academic/groups`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('Error al conectar con API');
+                return res.json();
+            })
+            .then(data => {
+                // Validación segura: si data no es array, usamos []
+                if (Array.isArray(data)) {
+                    setGrupos(data);
+                } else {
+                    console.error("Formato incorrecto de grupos:", data);
+                    setGrupos([]);
+                }
+            })
+            .catch(err => {
+                console.error("Error cargando grupos", err);
+                setGrupos([]); // Fallback seguro
+            });
+    }, [token]);
+
+    // 2. CARGAR ALUMNOS CUANDO SELECCIONAS GRUPO (Backend)
+    useEffect(() => {
+        if (!selectedGrupo) {
+            setAlumnos([]);
+            return;
+        }
+
+        setIsLoading(true);
+        setErrorMsg(null);
+
+        fetch(`${API_URL}/academic/attendance/students/${selectedGrupo}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (Array.isArray(data)) {
+                    // Mapeamos la respuesta del Enrollment a la interfaz visual
+                    const mappedAlumnos = data.map((enrollment: any) => ({
+                        id: enrollment.id, // Importante: ID de la inscripción
+                        nombre: enrollment.student.user?.fullName || "Sin Nombre Registrado",
+                        status: 'PRESENTE' as AsistenciaStatus // Estado por defecto al cargar
+                    }));
+                    setAlumnos(mappedAlumnos);
+                } else {
+                    setAlumnos([]);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setErrorMsg("No se pudieron cargar los alumnos.");
+                setAlumnos([]);
+            })
+            .finally(() => setIsLoading(false));
+    }, [selectedGrupo, token]);
 
     // Cálculos del Calendario
     const { daysInMonth, firstDayOffset, monthLabel, isCurrentMonth } = useMemo(() => {
         const year = viewDate.getFullYear();
         const month = viewDate.getMonth();
-        
+
         const totalDays = new Date(year, month + 1, 0).getDate();
         const offset = new Date(year, month, 1).getDay();
         const label = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(viewDate);
@@ -135,13 +186,41 @@ export const DocenteAsistenciaPage: React.FC = () => {
         setAlumnos(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     }, []);
 
-    const handleGuardarAsistencia = () => {
+    // 3. GUARDAR ASISTENCIA EN BASE DE DATOS
+    const handleGuardarAsistencia = async () => {
         if (!selectedGrupo) return;
         setIsLoading(true);
-        setTimeout(() => {
+
+        // Construir fecha en formato YYYY-MM-DD
+        const fechaStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.toString().padStart(2, '0')}`;
+
+        const payload = {
+            grupoId: selectedGrupo,
+            fecha: fechaStr,
+            asistencias: alumnos.map(a => ({ studentId: a.id, status: a.status }))
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/academic/attendance`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert('✅ Asistencia guardada correctamente en BD.');
+            } else {
+                alert('❌ Error al guardar. Asegúrate de tener conexión.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de red al intentar guardar.');
+        } finally {
             setIsLoading(false);
-            alert('Asistencia guardada correctamente.');
-        }, 1000);
+        }
     };
 
     return (
@@ -160,16 +239,30 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 {/* Columna Estudiantes */}
                 <div className="lg:col-span-2 space-y-8">
                     <Card header="Configuración">
+                        {/* 🛑 AQUI ESTÁ EL CAMBIO: El Select siempre se renderiza, aunque grupos esté vacío */}
                         <Select
                             label="Grupo"
                             value={selectedGrupo}
                             onChange={(e) => setSelectedGrupo(e.target.value)}
-                            placeholder="Seleccionar un grupo"
-                            options={MOCK_GRUPOS.map(g => ({ value: g.id, label: g.nombre }))}
+                            // Si no hay grupos, mostramos un mensaje en el placeholder
+                            placeholder={grupos.length === 0 ? "No hay grupos asignados" : "Seleccionar un grupo"}
+                            // Safe mapping: si grupos es [], map devuelve [] sin explotar
+                            options={grupos.map(g => ({ value: g.id, label: g.nombre }))}
                         />
+                        {grupos.length === 0 && (
+                            <p className="mt-2 text-xs text-gray-500">
+                                No se encontraron grupos cargados.
+                            </p>
+                        )}
                     </Card>
 
                     <Card header="Lista de Estudiantes">
+                        {errorMsg && (
+                            <div className="bg-red-50 text-red-700 p-3 mb-4 rounded-md text-sm border border-red-200">
+                                {errorMsg}
+                            </div>
+                        )}
+
                         <Table>
                             <Table.Header>
                                 <TableRow>
@@ -179,9 +272,17 @@ export const DocenteAsistenciaPage: React.FC = () => {
                             </Table.Header>
                             <Table.Body>
                                 {selectedGrupo ? (
-                                    alumnos.map(alumno => (
-                                        <AlumnoAsistenciaRow key={alumno.id} alumno={alumno} onUpdateStatus={handleUpdateStatus} />
-                                    ))
+                                    Array.isArray(alumnos) && alumnos.length > 0 ? (
+                                        alumnos.map(alumno => (
+                                            <AlumnoAsistenciaRow key={alumno.id} alumno={alumno} onUpdateStatus={handleUpdateStatus} />
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center py-10 text-gray-400">
+                                                {isLoading ? "Cargando alumnos..." : "No hay alumnos inscritos en este grupo."}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={2} className="text-center py-10 text-gray-400">
@@ -203,23 +304,21 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 {/* Columna Calendario */}
                 <Card header="Fecha de Registro">
                     <div className="flex justify-between items-center mb-6">
-                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
-                        <Button 
-                            variant='secondary' 
-                            onClick={() => changeMonth(-1)} 
-                            className="p-2 rounded-full h-9 w-9" 
+                        <Button
+                            variant='secondary'
+                            onClick={() => changeMonth(-1)}
+                            className="p-2 rounded-full h-9 w-9"
                             icon={<ChevronLeft className="w-5 h-5" />}
                         >
                             {""}
                         </Button>
-                        
+
                         <h3 className="font-bold text-gray-700">{monthLabel}</h3>
-                        
-                        {/* 🛑 FIX: Se agregó {""} para cumplir con la propiedad children obligatoria */}
-                        <Button 
-                            variant='secondary' 
-                            onClick={() => changeMonth(1)} 
-                            className="p-2 rounded-full h-9 w-9" 
+
+                        <Button
+                            variant='secondary'
+                            onClick={() => changeMonth(1)}
+                            className="p-2 rounded-full h-9 w-9"
                             icon={<ChevronRight className="w-5 h-5" />}
                         >
                             {""}
@@ -230,7 +329,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                         {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => (
                             <span key={d} className="text-xs font-black text-gray-400 mb-2">{d}</span>
                         ))}
-                        
+
                         {Array.from({ length: firstDayOffset }).map((_, i) => (
                             <div key={`empty-${i}`} />
                         ))}
@@ -247,7 +346,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                     </div>
                     <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-100">
                         <p className="text-sm text-blue-800 text-center">
-                            Registrando para el: <br/>
+                            Registrando para el: <br />
                             <strong>{selectedDate} de {monthLabel}</strong>
                         </p>
                     </div>
