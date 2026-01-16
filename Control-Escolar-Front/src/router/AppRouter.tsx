@@ -7,7 +7,8 @@ import type { Role } from '../types/models';
 import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
-import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage'; // ✅ IMPORTACIÓN NUEVA
+import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage';
+import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
 
 // === Layout principal ===
 import { AppLayout } from '../components/layout/AppLayout';
@@ -73,6 +74,7 @@ export const AppRouter: React.FC = () => {
         
         {/* ✅ NUEVA RUTA DE REGISTRO DE ESCUELA */}
         <Route path="/register-school" element={<RegisterSchoolPage />} />
+        <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
 
         {/* Redirecciones rápidas */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />

@@ -35,9 +35,12 @@ export const PlansPage: React.FC = () => {
 
   // --- LÓGICA DE NAVEGACIÓN CORREGIDA ---
   const handleRegisterAction = () => {
-    if (selectedPlan) {
-      // Ahora redirige a la ruta del formulario de registro
-      navigate('/register-school'); 
+    if (selectedPlan === 'gratuito') {
+      // Redirige a la ruta básica que ya tenías
+      navigate('/register-school');
+    } else if (selectedPlan === 'pago') {
+      // Redirige a la nueva ruta Pro que acabamos de crear
+      navigate('/register-school-pro');
     }
   };
 
@@ -48,12 +51,12 @@ export const PlansPage: React.FC = () => {
           Academic<span className="text-teal-600">+</span>
         </h1>
         <div className="grid items-center bg-main-700 hover:bg-main-900 transition-color duration-300 p-y2 p-x6 h-10 w-90 text-center rounded-xl">
-        <button 
-          onClick={() => navigate('/login')}
-          className="text-whiteBg-200 hover:text-whiteBg-50 font-gold text-xl  cursor-pointer"
-        >
-          ¿Ya tienes una cuenta?
-        </button>
+          <button
+            onClick={() => navigate('/login')}
+            className="text-whiteBg-200 hover:text-whiteBg-50 font-gold text-xl  cursor-pointer"
+          >
+            ¿Ya tienes una cuenta?
+          </button>
 
         </div>
       </header>
@@ -76,7 +79,7 @@ export const PlansPage: React.FC = () => {
         <div className='flex items-center border border-main-900  mt-0 mx-20 mb-10 w-100% alight-center'></div>
         <div className="flex flex-col md:flex-row justify-center gap-12 px-12 max-w-6xl mx-auto">
           {/* PLAN GRATUITO */}
-          <Card 
+          <Card
             className={`bg-whiteBg-100 shadow-grayDark-300 shadow-xl w-full md:w-1/2 transition-all duration-300 ${selectedPlan === 'gratuito' ? 'ring-4 ring-main-600 scale-105' : 'bg-blue-50/30'}`}
             header={<div className="text-center w-full">BASIC</div>}
           >
@@ -87,7 +90,7 @@ export const PlansPage: React.FC = () => {
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Dashboard de avisos</li>
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Gestión de Plan de Estudios</li>
             </ul>
-            <Button 
+            <Button
               variant={selectedPlan === 'gratuito' ? 'primary' : 'secondary'}
               className="w-full"
               onClick={() => setSelectedPlan('gratuito')}
@@ -97,7 +100,7 @@ export const PlansPage: React.FC = () => {
           </Card>
 
           {/* PLAN DE PAGO */}
-          <Card 
+          <Card
             className={`w-full bg-whiteBg-100 shadow-grayDark-300 shadow-xl md:w-1/2 transition-all duration-300 ${selectedPlan === 'pago' ? 'ring-4 ring-main-600 scale-105' : ''}`}
             header={<div className="text-center w-full">PRO</div>}
           >
@@ -108,7 +111,7 @@ export const PlansPage: React.FC = () => {
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Disponibilidad completa de Dashboard de avisos</li>
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Gestión de Plan de Estudios</li>
             </ul>
-            <Button 
+            <Button
               variant={selectedPlan === 'pago' ? 'primary' : 'secondary'}
               className="w-full"
               onClick={() => setSelectedPlan('pago')}
@@ -120,8 +123,8 @@ export const PlansPage: React.FC = () => {
       </section>
 
       <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 transition-all duration-500 ${selectedPlan ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
-        <Button 
-          variant="primary" 
+        <Button
+          variant="primary"
           className="px-12 py-4 bg-slate-600 hover:bg-slate-700 shadow-2xl"
           onClick={handleRegisterAction}
         >
