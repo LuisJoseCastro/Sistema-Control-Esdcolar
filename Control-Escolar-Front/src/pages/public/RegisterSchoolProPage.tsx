@@ -3,18 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import {
     School, Globe, Mail,
     CheckCircle2, Lock, Eye, EyeOff,
-    CreditCard,
-    User
+    CreditCard, User, XCircle, CheckCircle // <--- 1. Agregamos iconos para validación
 } from 'lucide-react';
 
-// Importación de tus componentes (asumiendo que tienen sus propios tipos)
+// Importación de tus componentes
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
-// Definimos una interfaz para el estado del formulario
+// Interfaz del estado
 interface SchoolFormData {
     schoolName: string;
     domain: string;
@@ -29,7 +28,7 @@ interface SchoolFormData {
 export const RegisterSchoolProPage: React.FC = () => {
     const navigate = useNavigate();
 
-    // --- ESTADOS TIPADOS ---
+    // --- ESTADOS ---
     const [isVerifying, setIsVerifying] = useState<boolean>(false);
     const [showSuccess, setShowSuccess] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,30 +47,43 @@ export const RegisterSchoolProPage: React.FC = () => {
         cardHolder: ''
     });
 
+    // --- 2. LÓGICA DE VALIDACIÓN (REGEX) ---
+    const hasMinLength = formData.password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(formData.password);
+    const hasLowerCase = /[a-z]/.test(formData.password);
+    const hasNumber = /\d/.test(formData.password);
+    // Busca cualquier caracter que NO sea letra ni número
+    const hasSpecialChar = /[^a-zA-Z0-9]/.test(formData.password);
+
+    // Todas las condiciones deben cumplirse
+    const isPasswordStrong = hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+
+
     // --- MANEJADORES ---
-    // Usamos ChangeEvent<HTMLInputElement> para el tipado de los inputs
     const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        // Limpiar error al escribir
+        if (error) setError(null);
     };
 
     const handleConfirmPayment = (e: FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Las contraseñas no coinciden. Por favor verifícalas.");
+            setError("Las contraseñas no coinciden.");
             return;
         }
 
-        if (formData.password.length < 8) {
-            setError("La contraseña debe tener al menos 8 caracteres.");
+        // 3. Validar fuerza antes de enviar
+        if (!isPasswordStrong) {
+            setError("La contraseña no es lo suficientemente segura.");
             return;
         }
 
         setError(null);
         setIsVerifying(true);
 
-        // Simulación de verificación
         setTimeout(() => {
             setIsVerifying(false);
             setShowSuccess(true);
@@ -82,9 +94,16 @@ export const RegisterSchoolProPage: React.FC = () => {
         navigate('/login');
     };
 
+    // --- COMPONENTE AUXILIAR PARA LA LISTA ---
+    const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
+        <div className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
+            {met ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
+            {text}
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-whiteBg-50 pb-12">
-            {/* Header adaptable */}
             <header className="px-6 md:px-12 py-6 bg-white border-b mb-10">
                 <h1 className="text-3xl font-serif italic font-bold tracking-tighter">
                     Academic<span className="text-teal-600">+</span>
@@ -98,7 +117,6 @@ export const RegisterSchoolProPage: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleConfirmPayment} className="space-y-8">
-                    {/* Contenedor Responsive sin desbordamientos */}
                     <div className="flex flex-col lg:flex-row justify-center gap-8 bg-transparent md:bg-whiteBg-50 md:p-8 rounded-2xl">
 
                         {/* SECCIÓN: DATOS DE LA ESCUELA */}
@@ -139,6 +157,7 @@ export const RegisterSchoolProPage: React.FC = () => {
                                     />
                                 </div>
 
+                                {/* Inputs de Contraseña */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="relative">
                                         <Input
@@ -146,10 +165,12 @@ export const RegisterSchoolProPage: React.FC = () => {
                                             name="password"
                                             type={showPassword ? "text" : "password"}
                                             value={formData.password}
-                                            placeholder="Mínimo 8 caracteres"
+                                            placeholder="Crear contraseña"
                                             icon={<Lock size={18} />}
                                             required
                                             onChange={handleChange}
+                                            // Feedback visual en el borde
+                                            className={formData.password && !isPasswordStrong ? "border-orange-300 focus:ring-orange-200" : ""}
                                         />
                                         <button
                                             type="button"
@@ -183,8 +204,27 @@ export const RegisterSchoolProPage: React.FC = () => {
                                     </div>
                                 </div>
 
+                                {/* 4. LISTA DE REQUISITOS VISUAL (Se muestra al escribir) */}
+                                {formData.password.length > 0 && (
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mt-2">
+                                        <p className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wide">
+                                            Seguridad de la contraseña:
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                                            <PasswordRequirement met={hasMinLength} text="Mínimo 8 caracteres" />
+                                            <PasswordRequirement met={hasUpperCase} text="Una mayúscula" />
+                                            <PasswordRequirement met={hasLowerCase} text="Una minúscula" />
+                                            <PasswordRequirement met={hasNumber} text="Un número" />
+                                            <div className="col-span-1 sm:col-span-2">
+                                                <PasswordRequirement met={hasSpecialChar} text="Un carácter especial (@, #, $...)" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {error && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm text-center font-medium">
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm flex items-center gap-2 justify-center font-medium animate-pulse">
+                                        <XCircle size={16} />
                                         {error}
                                     </div>
                                 )}
@@ -247,7 +287,9 @@ export const RegisterSchoolProPage: React.FC = () => {
                         <Button
                             variant="primary"
                             type="submit"
-                            className="w-full md:w-auto md:px-20 py-4 text-lg shadow-xl"
+                            // Deshabilitamos visualmente si la contraseña no es segura (opcional)
+                            className={`w-full md:w-auto md:px-20 py-4 text-lg shadow-xl transition-all ${!isPasswordStrong && formData.password.length > 0 ? 'opacity-75' : ''
+                                }`}
                         >
                             Confirmar pago y registrar
                         </Button>
