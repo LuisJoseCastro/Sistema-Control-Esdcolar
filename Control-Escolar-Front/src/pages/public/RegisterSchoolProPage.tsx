@@ -106,7 +106,7 @@ export const RegisterSchoolProPage: React.FC = () => {
         <div className="min-h-screen bg-whiteBg-50 pb-12">
             <header className="px-6 md:px-12 py-6 bg-white border-b mb-10">
                 <h1 className="text-3xl font-serif italic font-bold tracking-tighter">
-                    Academic<span className="text-teal-600">+</span>
+                    Academy<span className="text-teal-600">+</span>
                 </h1>
             </header>
 

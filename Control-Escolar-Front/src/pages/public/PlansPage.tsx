@@ -33,13 +33,10 @@ export const PlansPage: React.FC = () => {
     }
   ];
 
-  // --- LÓGICA DE NAVEGACIÓN CORREGIDA ---
   const handleRegisterAction = () => {
     if (selectedPlan === 'gratuito') {
-      // Redirige a la ruta básica que ya tenías
       navigate('/register-school');
     } else if (selectedPlan === 'pago') {
-      // Redirige a la nueva ruta Pro que acabamos de crear
       navigate('/register-school-pro');
     }
   };
@@ -48,7 +45,7 @@ export const PlansPage: React.FC = () => {
     <div className="min-h-screen bg-whiteBg-50 font-sans text-gray-800 pb-20">
       <header className="flex justify-between items-center px-12 py-6">
         <h1 className="text-4xl font-serif italic font-bold tracking-tighter">
-          Academic<span className="text-teal-600">+</span>
+          Academy<span className="text-teal-600">+</span>
         </h1>
         <div className="grid items-center bg-main-700 hover:bg-main-900 transition-color duration-300 p-y2 p-x6 h-10 w-90 text-center rounded-xl">
           <button
@@ -57,7 +54,6 @@ export const PlansPage: React.FC = () => {
           >
             ¿Ya tienes una cuenta?
           </button>
-
         </div>
       </header>
 
@@ -76,13 +72,20 @@ export const PlansPage: React.FC = () => {
 
       <section className="text-center mt-16">
         <h2 className="text-3xl font-semibold mb-10">Elige el Plan Perfecto para Ti</h2>
-        <div className='flex items-center border border-main-900  mt-0 mx-20 mb-10 w-100% alight-center'></div>
+        <div className='flex items-center border border-main-900 mt-0 mx-20 mb-10 w-100% alight-center'></div>
         <div className="flex flex-col md:flex-row justify-center gap-12 px-12 max-w-6xl mx-auto">
+          
           {/* PLAN GRATUITO */}
           <Card
             className={`bg-whiteBg-100 shadow-grayDark-300 shadow-xl w-full md:w-1/2 transition-all duration-300 ${selectedPlan === 'gratuito' ? 'ring-4 ring-main-600 scale-105' : 'bg-blue-50/30'}`}
             header={<div className="text-center w-full">BASIC</div>}
           >
+            {/* Precio Plan Basic */}
+            <div className="text-center mb-6">
+              <span className="text-3xl font-bold">$0</span>
+              <span className="text-gray-500">/mes</span>
+            </div>
+
             <ul className="space-y-4 mb-8 text-left">
               <li className="flex items-center text-gray-500"><X className="text-red-500 mr-2 w-5 h-5" /> Reportes completos (PDF, Excel)</li>
               <li className="flex items-center text-gray-500"><X className="text-red-500 mr-2 w-5 h-5" /> BackUp automático</li>
@@ -104,6 +107,13 @@ export const PlansPage: React.FC = () => {
             className={`w-full bg-whiteBg-100 shadow-grayDark-300 shadow-xl md:w-1/2 transition-all duration-300 ${selectedPlan === 'pago' ? 'ring-4 ring-main-600 scale-105' : ''}`}
             header={<div className="text-center w-full">PRO</div>}
           >
+            {/* Precio Plan PRO agregado aquí */}
+            <div className="text-center mb-6">
+              <span className="text-3xl font-bold">$999</span>
+              <span className="text-gray-500">/mes</span>
+              <p className="text-xs text-gray-400">Cobro mensual recurrente</p>
+            </div>
+
             <ul className="space-y-4 mb-8 text-left">
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> Reportes completos (PDF, Excel)</li>
               <li className="flex items-center"><Check className="text-green-500 mr-2 w-5 h-5" /> BackUp automático</li>
