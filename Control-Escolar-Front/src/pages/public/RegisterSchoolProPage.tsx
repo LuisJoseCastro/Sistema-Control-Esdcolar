@@ -6,14 +6,12 @@ import {
     CreditCard, User, XCircle, CheckCircle
 } from 'lucide-react';
 
-// Importación de tus componentes
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Modal from '../../components/ui/Modal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
-// Interfaz del estado
 interface SchoolFormData {
     schoolName: string;
     domain: string;
@@ -28,14 +26,11 @@ interface SchoolFormData {
 export const RegisterSchoolProPage: React.FC = () => {
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
     const [isVerifying, setIsVerifying] = useState<boolean>(false);
     const [showSuccess, setShowSuccess] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-
     const [formData, setFormData] = useState<SchoolFormData>({
         schoolName: '',
         domain: '',
@@ -47,7 +42,6 @@ export const RegisterSchoolProPage: React.FC = () => {
         cardHolder: ''
     });
 
-    // --- LÓGICA DE VALIDACIÓN DE CONTRASEÑA ---
     const hasMinLength = formData.password.length >= 8;
     const hasUpperCase = /[A-Z]/.test(formData.password);
     const hasLowerCase = /[a-z]/.test(formData.password);
@@ -56,22 +50,18 @@ export const RegisterSchoolProPage: React.FC = () => {
 
     const isPasswordStrong = hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
 
-
-    // --- MANEJADOR DE CAMBIOS CON MÁSCARAS ---
     const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
-        
-        // 1. Máscara para Número de Tarjeta (#### #### #### ####)
+
         if (name === 'cardNumber') {
-            const cleanValue = value.replace(/\D/g, ''); // Solo números
-            const limitedValue = cleanValue.slice(0, 16); // Max 16 dígitos
+            const cleanValue = value.replace(/\D/g, '');
+            const limitedValue = cleanValue.slice(0, 16);
             const formattedValue = limitedValue.match(/.{1,4}/g)?.join(' ') || limitedValue;
             
             setFormData(prev => ({ ...prev, [name]: formattedValue }));
             return;
         }
 
-        // 2. Máscara para Vencimiento (MM/AA)
         if (name === 'expiryDate') {
             const cleanValue = value.replace(/\D/g, '');
             let formattedValue = cleanValue;
@@ -90,32 +80,70 @@ export const RegisterSchoolProPage: React.FC = () => {
         if (error) setError(null);
     };
 
-    const handleConfirmPayment = (e: FormEvent<HTMLFormElement>): void => {
+    const handleConfirmPayment = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
             setError("Las contraseñas no coinciden.");
             return;
         }
-
         if (!isPasswordStrong) {
             setError("La contraseña no es lo suficientemente segura.");
             return;
         }
-
-        // Validar que la tarjeta y fecha estén completas
         if (formData.cardNumber.length < 19 || formData.expiryDate.length < 5) {
             setError("Por favor, completa los datos de facturación.");
             return;
         }
-
         setError(null);
         setIsVerifying(true);
 
-        setTimeout(() => {
+        try {
+            
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const tokenSimulado = "tok_visa";
+            const cleanCardNumber = formData.cardNumber.replace(/\D/g, '');
+            const ultimos4 = cleanCardNumber.length > 4
+                ? cleanCardNumber.slice(-4)
+                : '0000';
+            
+            const payload = {
+                nombreEscuela: formData.schoolName,
+                dominioEscuela: formData.domain,
+                emailAdmin: formData.email,
+                passwordAdmin: formData.password,
+                plan: 'PRO',
+                
+                nombreTitular: formData.cardHolder,
+                tarjetaUltimos4: ultimos4,
+                tokenPago: tokenSimulado
+            };
+
+            console.log(`Plan PRO seleccionado: ${apiUrl}/tenants/register`);
+
+            const response = await fetch(`${apiUrl}/tenants/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Error en el registro PRO');
+            }
+
+            console.log('Registrado en el plan PRO:', data);
             setIsVerifying(false);
             setShowSuccess(true);
-        }, 3000);
+
+        } catch (err: any) {
+            console.error('Error:', err);
+            setError(err.message || "Error al procesar el pago y registro");
+            setIsVerifying(false);
+        }
     };
 
     const handleFinalRedirect = (): void => {
@@ -146,7 +174,7 @@ export const RegisterSchoolProPage: React.FC = () => {
                 <form onSubmit={handleConfirmPayment} className="space-y-8">
                     <div className="flex flex-col lg:flex-row justify-center gap-8 bg-transparent md:bg-whiteBg-50 md:p-8 rounded-2xl">
 
-                        {/* SECCIÓN: DATOS DE LA ESCUELA */}
+                        {/* datos de la escuela */}
                         <section className="flex-[1.5] w-full">
                             <h3 className="text-lg font-semibold flex items-center gap-2 text-main-700 mb-4">
                                 <School size={20} /> Información Escolar
@@ -255,7 +283,7 @@ export const RegisterSchoolProPage: React.FC = () => {
                             </Card>
                         </section>
 
-                        {/* SECCIÓN: DATOS DE PAGO */}
+                        {/* sección de pago */}
                         <section className="flex-1 w-full">
                             <h3 className="text-lg font-semibold flex items-center gap-2 text-main-700 mb-4">
                                 <CreditCard size={20} /> Detalles de Facturación
@@ -322,7 +350,7 @@ export const RegisterSchoolProPage: React.FC = () => {
                 </form>
             </main>
 
-            {/* MODALES */}
+            {/* modales */}
             <Modal isOpen={isVerifying} onClose={() => { }} title="Verificando Datos">
                 <div className="flex flex-col items-center justify-center py-12">
                     <LoadingSpinner className="w-16 h-16 text-teal-600 mb-6" />
