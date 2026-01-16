@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, useLocation } from 'react-router-dom'; // IMPORTAR useLocation
+import { useNavigate, useSearchParams } from 'react-router-dom'; // IMPORTAR useSearchParams
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
-// Determina el dashboard por defecto si no hay ruta previa
 const getDefaultDashboard = (role: string) => {
   switch (role) {
     case 'ADMIN': return '/admin/dashboard';
@@ -29,77 +29,77 @@ const parseEmail = (fullEmail: string): { rolePrefix: string, schoolDomain: stri
 export const LoginPageGeneral: React.FC = () => {
   const { login, isLoggedIn, role, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation(); // Hook para leer el estado de navegación
-
-  // 1. Intentamos leer de dónde venía el usuario
-  // 'from' será la ruta (ej: /admin/alumnos) o undefined
-  const from = location.state?.from?.pathname;
+  
+  // 1. LEER LA URL (Ej: /login?returnTo=/admin/alumnos)
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
 
   const [email, setEmail] = useState('Drodolfo@tesji.com');
   const [password, setPassword] = useState('1234');
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 2. REDIRECCIÓN AUTOMÁTICA (Al recargar la página)
+  // 2. EFECTO DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
+    // Si ya estamos logueados y terminó de cargar...
     if (isLoggedIn && !isLoading && role) {
-      // Si venía de algún lado, lo regresamos ahí. Si no, al dashboard.
-      const destination = from || getDefaultDashboard(role);
+      
+      // Decidimos el destino: ¿Hay algo en la URL? Si no, Dashboard.
+      const destination = returnTo ? decodeURIComponent(returnTo) : getDefaultDashboard(role);
+      
+      console.log(`🚀 Redirigiendo a: ${destination}`);
       navigate(destination, { replace: true });
     }
-  }, [isLoggedIn, role, isLoading, navigate, from]);
+  }, [isLoggedIn, role, isLoading, navigate, returnTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     setError('');
 
     const parsedData = parseEmail(email);
 
     if (!parsedData || !parsedData.rolePrefix) {
-      setError("Formato de correo inválido. Asegura incluir el prefijo de rol.");
-      setLoading(false);
+      setError("Formato de correo inválido.");
+      setFormLoading(false);
       return;
     }
 
-    const schoolKey = parsedData.schoolDomain;
-
     try {
-      const userRole = await login(email, password, schoolKey);
-      
-      // 3. REDIRECCIÓN MANUAL (Al hacer click en Iniciar Sesión)
-      const destination = from || getDefaultDashboard(userRole);
-      navigate(destination, { replace: true });
-
+      await login(email, password, parsedData.schoolDomain);
+      // No hacemos navigate aquí, dejamos que el useEffect lo haga
     } catch (err: any) {
-      setError(err.message || "Credenciales, dominio o clave inválida.");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setError(err.message || "Credenciales inválidas.");
+      setFormLoading(false);
     }
   };
 
-  // Si se está verificando la sesión, mostramos carga en lugar del formulario
-  // para evitar que el usuario intente loguearse dos veces
-  if (isLoading) {
+  // 3. BLOQUEO DE PANTALLA (ANTI-PARPADEO)
+  // Si está cargando O si ya está logueado, NO mostramos el form.
+  if (isLoading || isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
-        <p className="text-gray-500 font-semibold animate-pulse">Recuperando sesión...</p>
+        <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
+        <p className="text-gray-500 font-medium animate-pulse">
+          {isLoggedIn ? 'Ingresando al sistema...' : 'Verificando sesión...'}
+        </p>
       </div>
     );
   }
 
+  // 4. RENDERIZADO DEL FORMULARIO
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
       <h2 className="text-3xl font-bold mb-6">Acceso Único al Sistema Escolar SaaS</h2>
       <form onSubmit={handleSubmit} className="bg-whiteBg-50 p-8 rounded-lg shadow-xl w-96">
         <div className='flex'>
           <div className='w-20 flex-none'>
-            {/* Ajusta la ruta de la imagen si es necesaria */}
-            <img src="/Logo-Academy+.jpeg" alt="Logo del sistema" className='w-auto h-auto rounded-xl'/>
+            <img src="/Logo-Academy+.jpeg" alt="Logo" className='w-auto h-auto rounded-xl'/>
           </div>
           <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto'>
             <p className=" text-sm text-center text-gray-800 font-semibold">
-              Usa tu correo institucional (ej: Dfernando@tesji.com)
+              Usa tu correo institucional
             </p>
           </div>
         </div>
@@ -129,10 +129,10 @@ export const LoginPageGeneral: React.FC = () => {
           <Button
             variant="primary"
             type="submit"
-            disabled={loading}
+            disabled={formLoading}
             className="w-full"
           >
-            {loading ? 'Verificando...' : 'Iniciar Sesión'}
+            {formLoading ? 'Validando...' : 'Iniciar Sesión'}
           </Button>
         </div>
         {error && <p className="mt-4 text-red-500 text-center">{error}</p>}

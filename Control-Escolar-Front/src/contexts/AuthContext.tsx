@@ -22,47 +22,43 @@ type AuthContextType = {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  // INICIA EN TRUE: Para que la app espere a verificar el localStorage antes de renderizar nada
+  
+  // 1. CAMBIO CLAVE: "Lazy Initialization"
+  // Leemos el localStorage DIRECTAMENTE al iniciar el estado.
+  // Esto garantiza que 'user' tenga valor ANTES del primer renderizado.
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const stored = localStorage.getItem('academic_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error("Error parsing user from storage", error);
+      return null;
+    }
+  });
+
+  // Si ya tenemos usuario (por lazy init), no necesitamos bloquear con carga inicial
+  // a menos que quieras forzar la carga del Tenant.
   const [isLoading, setIsLoading] = useState(true); 
   
   const { loadTenant } = useTenant();
 
-  // EFECTO: Recuperar sesión al recargar la página
+  // 2. EFECTO: Solo para cargar configuraciones extra (Tenant)
   useEffect(() => {
-    const initAuth = async () => {
-      console.log("🔄 Verificando sesión guardada...");
-      const storedUser = localStorage.getItem('academic_user');
-      
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          console.log("✅ Usuario encontrado:", parsedUser.email);
-          
-          // Recargamos la configuración de la escuela (Tenant)
-          if (parsedUser.tenantId) {
-             await loadTenant(parsedUser.tenantId);
-          }
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("❌ Error recuperando sesión:", error);
-          localStorage.removeItem('academic_user');
-        }
-      } else {
-        console.warn("⚠️ No hay sesión activa.");
+    const initTenant = async () => {
+      if (user && user.tenantId) {
+        console.log("🔄 Recargando configuración de escuela...");
+        await loadTenant(user.tenantId);
       }
-      
-      // FINALMENTE: Liberamos la carga para que el Router decida qué mostrar
       setIsLoading(false);
     };
 
-    initAuth();
+    initTenant();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []); // Se ejecuta una vez. Si user ya existe, carga el tenant.
 
   const login = async (email: string, _password: string, schoolKey: string) => {
     setIsLoading(true);
-    // Simular delay de red
+    // Simular delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const lookupEmail = email.toLowerCase();
@@ -81,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     await loadTenant(foundUser.tenantId); 
     
-    // GUARDAR EN LOCALSTORAGE (La clave de la persistencia)
+    // Guardar en Storage
     localStorage.setItem('academic_user', JSON.stringify(foundUser));
     
     setUser(foundUser);

@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
-// ... (Tus imports de páginas se mantienen igual, no los borres) ...
+// ... (Tus imports de páginas siguen igual) ...
 // === Páginas públicas ===
 import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
@@ -15,7 +15,7 @@ import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
 // === Layout ===
 import { AppLayout } from '../components/layout/AppLayout';
 
-// === Dashboards y Admin Pages ===
+// === Dashboards y Admin ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
 import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
@@ -27,7 +27,7 @@ import AdminMensajesPage from '../pages/admin/AdminMensajesPage';
 import AdminGestionPage from '../pages/admin/AdminGestionPage'; 
 import AdminReportesPage from '../pages/admin/AdminReportesPage'; 
 
-// === Vistas del docente ===
+// === Docente ===
 import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
 import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
 import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
@@ -36,7 +36,7 @@ import DocenteGruposPage from '../pages/docente/DocenteGruposPage';
 import DocenteReportesPage from '../pages/docente/DocenteReportesPage';
 import DocentePerfilPage from '../pages/docente/DocentePerfilPage';
 
-// === Vistas del alumno ===
+// === Alumno ===
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
@@ -48,28 +48,26 @@ import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
 
-// === PrivateRoute: INTELIGENTE ===
+// === PrivateRoute: NUEVA LÓGICA DE URL ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   const { isLoggedIn, role, isLoading } = useAuth();
-  const location = useLocation(); // 1. Obtenemos dónde está el usuario ahora
+  const location = useLocation();
 
-  // 2. Si está cargando, ESPERA. No redirijas.
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
         <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
-        <p className="text-gray-500 font-medium animate-pulse">Verificando acceso...</p>
+        <p className="text-gray-500 font-medium">Cargando...</p>
       </div>
     );
   }
 
-  // 3. Si terminó de cargar y no hay usuario, vamos al Login.
-  // IMPORTANTE: Pasamos "state={{ from: location }}" para recordar esta página.
   if (!isLoggedIn) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // 🛑 CAMBIO CLAVE: Guardamos la ruta en la URL como parámetro "?returnTo=..."
+    // encodeURIComponent asegura que la ruta sea segura para poner en la URL
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  // 4. Validación de Roles
   if (!allowedRoles.includes((role ?? 'ALUMNO') as Role)) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -85,23 +83,19 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* RUTAS PÚBLICAS */}
         <Route path="/" element={<PlansPage />} /> 
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
         <Route path="/register-school" element={<RegisterSchoolPage />} />
         <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
 
-        {/* Redirecciones */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/docente/login" element={<Navigate to="/login" replace />} />
         <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
-        {/* RUTAS PROTEGIDAS */}
         <Route element={<AppLayout />}>
-          
-          {/* ADMINISTRADOR */}
+          {/* ADMIN */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
