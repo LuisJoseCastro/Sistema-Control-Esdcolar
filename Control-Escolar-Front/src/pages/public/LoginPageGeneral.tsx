@@ -1,91 +1,109 @@
-// src/pages/public/LoginPageGeneral.tsx - CÓDIGO FINAL CON COMPONENTES UI
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-// IMPORTACIÓN DE COMPONENTES UI (Asumiendo que existen)
+import { useNavigate, useSearchParams } from 'react-router-dom'; // IMPORTAR useSearchParams
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-// Si usas un Card para el formulario, también lo importarías:
-// import { Card } from '../../components/ui/Card'; 
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
-// Función para analizar el email y extraer el rol y el dominio (SaaS Key)
+const getDefaultDashboard = (role: string) => {
+  switch (role) {
+    case 'ADMIN': return '/admin/dashboard';
+    case 'DOCENTE': return '/docente/dashboard';
+    case 'ALUMNO': return '/alumno/dashboard';
+    default: return '/login';
+  }
+};
+
 const parseEmail = (fullEmail: string): { rolePrefix: string, schoolDomain: string } | null => {
   const parts = fullEmail.split('@');
   if (parts.length !== 2) return null;
-
   const [localPart, domainPart] = parts;
-
-  // Determinar el prefijo del Rol
   let rolePrefix = '';
-  if (localPart.toLowerCase().startsWith('d')) {
-    rolePrefix = 'DOCENTE';
-  } else if (localPart.toLowerCase().startsWith('a')) {
-    rolePrefix = 'ALUMNO';
-  } else if (localPart.toLowerCase().startsWith('admin')) {
-    rolePrefix = 'ADMIN';
-  }
-
-  // Extraer el dominio (SaaS Key).
+  if (localPart.toLowerCase().startsWith('d')) rolePrefix = 'DOCENTE';
+  else if (localPart.toLowerCase().startsWith('a')) rolePrefix = 'ALUMNO';
+  else if (localPart.toLowerCase().startsWith('admin')) rolePrefix = 'ADMIN';
   const domainName = domainPart.split('.')[0];
-
   return { rolePrefix, schoolDomain: domainName };
 };
 
-
 export const LoginPageGeneral: React.FC = () => {
-  const { login } = useAuth();
+  const { login, isLoggedIn, role, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // 1. LEER LA URL (Ej: /login?returnTo=/admin/alumnos)
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('returnTo');
 
   const [email, setEmail] = useState('Drodolfo@tesji.com');
   const [password, setPassword] = useState('1234');
-
-  const [loading, setLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // 2. EFECTO DE REDIRECCIÓN AUTOMÁTICA
+  useEffect(() => {
+    // Si ya estamos logueados y terminó de cargar...
+    if (isLoggedIn && !isLoading && role) {
+      
+      // Decidimos el destino: ¿Hay algo en la URL? Si no, Dashboard.
+      const destination = returnTo ? decodeURIComponent(returnTo) : getDefaultDashboard(role);
+      
+      console.log(`🚀 Redirigiendo a: ${destination}`);
+      navigate(destination, { replace: true });
+    }
+  }, [isLoggedIn, role, isLoading, navigate, returnTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     setError('');
 
     const parsedData = parseEmail(email);
 
     if (!parsedData || !parsedData.rolePrefix) {
-      setError("Formato de correo inválido. Asegura incluir el prefijo de rol (D, A, Admin).");
-      setLoading(false);
+      setError("Formato de correo inválido.");
+      setFormLoading(false);
       return;
     }
 
-    const schoolKey = parsedData.schoolDomain;
-
     try {
-      const rol = await login(email, password, schoolKey);
-      navigate(`/${rol.toLowerCase()}/dashboard`, { replace: true });
-
+      await login(email, password, parsedData.schoolDomain);
+      // No hacemos navigate aquí, dejamos que el useEffect lo haga
     } catch (err: any) {
-      setError(err.message || "Credenciales, dominio o clave inválida.");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      setError(err.message || "Credenciales inválidas.");
+      setFormLoading(false);
     }
   };
 
+  // 3. BLOQUEO DE PANTALLA (ANTI-PARPADEO)
+  // Si está cargando O si ya está logueado, NO mostramos el form.
+  if (isLoading || isLoggedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
+        <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
+        <p className="text-gray-500 font-medium animate-pulse">
+          {isLoggedIn ? 'Ingresando al sistema...' : 'Verificando sesión...'}
+        </p>
+      </div>
+    );
+  }
+
+  // 4. RENDERIZADO DEL FORMULARIO
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
       <h2 className="text-3xl font-bold mb-6">Acceso Único al Sistema Escolar SaaS</h2>
       <form onSubmit={handleSubmit} className="bg-whiteBg-50 p-8 rounded-lg shadow-xl w-96">
         <div className='flex'>
-          <div className='w-20 flex-none ...'>
-            <img src="../../../public/Logo-Academy+.jpeg" alt="Logo del sistema Academy+" className='w-auto h-auto rounded-xl'/>
+          <div className='w-20 flex-none'>
+            <img src="/Logo-Academy+.jpeg" alt="Logo" className='w-auto h-auto rounded-xl'/>
           </div>
           <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto'>
             <p className=" text-sm text-center text-gray-800 font-semibold">
-              Usa tu correo institucional (ej: Dfernando@tesji.com)
+              Usa tu correo institucional
             </p>
           </div>
-
         </div>
 
-        {/* Campo Único de Email/Usuario usando el componente Input */}
         <div className="mb-4 p-5 bg-grayLight-400 rounded-xl">
           <div className='mt-0'>
             <label className="block font-semibold text-xl mb-1">Correo Institucional:</label>
@@ -96,10 +114,8 @@ export const LoginPageGeneral: React.FC = () => {
               placeholder="Ej: Docente@tesji.com"
               required
             />
-
           </div>
 
-          {/* Campo de Password usando el componente Input */}
           <div className='mt-4 mb-4'>
             <label className="block font-semibold text-xl mb-1">Contraseña:</label>
             <Input
@@ -108,18 +124,15 @@ export const LoginPageGeneral: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-
           </div>
 
-          {/* Botón de Submit usando el componente Button */}
           <Button
             variant="primary"
             type="submit"
-            disabled={loading}
-            // Aquí se pasa la clase para el estilo, si el Button lo soporta
+            disabled={formLoading}
             className="w-full"
           >
-            {loading ? 'Verificando acceso...' : 'Iniciar Sesión'}
+            {formLoading ? 'Validando...' : 'Iniciar Sesión'}
           </Button>
         </div>
         {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
