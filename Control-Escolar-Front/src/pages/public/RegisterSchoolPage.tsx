@@ -14,15 +14,11 @@ import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 export const RegisterSchoolPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // --- ESTADOS ---
   const [isVerifying, setIsVerifying] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Estados visuales
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [formData, setFormData] = useState({
     schoolName: '',
     domain: '',
@@ -34,24 +30,19 @@ export const RegisterSchoolPage: React.FC = () => {
     cardHolder: ''
   });
 
-  // --- VALIDACIONES EN TIEMPO REAL (REGEX) ---
   const hasMinLength = formData.password.length >= 8;
-  const hasUpperCase = /[A-Z]/.test(formData.password); // Al menos una mayúscula
-  const hasLowerCase = /[a-z]/.test(formData.password); // Al menos una minúscula
-  const hasNumber = /\d/.test(formData.password);       // Al menos un número
-  // Nueva validación: Busca cualquier caracter que NO sea letra ni número (ej: @, #, -, !)
-  const hasSpecialChar = /[^a-zA-Z0-9]/.test(formData.password); 
-
-  // Ahora se deben cumplir las 5 condiciones
+  const hasUpperCase = /[A-Z]/.test(formData.password);
+  const hasLowerCase = /[a-z]/.test(formData.password);
+  const hasNumber = /\d/.test(formData.password);
+  const hasSpecialChar = /[^a-zA-Z0-9]/.test(formData.password);
   const isPasswordStrong = hasMinLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
 
-  // --- MANEJADORES ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
   };
 
-  const handleConfirmPayment = (e: React.FormEvent) => {
+  const handleConfirmPayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -65,17 +56,51 @@ export const RegisterSchoolPage: React.FC = () => {
     }
 
     setIsVerifying(true);
-    setTimeout(() => {
+    setError(null);
+    
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      
+      console.log(`Plan BASIC seleccionado: ${apiUrl}/tenants/register`);
+
+
+      const payload = {
+        nombreEscuela: formData.schoolName,
+        dominioEscuela: formData.domain,
+        emailAdmin: formData.email,
+        passwordAdmin: formData.password,
+        plan: 'BASIC'
+      };
+
+      const response = await fetch(`${apiUrl}/tenants/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al registrar la escuela');
+      }
+
+      console.log('Registrado en el plan BASIC:', data);
       setIsVerifying(false);
       setShowSuccess(true);
-    }, 3000);
+
+    } catch (err: any) {
+      console.error('Error de conexión:', err);
+      setError(err.message || "Error de conexión con el servidor");
+      setIsVerifying(false);
+    }
   };
 
   const handleFinalRedirect = () => {
     navigate('/login');
   };
 
-  // Componente visual para la lista
   const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
     <div className={`flex items-center gap-2 text-xs transition-colors ${met ? 'text-green-600 font-bold' : 'text-gray-400'}`}>
       {met ? <CheckCircle size={14} /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300" />}
@@ -87,7 +112,7 @@ export const RegisterSchoolPage: React.FC = () => {
     <div className="min-h-screen bg-whiteBg-50 pb-12">
       <header className="px-12 py-6 bg-white border-b mb-10">
         <h1 className="text-3xl font-serif italic font-bold tracking-tighter">
-          Academy<span className="text-teal-600">+</span>
+          Academic<span className="text-teal-600">+</span>
         </h1>
       </header>
 
@@ -130,10 +155,10 @@ export const RegisterSchoolPage: React.FC = () => {
                   onChange={handleChange}
                 />
 
-                {/* --- SECCIÓN DE CONTRASEÑAS --- */}
+                {/* sección de contraseñas */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Contraseña */}
+                    {/* contraseña */}
                     <div className="relative">
                       <Input
                         label="Contraseña"
@@ -155,7 +180,7 @@ export const RegisterSchoolPage: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Confirmar Contraseña */}
+                    {/* confirmar contraseña */}
                     <div className="relative">
                       <Input
                         label="Confirmar Contraseña"
@@ -177,19 +202,17 @@ export const RegisterSchoolPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* --- LISTA DE REQUISITOS (Ahora con caracteres especiales) --- */}
+                  {/* requisitos */}
                   {formData.password.length > 0 && (
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                       <p className="text-xs text-gray-500 font-semibold mb-3 uppercase tracking-wide">
                         La contraseña debe contener:
                       </p>
-                      {/* Usamos un grid de 2 columnas para que se vea ordenado */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
                         <PasswordRequirement met={hasMinLength} text="Mínimo 8 caracteres" />
                         <PasswordRequirement met={hasUpperCase} text="Una letra mayúscula" />
                         <PasswordRequirement met={hasLowerCase} text="Una letra minúscula" />
                         <PasswordRequirement met={hasNumber} text="Un número" />
-                        {/* Nuevo requisito visual */}
                         <div className="col-span-1 sm:col-span-2">
                             <PasswordRequirement met={hasSpecialChar} text="Un carácter especial (@, #, $, %, etc.)" />
                         </div>
@@ -222,7 +245,7 @@ export const RegisterSchoolPage: React.FC = () => {
         </form>
       </main>
 
-      {/* Modales (Sin cambios) */}
+      {/* modales */}
       <Modal isOpen={isVerifying} onClose={() => { }} title="Verificando Datos">
         <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner className="w-16 h-16 text-teal-600 mb-6" />
