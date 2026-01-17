@@ -46,10 +46,9 @@ export const LoginPageGeneral: React.FC = () => {
     }
 
     // 2. Extraer el dominio para usarlo como schoolKey (ID del Tenant)
-    // Ejemplo: 'juan@mi-escuela.com' -> schoolDomain = 'mi-escuela'
     const parts = email.split('@');
     const domainPart = parts[1]; 
-    const schoolDomain = domainPart.split('.')[0]; // Toma lo que está antes del primer punto
+    const schoolDomain = domainPart.split('.')[0]; 
 
     try {
       // 3. Intentar Login con el dominio extraído
@@ -57,7 +56,6 @@ export const LoginPageGeneral: React.FC = () => {
     } catch (err) {
       console.error(err);
       if (err instanceof Error) {
-          // Si es error de red (CORS/Apagado), suele ser un TypeError con mensaje "Failed to fetch"
           if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
              setError("No se pudo conectar con el servidor. Verifica tu conexión o que el backend esté encendido.");
           } else {

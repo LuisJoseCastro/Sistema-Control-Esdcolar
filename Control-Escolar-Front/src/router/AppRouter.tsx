@@ -4,13 +4,16 @@ import { useAuth } from '../hooks/useAuth';
 import type { Role } from '../types/models';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
-// ... (Tus imports de páginas siguen igual) ...
 // === Páginas públicas ===
 import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage';
 import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
+
+// 👇👇👇 NUEVAS PÁGINAS AGREGADAS AQUÍ 👇👇👇
+import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage';
+import { ResetPasswordPage } from '../pages/public/ResetPasswordPage';
 
 // === Layout ===
 import { AppLayout } from '../components/layout/AppLayout';
@@ -48,7 +51,7 @@ import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
 
-// === PrivateRoute: NUEVA LÓGICA DE URL ===
+// === PrivateRoute: LÓGICA DE URL ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   const { isLoggedIn, role, isLoading } = useAuth();
   const location = useLocation();
@@ -63,8 +66,6 @@ const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   }
 
   if (!isLoggedIn) {
-    // 🛑 CAMBIO CLAVE: Guardamos la ruta en la URL como parámetro "?returnTo=..."
-    // encodeURIComponent asegura que la ruta sea segura para poner en la URL
     return <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
@@ -83,17 +84,24 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* --- RUTAS PÚBLICAS --- */}
         <Route path="/" element={<PlansPage />} /> 
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
         <Route path="/register-school" element={<RegisterSchoolPage />} />
         <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
 
+        {/* 👇👇👇 RUTAS DE RECUPERACIÓN (SOLUCIÓN AL 404) 👇👇👇 */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/recovery" element={<ResetPasswordPage />} />
+
+        {/* --- REDIRECTS --- */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<Navigate to="/login" replace />} />
         <Route path="/docente/login" element={<Navigate to="/login" replace />} />
         <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
+        {/* --- RUTAS PROTEGIDAS --- */}
         <Route element={<AppLayout />}>
           {/* ADMIN */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
