@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -40,29 +40,28 @@ export const LoginPageGeneral: React.FC = () => {
     // 1. Validación simple de formato de correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Formato de correo inválido.");
+      setError("Formato de correo inválido");
       setFormLoading(false);
       return;
     }
 
-    // 2. Extraer el dominio para usarlo como schoolKey (ID del Tenant)
+    // 2. Extraer el dominio
     const parts = email.split('@');
     const domainPart = parts[1]; 
     const schoolDomain = domainPart.split('.')[0]; 
 
     try {
-      // 3. Intentar Login con el dominio extraído
       await login(email, password, schoolDomain);
     } catch (err) {
       console.error(err);
       if (err instanceof Error) {
           if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
-             setError("No se pudo conectar con el servidor. Verifica tu conexión o que el backend esté encendido.");
+             setError("No se pudo conectar con el servidor. Verifica tu conexión.");
           } else {
              setError(err.message);
           }
       } else {
-          setError("Ocurrió un error inesperado al iniciar sesión.");
+          setError("Ocurrió un error inesperado al iniciar sesión");
       }
       setFormLoading(false);
     }
@@ -87,9 +86,12 @@ export const LoginPageGeneral: React.FC = () => {
           <div className='w-20 flex-none'>
             <img src="/Logo-Academy+.jpeg" alt="Logo" className='w-auto h-auto rounded-xl'/>
           </div>
-          <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto'>
-            <p className=" text-sm text-center text-gray-800 font-semibold">
+          <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto flex flex-col justify-center'>
+            <p className="text-sm text-center text-gray-800 font-semibold leading-tight">
               Usa tu correo institucional
+            </p>
+            <p className="text-xs text-center text-gray-500 mt-1">
+              (Ej: Docente@tesji.com)
             </p>
           </div>
         </div>
@@ -106,7 +108,7 @@ export const LoginPageGeneral: React.FC = () => {
             />
           </div>
 
-          <div className='mt-4 mb-4'>
+          <div className='mt-4 mb-2'>
             <label className="block font-semibold text-xl mb-1">Contraseña:</label>
             <Input
               type="password"
@@ -114,6 +116,15 @@ export const LoginPageGeneral: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <Link 
+              to="/forgot-password" 
+              className="text-sm text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
 
           <Button
