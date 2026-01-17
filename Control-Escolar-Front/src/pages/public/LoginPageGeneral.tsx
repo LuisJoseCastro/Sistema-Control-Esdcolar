@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // IMPORTAR useSearchParams
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -30,7 +30,7 @@ export const LoginPageGeneral: React.FC = () => {
   const { login, isLoggedIn, role, isLoading } = useAuth();
   const navigate = useNavigate();
   
-  // 1. LEER LA URL (Ej: /login?returnTo=/admin/alumnos)
+  // 1. LEER LA URL
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
 
@@ -41,12 +41,8 @@ export const LoginPageGeneral: React.FC = () => {
 
   // 2. EFECTO DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
-    // Si ya estamos logueados y terminó de cargar...
     if (isLoggedIn && !isLoading && role) {
-      
-      // Decidimos el destino: ¿Hay algo en la URL? Si no, Dashboard.
       const destination = returnTo ? decodeURIComponent(returnTo) : getDefaultDashboard(role);
-      
       console.log(`🚀 Redirigiendo a: ${destination}`);
       navigate(destination, { replace: true });
     }
@@ -67,7 +63,6 @@ export const LoginPageGeneral: React.FC = () => {
 
     try {
       await login(email, password, parsedData.schoolDomain);
-      // No hacemos navigate aquí, dejamos que el useEffect lo haga
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Credenciales inválidas.");
@@ -75,8 +70,7 @@ export const LoginPageGeneral: React.FC = () => {
     }
   };
 
-  // 3. BLOQUEO DE PANTALLA (ANTI-PARPADEO)
-  // Si está cargando O si ya está logueado, NO mostramos el form.
+  // 3. BLOQUEO DE PANTALLA
   if (isLoading || isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
@@ -97,9 +91,13 @@ export const LoginPageGeneral: React.FC = () => {
           <div className='w-20 flex-none'>
             <img src="/Logo-Academy+.jpeg" alt="Logo" className='w-auto h-auto rounded-xl'/>
           </div>
-          <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto'>
-            <p className=" text-sm text-center text-gray-800 font-semibold">
+          <div className='w-60 flex-1 bg-grayLight-400 mb-2 p-2 rounded-xl h-auto flex flex-col justify-center'>
+            <p className="text-sm text-center text-gray-800 font-semibold leading-tight">
               Usa tu correo institucional
+            </p>
+            {/* 👇 AQUÍ AGREGUÉ EL EJEMPLO EN LA CAJITA GRIS 👇 */}
+            <p className="text-xs text-center text-gray-500 mt-1">
+              (Ej: Docente@tesji.com)
             </p>
           </div>
         </div>
@@ -116,7 +114,7 @@ export const LoginPageGeneral: React.FC = () => {
             />
           </div>
 
-          <div className='mt-4 mb-4'>
+          <div className='mt-4 mb-2'>
             <label className="block font-semibold text-xl mb-1">Contraseña:</label>
             <Input
               type="password"
@@ -125,6 +123,17 @@ export const LoginPageGeneral: React.FC = () => {
               required
             />
           </div>
+
+          {/* 👇 LINK AHORA ES AZUL (blue-600) 👇 */}
+          <div className="flex justify-end mb-4">
+            <Link 
+              to="/forgot-password" 
+              className="text-sm text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+          {/* 👆 FIN DEL CAMBIO DE COLOR 👆 */}
 
           <Button
             variant="primary"
