@@ -8,22 +8,33 @@ import Table, { TableHead, TableCell, TableRow } from '../../components/ui/Table
 import { Card } from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 
-// --- CONSTANTE ID (REEMPLAZAR CON ID REAL DE LA BD) ---
-const TEACHER_ID = "550e8400-e29b-41d4-a716-446655440000";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// --- Tipos de Datos ---
 interface AlumnoCalificacion {
-    id: string; // ID real de la base de datos (GradeCard ID)
+    id: string;
     nombre: string;
     parcial1: string;
     parcial2: string;
     parcial3: string;
     final: string;
     extraordinario: string;
+    [key: string]: string; 
 }
 
 interface Grupo { id: string; nombre: string; }
 interface Asignatura { id: string; nombre: string; }
+
+interface ApiGroup { id: string; nombre: string; }
+interface ApiSubject { id: string; subject: { nombre: string; } }
+interface ApiGradeResponse {
+    id: string;
+    nombre: string;
+    parcial1?: string | number;
+    parcial2?: string | number;
+    parcial3?: string | number;
+    final?: string | number;
+    extraordinario?: string | number;
+}
 
 interface CalificacionInputProps {
     value: string;
@@ -65,9 +76,9 @@ const CalificacionInput: React.FC<CalificacionInputProps> = ({
         }
     };
     
-    const handleBlurInternal = (e: React.FocusEvent<HTMLInputElement>) => {
+    const handleBlurInternal = () => {
         setIsFocused(false);
-        const inputValue = e.target.value.trim();
+        const inputValue = tempValue.trim();
         
         if (isExtraordinario) {
             const finalValue = inputValue || 'NA';
@@ -122,8 +133,8 @@ const CalificacionInput: React.FC<CalificacionInputProps> = ({
 
 export const DocenteCalificacionesPage: React.FC = () => {
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
     
-    // --- ESTADOS CONECTADOS A LA BD (Inicializan vacíos) ---
     const [grupos, setGrupos] = useState<Grupo[]>([]);
     const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
     const [calificaciones, setCalificaciones] = useState<AlumnoCalificacion[]>([]);
@@ -131,49 +142,69 @@ export const DocenteCalificacionesPage: React.FC = () => {
     const [selectedGrupo, setSelectedGrupo] = useState<string>('');
     const [selectedAsignatura, setSelectedAsignatura] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    
     const [camposEditados, setCamposEditados] = useState<Set<string>>(new Set());
 
-    // 1. CARGA INICIAL: Grupos y Asignaturas desde el Backend
     useEffect(() => {
         const fetchFiltros = async () => {
+            if (!token) return;
             try {
-                // Grupos
-                const resGrupos = await fetch(`http://localhost:3000/academic/groups/${TEACHER_ID}`);
+                const resGrupos = await fetch(`${API_URL}/academic/groups`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (resGrupos.ok) {
                     const dataGrupos = await resGrupos.json();
-                    setGrupos(dataGrupos);
+                    if(Array.isArray(dataGrupos)) {
+                        setGrupos(dataGrupos.map((g: ApiGroup) => ({ id: g.id, nombre: g.nombre })));
+                    }
                 }
 
-                // Asignaturas (desde la carga académica)
-                const resLoad = await fetch(`http://localhost:3000/academic/teacher-load/${TEACHER_ID}`);
+                const resLoad = await fetch(`${API_URL}/academic/teacher-load`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (resLoad.ok) {
                     const dataLoad = await resLoad.json();
-                    const mats = dataLoad.map((item: any) => ({
-                        id: item.id,
-                        nombre: item.subject?.nombre || 'Sin nombre'
-                    }));
-                    setAsignaturas(mats);
+                    if(Array.isArray(dataLoad)) {
+                        const mats = dataLoad.map((item: ApiSubject) => ({
+                            id: item.id,
+                            nombre: item.subject?.nombre || 'Sin nombre'
+                        }));
+                        setAsignaturas(mats);
+                    }
                 }
             } catch (error) {
                 console.error("Error cargando filtros:", error);
             }
         };
         fetchFiltros();
-    }, []);
+    }, [token]);
 
-    // 2. CARGA DINÁMICA: Alumnos (cuando seleccionas asignatura)
     useEffect(() => {
         const cargarAlumnos = async () => {
-            if (!selectedAsignatura) {
+            if (!selectedAsignatura || !token) {
                 setCalificaciones([]);
                 return;
             }
             setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:3000/academic/grades/list/${selectedAsignatura}`);
+                const response = await fetch(`${API_URL}/academic/grades/list/${selectedAsignatura}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!response.ok) throw new Error('No se pudo obtener la lista');
                 const data = await response.json();
-                setCalificaciones(data);
+                
+                if (Array.isArray(data)) {
+                    const safeData: AlumnoCalificacion[] = data.map((d: ApiGradeResponse) => ({
+                        id: d.id,
+                        nombre: d.nombre,
+                        parcial1: String(d.parcial1 || ''),
+                        parcial2: String(d.parcial2 || ''),
+                        parcial3: String(d.parcial3 || ''),
+                        final: String(d.final || ''),
+                        extraordinario: String(d.extraordinario || '')
+                    }));
+                    setCalificaciones(safeData);
+                }
             } catch (error) {
                 console.error("Fetch error:", error);
                 setCalificaciones([]);
@@ -182,9 +213,8 @@ export const DocenteCalificacionesPage: React.FC = () => {
             }
         };
         cargarAlumnos();
-    }, [selectedAsignatura]);
+    }, [selectedAsignatura, token]);
 
-    // --- LÓGICA DE NEGOCIO (Idéntica a tu original) ---
     const actualizarLogicaAutomática = useCallback((alumno: AlumnoCalificacion): AlumnoCalificacion => {
         const parciales = [
             { val: alumno.parcial1, label: 'P1' },
@@ -209,22 +239,18 @@ export const DocenteCalificacionesPage: React.FC = () => {
             const suma = parciales.reduce((acc, p) => acc + parseFloat(p.val), 0);
             nuevoFinal = Math.round(suma / 3).toString();
             nuevoExtra = 'NA';
-        } else {
-            nuevoFinal = ''; 
-            nuevoExtra = 'NA';
         }
 
         return { ...alumno, final: nuevoFinal, extraordinario: nuevoExtra };
     }, []);
 
     const handleUpdateCalificacion = useCallback((id: string, field: keyof AlumnoCalificacion, value: string) => {
-        const campoKey = `${id}-${field}`;
-        setCamposEditados(prev => new Set(prev).add(campoKey));
+        setCamposEditados(prev => new Set(prev).add(`${id}-${field}`));
         
         setCalificaciones(prevCals => prevCals.map(cal => {
             if (cal.id === id) {
                 const actualizado = { ...cal, [field]: value };
-                if (['parcial1', 'parcial2', 'parcial3'].includes(field)) {
+                if (['parcial1', 'parcial2', 'parcial3'].includes(field as string)) {
                     return actualizarLogicaAutomática(actualizado);
                 }
                 return actualizado;
@@ -237,11 +263,11 @@ export const DocenteCalificacionesPage: React.FC = () => {
         const camposVacios: Array<{alumno: string, campo: string}> = [];
         calificaciones.forEach(alumno => {
             const campos = [
-                { key: 'parcial1' as const, label: 'Parcial 1' },
-                { key: 'parcial2' as const, label: 'Parcial 2' },
-                { key: 'parcial3' as const, label: 'Parcial 3' },
-                { key: 'final' as const, label: 'Final' },
-                { key: 'extraordinario' as const, label: 'Extraordinario' }
+                { key: 'parcial1', label: 'Parcial 1' },
+                { key: 'parcial2', label: 'Parcial 2' },
+                { key: 'parcial3', label: 'Parcial 3' },
+                { key: 'final', label: 'Final' },
+                { key: 'extraordinario', label: 'Extraordinario' }
             ];
             campos.forEach(({key, label}) => {
                 if (!alumno[key] || alumno[key].trim() === '') {
@@ -252,46 +278,36 @@ export const DocenteCalificacionesPage: React.FC = () => {
         return camposVacios;
     }, [calificaciones]);
 
-    // 3. GUARDADO REAL: Fetch POST al Backend
     const handleGuardarCalificaciones = useCallback(async () => {
         const vacios = obtenerCamposVacios();
         if (vacios.length > 0) {
-            let mensaje = `⚠️ Hay ${vacios.length} campo(s) vacío(s):\n\n`;
-            const porAlumno: Record<string, string[]> = {};
-            vacios.forEach(({alumno, campo}) => {
-                if (!porAlumno[alumno]) porAlumno[alumno] = [];
-                porAlumno[alumno].push(campo);
-            });
-            Object.entries(porAlumno).forEach(([alumno, campos], index) => {
-                mensaje += `${index + 1}. ${alumno}: ${campos.join(', ')}\n`;
-            });
-            alert(mensaje + "\nCompleta todos los campos antes de guardar.");
+            alert(`Hay ${vacios.length} campo(s) vacío(s). Completa todos antes de guardar.`);
             return;
         }
         
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/academic/grades/capture/${selectedAsignatura}`, {
+            const response = await fetch(`${API_URL}/academic/grades/capture/${selectedAsignatura}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(calificaciones),
             });
 
             if (!response.ok) throw new Error('Error al guardar');
 
-            alert('✅ Calificaciones guardadas exitosamente.');
-            setCamposEditados(new Set());
+            alert('Calificaciones guardadas exitosamente.');
+            setCamposEditados(new Set()); 
         } catch (error) {
             console.error("Error saving grades:", error);
-            alert('❌ No se pudo conectar con el servidor.');
+            alert('No se pudo conectar con el servidor.');
         } finally {
             setIsLoading(false);
         }
-    }, [obtenerCamposVacios, selectedAsignatura, calificaciones]);
+    }, [obtenerCamposVacios, selectedAsignatura, calificaciones, token]);
 
     const totalCamposVacios = useMemo(() => {
         return calificaciones.reduce((total, alumno) => {
-            const campos = ['parcial1', 'parcial2', 'parcial3', 'final', 'extraordinario'] as const;
+            const campos = ['parcial1', 'parcial2', 'parcial3', 'final', 'extraordinario'];
             return total + campos.filter(campo => !alumno[campo] || alumno[campo].trim() === '').length;
         }, 0);
     }, [calificaciones]);
@@ -338,7 +354,7 @@ export const DocenteCalificacionesPage: React.FC = () => {
                 {(!selectedGrupo || !selectedAsignatura) ? (
                     <Card variant="flat" className="text-center py-12">
                         <Search className="w-10 h-10 mx-auto text-gray-600 mb-4" />
-                        <p className="text-xl font-medium text-gray-700">Filtros pendientes. Por favor, selecciona un <strong>Grupo</strong> y una <strong>Asignatura</strong> para cargar el registro de calificaciones.</p>
+                        <p className="text-xl font-medium text-gray-700">Filtros pendientes. Por favor, selecciona un <strong>Grupo</strong> y una <strong>Asignatura</strong>.</p>
                     </Card>
                 ) : (
                     <>
@@ -347,7 +363,7 @@ export const DocenteCalificacionesPage: React.FC = () => {
                                 <AlertTriangle className="w-6 h-6 text-yellow-600 mr-3" />
                                 <div>
                                     <h3 className="font-bold text-yellow-800 text-lg">{totalCamposVacios} campo(s) vacío(s)</h3>
-                                    <p className="text-yellow-700 text-sm">Completa todos los campos con una calificación (0-100) o escribe "NA".</p>
+                                    <p className="text-yellow-700 text-sm">Completa todos los campos.</p>
                                 </div>
                             </div>
                         )}
@@ -372,7 +388,7 @@ export const DocenteCalificacionesPage: React.FC = () => {
                                             <TableCell><CalificacionInput value={alumno.parcial2} onChange={(v) => handleUpdateCalificacion(alumno.id, 'parcial2', v)} hasError={alumno.parcial2 === ''} placeholder="Ej: 85" /></TableCell>
                                             <TableCell><CalificacionInput value={alumno.parcial3} onChange={(v) => handleUpdateCalificacion(alumno.id, 'parcial3', v)} hasError={alumno.parcial3 === ''} placeholder="Ej: 85" /></TableCell>
                                             <TableCell><CalificacionInput value={alumno.final} onChange={(v) => handleUpdateCalificacion(alumno.id, 'final', v)} hasError={alumno.final === ''} placeholder="Ej: 85" /></TableCell>
-                                            <TableCell><CalificacionInput value={alumno.extraordinario} onChange={(v) => handleUpdateCalificacion(alumno.id, 'extraordinario', v)} isExtraordinario hasError={alumno.extraordinario === ''} placeholder="NA, P1, P1-P3" /></TableCell>
+                                            <TableCell><CalificacionInput value={alumno.extraordinario} onChange={(v) => handleUpdateCalificacion(alumno.id, 'extraordinario', v)} isExtraordinario hasError={alumno.extraordinario === ''} placeholder="NA, P1..." /></TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
@@ -386,47 +402,60 @@ export const DocenteCalificacionesPage: React.FC = () => {
                         </Table>
 
                         <div className="flex justify-end mt-8">
-                            <Button onClick={handleGuardarCalificaciones} disabled={isLoading || calificaciones.length === 0} icon={<Save className="w-5 h-5" />} variant="primary">
-                                {isLoading ? 'Guardando...' : 'Guardar Calificaciones'}
+                            <Button 
+                                onClick={handleGuardarCalificaciones} 
+                                disabled={isLoading || calificaciones.length === 0 || camposEditados.size === 0} 
+                                icon={<Save className="w-5 h-5" />} 
+                                variant="primary"
+                            >
+                                {isLoading ? 'Guardando...' : (camposEditados.size === 0 ? 'No hay cambios' : 'Guardar Calificaciones')}
                             </Button>
                         </div>
                     </>
                 )}
             </div>
-
-            <div className="mt-10 space-y-6">
-                <div className="p-4 bg-gray-100 rounded-lg border border-gray-300">
-                    <h3 className="font-bold text-gray-800 mb-3 text-lg flex items-center">
+            
+            <div className="mt-8">
+                <div className="p-5 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+                    <h3 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
                         <ClipboardList className="w-5 h-5 mr-2" />
                         Guía de uso:
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start">
-                            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0"><span className="text-sm font-bold">1</span></div>
-                            <div><p className="font-medium text-gray-800">Escribe calificaciones</p><p className="text-sm text-gray-600">Números entre 0-100</p></div>
+                            <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 border border-blue-200"><span className="text-xs font-bold">1</span></div>
+                            <div><p className="font-bold text-gray-800 text-sm">Escribe calificaciones</p><p className="text-xs text-gray-600">Números entre 0-100</p></div>
                         </div>
                         <div className="flex items-start">
-                            <div className="w-6 h-6 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0"><span className="text-sm font-bold">2</span></div>
-                            <div><p className="font-medium text-gray-800">NA automático</p><p className="text-sm text-gray-600">Calificaciones &lt; 70 se convierten a NA</p></div>
+                            <div className="w-6 h-6 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 border border-yellow-200"><span className="text-xs font-bold">2</span></div>
+                            <div><p className="font-bold text-gray-800 text-sm">NA automático</p><p className="text-xs text-gray-600">Calificaciones &lt; 70 se convierten a NA</p></div>
                         </div>
                         <div className="flex items-start">
-                            <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0"><span className="text-sm font-bold">3</span></div>
-                            <div><p className="font-medium text-gray-800">Campos vacíos</p><p className="text-sm text-gray-600">Se marcarán en <span className="text-yellow-600 font-bold">amarillo</span></p></div>
+                            <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 border border-red-200"><span className="text-xs font-bold">3</span></div>
+                            <div><p className="font-bold text-gray-800 text-sm">Campos vacíos</p><p className="text-xs text-gray-600">Se marcarán en <span className="text-yellow-600 font-bold">amarillo</span></p></div>
                         </div>
                         <div className="flex items-start">
-                            <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0"><span className="text-sm font-bold">4</span></div>
-                            <div><p className="font-medium text-gray-800">Campo extraordinario</p><p className="text-sm text-gray-600">Usa P1, P2, P3, P1-P3, etc.</p></div>
+                            <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-3 mt-0.5 flex-shrink-0 border border-green-200"><span className="text-xs font-bold">4</span></div>
+                            <div><p className="font-bold text-gray-800 text-sm">Campo extraordinario</p><p className="text-xs text-gray-600">Usa P1, P2, P3, P1-P3, etc.</p></div>
                         </div>
                     </div>
                 </div>
-                
-                {/* INDICADORES VISUALES (RESTAURADOS) */}
-                <div className="p-4 bg-white rounded-lg border border-gray-300 shadow-sm">
-                    <h4 className="font-bold text-gray-700 mb-2">Indicadores visuales:</h4>
-                    <div className="flex flex-wrap gap-3">
-                        <div className="flex items-center"><div className="w-4 h-4 bg-yellow-100 border-2 border-yellow-400 rounded mr-2"></div><span className="text-sm text-gray-600">Campo vacío (requerido)</span></div>
-                        <div className="flex items-center"><div className="w-4 h-4 bg-gray-100 border-2 border-gray-300 rounded mr-2"></div><span className="text-sm text-gray-600">Campo válido</span></div>
-                        <div className="flex items-center"><div className="w-8 h-6 bg-red-50 outline-2 outline-red-200 rounded mr-2 pl-1.5 italic text-gray-500">NA</div><span className="text-sm text-gray-600">No Aplicable</span></div>
+            </div>
+            
+            <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="font-bold text-gray-800 mb-3 text-sm">Indicadores visuales:</h4>
+                <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                    <div className="flex items-center">
+                        <div className="w-5 h-5 bg-yellow-50 border border-yellow-400 rounded mr-2"></div>
+                        <span>Campo vacío (requerido)</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-5 h-5 bg-gray-100 border border-gray-300 rounded mr-2"></div>
+                        <span>Campo válido</span>
+                    </div>
+                    <div className="flex items-center">
+                        <div className="w-7 h-6 bg-red-50 border border-red-300 rounded flex items-center justify-center text-[13px] font-bold text-black-600 mr-2">NA</div>
+                        <span>No Aplicable</span>
                     </div>
                 </div>
             </div>

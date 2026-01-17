@@ -2,15 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Calendar, List, ClipboardList, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// Importación de componentes UI
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Table from '../../components/ui/Table';
 
-// --- CONSTANTE ID (REEMPLAZAR CON ID REAL DE LA BD) ---
-const TEACHER_ID = "550e8400-e29b-41d4-a716-446655440000"; 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// --- Interfaces ---
 interface AsignaturaUI {
     nombre: string;
     clave: string;
@@ -25,7 +22,23 @@ interface ClaseUI {
     dia: string;
 }
 
-// --- Componente de Celda de Horario ---
+interface ApiSchedule {
+    diaSemana: string;
+    horaInicio: string;
+    horaFin: string;
+}
+
+interface ApiSubject {
+    nombre: string;
+    codigoMateria: string;
+}
+
+interface ApiCourse {
+    subject?: ApiSubject;
+    salonDefault?: string;
+    schedules?: ApiSchedule[];
+}
+
 const HorarioSlot: React.FC<{ timeRange: string, content: ClaseUI[] }> = ({ timeRange, content = [] }) => {
     const days = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
     
@@ -64,6 +77,7 @@ const HorarioSlot: React.FC<{ timeRange: string, content: ClaseUI[] }> = ({ time
 
 const DocenteDashboardPage: React.FC = () => {
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
     const [asignaturas, setAsignaturas] = useState<AsignaturaUI[]>([]);
     const [horario, setHorario] = useState<ClaseUI[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,62 +85,55 @@ const DocenteDashboardPage: React.FC = () => {
 
     useEffect(() => {
         const fetchCargaAcademica = async () => {
+            if (!token) return;
             setLoading(true);
             setError(null);
 
             try {
-                // PETICIÓN REAL AL BACKEND
-                const response = await fetch(`http://localhost:3000/academic/teacher-load/${TEACHER_ID}`);
+                const response = await fetch(`${API_URL}/academic/teacher-load`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 
-                // 🛑 CORRECCIÓN AQUÍ: Controlamos el mensaje en español manualmente
                 if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error("No se encontró información para este docente (ID incorrecto o sin carga asignada).");
-                    } else if (response.status === 500) {
-                        throw new Error("Error interno del servidor. Por favor avisa a soporte técnico.");
-                    } else {
-                        throw new Error("No se pudo conectar con el sistema escolar.");
-                    }
+                    throw new Error("No se pudo conectar con el sistema escolar.");
                 }
                 
                 const data = await response.json();
 
-                // Mapeo de datos del Backend a la UI
-                const formattedAsignaturas = data.map((item: any) => ({
-                    nombre: item.subject?.nombre || 'Materia desconocida',
-                    clave: item.subject?.codigoMateria || 'N/A', 
-                    salon: item.salonDefault || 'N/A',
-                    horario: item.schedules?.map((s: any) => `${s.diaSemana} ${s.horaInicio?.slice(0,5)}`).join(', ') || 'Sin horario'
-                }));
+                if (Array.isArray(data)) {
+                    const formattedAsignaturas: AsignaturaUI[] = data.map((item: ApiCourse) => ({
+                        nombre: item.subject?.nombre || 'Materia desconocida',
+                        clave: item.subject?.codigoMateria || 'N/A', 
+                        salon: item.salonDefault || 'N/A',
+                        horario: item.schedules?.map((s) => `${s.diaSemana} ${s.horaInicio?.slice(0,5)}`).join(', ') || 'Sin horario'
+                    }));
 
-                const formattedHorario = data.flatMap((item: any) => 
-                    (item.schedules || []).map((s: any) => ({
-                        horaInicio: s.horaInicio,
-                        horaFin: s.horaFin,
-                        asignatura: item.subject?.nombre || 'Materia',
-                        dia: s.diaSemana
-                    }))
-                );
+                    const formattedHorario: ClaseUI[] = data.flatMap((item: ApiCourse) => 
+                        (item.schedules || []).map((s) => ({
+                            horaInicio: s.horaInicio,
+                            horaFin: s.horaFin,
+                            asignatura: item.subject?.nombre || 'Materia',
+                            dia: s.diaSemana
+                        }))
+                    );
 
-                setAsignaturas(formattedAsignaturas);
-                setHorario(formattedHorario);
-            } catch (err: any) {
-                // Forzamos el mensaje en español si viene algo raro
-                const mensaje = err.message === "Failed to fetch" 
-                    ? "Error de conexión: El servidor parece estar apagado." 
-                    : err.message;
-                
-                setError(mensaje);
-                console.error("Error detallado:", err);
+                    setAsignaturas(formattedAsignaturas);
+                    setHorario(formattedHorario);
+                }
+            } catch (err) {
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("Error desconocido");
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         fetchCargaAcademica();
-    }, []);
+    }, [token]);
 
-    // Helpers para la matriz del horario
     const timeSlots = useMemo(() => [
         '07:00 - 08:00', '08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', 
         '11:00 - 12:00', '12:00 - 13:00', '13:00 - 14:00', '14:00 - 15:00'
@@ -155,7 +162,6 @@ const DocenteDashboardPage: React.FC = () => {
                 <p className="text-gray-500 mt-1">Gestión de clases y horarios</p>
             </header>
 
-            {/* Alerta de Error */}
             {error && (
                 <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 flex items-center text-amber-800">
                     <AlertCircle className="w-5 h-5 mr-3" />
@@ -163,7 +169,6 @@ const DocenteDashboardPage: React.FC = () => {
                 </div>
             )}
             
-            {/* TABLA DE ASIGNATURAS */}
             <Card className="mb-8" header={
                 <div className="flex items-center">
                     <List className="w-5 h-5 mr-2 text-blue-700" />
@@ -204,7 +209,6 @@ const DocenteDashboardPage: React.FC = () => {
                 </div>
             </Card>
 
-            {/* HORARIO SEMANAL */}
             <Card header={
                 <div className="flex items-center">
                     <Calendar className="w-5 h-5 mr-2 text-blue-700" />

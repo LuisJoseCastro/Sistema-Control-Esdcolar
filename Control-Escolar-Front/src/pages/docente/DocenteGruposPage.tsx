@@ -1,15 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Home, ArrowLeft } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react'; 
 import Table from '../../components/ui/Table';
 
-// ⚠️ CONFIGURACIÓN API
-// Si usas Tailscale, cambia localhost por la IP del líder (ej: 100.77.114.87)
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface Grupo {
-  id: string; // ID del Curso (Course ID)
-  nombre: string; // Nombre compuesto (Grupo - Materia)
+  id: string;
+  nombre: string;
 }
 
 interface Alumno {
@@ -22,20 +19,32 @@ interface Alumno {
   comentarios?: string;
 }
 
+interface ApiLoadResponse {
+    id: string;
+    group?: { nombre: string };
+    subject?: { nombre: string };
+}
+
+interface ApiGradeResponse {
+    id: string;
+    nombre: string;
+    matricula: string;
+    final?: string;
+    extraordinario?: string;
+}
+
 const DocenteGruposPage: React.FC = () => {
-  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  // --- ESTADOS DE DATOS REALES ---
-  // Inicializamos como arrays vacíos para evitar errores de renderizado
   const [cursos, setCursos] = useState<Grupo[]>([]);
   const [selectedGrupoId, setSelectedGrupoId] = useState<string>('');
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [filter, setFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // 1. CARGAR CURSOS (Grupos asignados) AL INICIO
   useEffect(() => {
+    if (!token) return;
+
     fetch(`${API_URL}/academic/teacher-load`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
     })
@@ -43,18 +52,14 @@ const DocenteGruposPage: React.FC = () => {
           if (!res.ok) throw new Error('Error al cargar cursos');
           return res.json();
       })
-      .then(data => {
+      .then((data: unknown) => {
           if (Array.isArray(data)) {
-              // Mapeamos la respuesta del backend a la estructura visual
-              const mappedCursos = data.map((c: any) => ({
-                  id: c.id, // Usamos el ID del Curso para buscar calificaciones
-                  // Construimos el nombre visual: "3ro A - Matemáticas"
-                  nombre: `${c.group ? c.group.nombre : 'Sin Grupo'} - ${c.subject ? c.subject.nombre : 'Materia'}`
+              const mappedCursos = data.map((c: ApiLoadResponse) => ({
+                  id: c.id, 
+                  nombre: `${c.group?.nombre || 'Sin Grupo'} - ${c.subject?.nombre || 'Materia'}`
               }));
               
               setCursos(mappedCursos);
-              
-              // Seleccionamos el primer curso por defecto si existe
               if (mappedCursos.length > 0) {
                   setSelectedGrupoId(mappedCursos[0].id);
               }
@@ -65,28 +70,26 @@ const DocenteGruposPage: React.FC = () => {
       .catch(err => console.error("Error fetching groups:", err));
   }, [token]);
 
-  // 2. CARGAR ALUMNOS DEL CURSO SELECCIONADO
   useEffect(() => {
-    if (!selectedGrupoId) {
+    if (!selectedGrupoId || !token) {
         setAlumnos([]);
         return;
     }
 
     setIsLoading(true);
-    // Usamos el endpoint de calificaciones para obtener la lista
     fetch(`${API_URL}/academic/grades/list/${selectedGrupoId}`, { 
         headers: { 'Authorization': `Bearer ${token}` } 
     })
       .then(res => res.json())
-      .then(data => {
+      .then((data: unknown) => {
         if (Array.isArray(data)) {
-            const mappedAlumnos = data.map((grade: any) => ({
-                id: grade.id, // ID de la boleta/calificación
+            const mappedAlumnos = data.map((grade: ApiGradeResponse) => ({
+                id: grade.id,
                 nombre: grade.nombre,
                 matricula: grade.matricula,
-                email: "registrado@escuela.edu", // Dato pendiente en backend, placeholder seguro
+                email: "registrado@escuela.edu",
                 calificacion: Number(grade.final || 0),
-                asistencia: "-", // Dato pendiente en este endpoint
+                asistencia: "-",
                 comentarios: grade.extraordinario ? `Extra: ${grade.extraordinario}` : ''
             }));
             setAlumnos(mappedAlumnos);
@@ -98,7 +101,6 @@ const DocenteGruposPage: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, [selectedGrupoId, token]);
 
-  // Filtrado en Frontend (Búsqueda)
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return alumnos;
@@ -109,22 +111,17 @@ const DocenteGruposPage: React.FC = () => {
     );
   }, [alumnos, filter]);
 
-  // Encontrar el nombre del grupo seleccionado para el título
   const selectedGrupoNombre = cursos.find(g => g.id === selectedGrupoId)?.nombre ?? 'Cargando...';
 
   return (
     <div className='h-full'>
-      {/* CONTENIDO PRINCIPAL */}
       <main className="h-full bg-gray-100 p-8">
-        {/* Encabezado de la sección */}
         <div className="mb-6 flex justify-between items-start">
           <div>
             <div className="flex items-center gap-4">
                 <h1 className="text-4xl font-serif italic text-gray-800 mb-2">
                 {selectedGrupoNombre}
                 </h1>
-                {/* SELECTOR DE GRUPOS DISCRETO */}
-                {/* Se muestra solo si hay más de 1 grupo para no ensuciar la UI si es único */}
                 {cursos.length > 0 && (
                     <select 
                         className="mt-1 ml-2 p-1 text-sm bg-gray-200 border-none rounded text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-500"
@@ -144,7 +141,6 @@ const DocenteGruposPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Barra de búsqueda */}
         <div className="mb-6 flex justify-end">
           <div className="w-80">
             <div className="relative">
@@ -159,7 +155,6 @@ const DocenteGruposPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabla */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <Table>
             <Table.Header>

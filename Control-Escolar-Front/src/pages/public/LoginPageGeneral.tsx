@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // IMPORTAR useSearchParams
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
@@ -14,40 +14,20 @@ const getDefaultDashboard = (role: string) => {
   }
 };
 
-const parseEmail = (fullEmail: string): { rolePrefix: string, schoolDomain: string } | null => {
-  const parts = fullEmail.split('@');
-  if (parts.length !== 2) return null;
-  const [localPart, domainPart] = parts;
-  let rolePrefix = '';
-  if (localPart.toLowerCase().startsWith('d')) rolePrefix = 'DOCENTE';
-  else if (localPart.toLowerCase().startsWith('a')) rolePrefix = 'ALUMNO';
-  else if (localPart.toLowerCase().startsWith('admin')) rolePrefix = 'ADMIN';
-  const domainName = domainPart.split('.')[0];
-  return { rolePrefix, schoolDomain: domainName };
-};
-
 export const LoginPageGeneral: React.FC = () => {
   const { login, isLoggedIn, role, isLoading } = useAuth();
   const navigate = useNavigate();
-  
-  // 1. LEER LA URL (Ej: /login?returnTo=/admin/alumnos)
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
 
-  const [email, setEmail] = useState('Drodolfo@tesji.com');
-  const [password, setPassword] = useState('1234');
+  const [email, setEmail] = useState('carlos.profe@basico-v2.edu.mx');
+  const [password, setPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 2. EFECTO DE REDIRECCIÓN AUTOMÁTICA
   useEffect(() => {
-    // Si ya estamos logueados y terminó de cargar...
     if (isLoggedIn && !isLoading && role) {
-      
-      // Decidimos el destino: ¿Hay algo en la URL? Si no, Dashboard.
       const destination = returnTo ? decodeURIComponent(returnTo) : getDefaultDashboard(role);
-      
-      console.log(`🚀 Redirigiendo a: ${destination}`);
       navigate(destination, { replace: true });
     }
   }, [isLoggedIn, role, isLoading, navigate, returnTo]);
@@ -57,26 +37,39 @@ export const LoginPageGeneral: React.FC = () => {
     setFormLoading(true);
     setError('');
 
-    const parsedData = parseEmail(email);
-
-    if (!parsedData || !parsedData.rolePrefix) {
+    // 1. Validación simple de formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       setError("Formato de correo inválido.");
       setFormLoading(false);
       return;
     }
 
+    // 2. Extraer el dominio para usarlo como schoolKey (ID del Tenant)
+    // Ejemplo: 'juan@mi-escuela.com' -> schoolDomain = 'mi-escuela'
+    const parts = email.split('@');
+    const domainPart = parts[1]; 
+    const schoolDomain = domainPart.split('.')[0]; // Toma lo que está antes del primer punto
+
     try {
-      await login(email, password, parsedData.schoolDomain);
-      // No hacemos navigate aquí, dejamos que el useEffect lo haga
-    } catch (err: any) {
+      // 3. Intentar Login con el dominio extraído
+      await login(email, password, schoolDomain);
+    } catch (err) {
       console.error(err);
-      setError(err.message || "Credenciales inválidas.");
+      if (err instanceof Error) {
+          // Si es error de red (CORS/Apagado), suele ser un TypeError con mensaje "Failed to fetch"
+          if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
+             setError("No se pudo conectar con el servidor. Verifica tu conexión o que el backend esté encendido.");
+          } else {
+             setError(err.message);
+          }
+      } else {
+          setError("Ocurrió un error inesperado al iniciar sesión.");
+      }
       setFormLoading(false);
     }
   };
 
-  // 3. BLOQUEO DE PANTALLA (ANTI-PARPADEO)
-  // Si está cargando O si ya está logueado, NO mostramos el form.
   if (isLoading || isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
@@ -88,7 +81,6 @@ export const LoginPageGeneral: React.FC = () => {
     );
   }
 
-  // 4. RENDERIZADO DEL FORMULARIO
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
       <h2 className="text-3xl font-bold mb-6">Acceso Único al Sistema Escolar SaaS</h2>
@@ -111,7 +103,7 @@ export const LoginPageGeneral: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ej: Docente@tesji.com"
+              placeholder="Ej: usuario@escuela.edu"
               required
             />
           </div>

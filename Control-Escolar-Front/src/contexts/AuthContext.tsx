@@ -3,12 +3,7 @@ import type { ReactNode } from 'react';
 import type { User, Role } from '../types/models';
 import { useTenant } from './TenantContext'; 
 
-// --- MOCK DB ---
-const MOCK_DB: Record<string, User> = {
-  'adminmaria@tesji.com': { id: 'a1', nombre: 'Admin Maria', email: 'adminmaria@tesji.com', rol: 'ADMIN', tenantId: 'T-123' },
-  'drodolfo@tesji.com': { id: 'd1', nombre: 'Rodolfo Docente', email: 'drodolfo@tesji.com', rol: 'DOCENTE', tenantId: 'T-123' },
-  'a12345678@tesji.com': { id: 'l1', nombre: 'Laura Alumna', email: 'a12345678@tesji.com', rol: 'ALUMNO', tenantId: 'T-123' },
-};
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -19,74 +14,94 @@ type AuthContextType = {
   isLoading: boolean;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   
-  // 1. CAMBIO CLAVE: "Lazy Initialization"
-  // Leemos el localStorage DIRECTAMENTE al iniciar el estado.
-  // Esto garantiza que 'user' tenga valor ANTES del primer renderizado.
   const [user, setUser] = useState<User | null>(() => {
     try {
       const stored = localStorage.getItem('academic_user');
       return stored ? JSON.parse(stored) : null;
     } catch (error) {
-      console.error("Error parsing user from storage", error);
+      console.error(error);
       return null;
     }
   });
 
-  // Si ya tenemos usuario (por lazy init), no necesitamos bloquear con carga inicial
-  // a menos que quieras forzar la carga del Tenant.
-  const [isLoading, setIsLoading] = useState(true); 
-  
+  const [isLoading, setIsLoading] = useState(false); 
   const { loadTenant } = useTenant();
 
-  // 2. EFECTO: Solo para cargar configuraciones extra (Tenant)
   useEffect(() => {
     const initTenant = async () => {
       if (user && user.tenantId) {
-        console.log("🔄 Recargando configuración de escuela...");
-        await loadTenant(user.tenantId);
+        try {
+          await loadTenant(user.tenantId);
+        } catch {
+          logout(); 
+        }
       }
-      setIsLoading(false);
     };
-
     initTenant();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Se ejecuta una vez. Si user ya existe, carga el tenant.
+  }, []); 
 
-  const login = async (email: string, _password: string, schoolKey: string) => {
+  const login = async (email: string, password: string, schoolKey: string) => {
     setIsLoading(true);
-    // Simular delay
-    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const lookupEmail = email.toLowerCase();
-    const foundUser = MOCK_DB[lookupEmail];
-    
-    if (!foundUser) {
-        setIsLoading(false);
-        throw new Error("Credenciales inválidas.");
-    }
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const emailDomainPart = lookupEmail.split('@')[1]?.split('.')[0];
-    if (emailDomainPart !== schoolKey) {
-        setIsLoading(false);
-        throw new Error("Clave de escuela inválida.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Error al iniciar sesión");
+      }
+
+      const data = await response.json();
+      const { access_token, user: apiUser } = data;
+
+      localStorage.setItem('token', access_token);
+
+      let role: Role = 'DOCENTE'; 
+      if (apiUser.roles && apiUser.roles.includes('admin')) role = 'ADMIN';
+      if (apiUser.roles && apiUser.roles.includes('student')) role = 'ALUMNO';
+      
+      const finalTenantId = apiUser.tenantId || schoolKey;
+
+      const userData: User = {
+        id: apiUser.id,
+        nombre: apiUser.fullName || apiUser.email,
+        email: apiUser.email,
+        rol: role, 
+        tenantId: finalTenantId
+      };
+
+      try {
+          await loadTenant(finalTenantId);
+      } catch (e) {
+          console.warn(e);
+      }
+
+      localStorage.setItem('academic_user', JSON.stringify(userData));
+      setUser(userData);
+
+      return role;
+
+    } catch (error) {
+      console.error(error);
+      throw error; 
+    } finally {
+      setIsLoading(false);
     }
-    
-    await loadTenant(foundUser.tenantId); 
-    
-    // Guardar en Storage
-    localStorage.setItem('academic_user', JSON.stringify(foundUser));
-    
-    setUser(foundUser);
-    setIsLoading(false);
-    return foundUser.rol;
   };
 
   const logout = () => {
     localStorage.removeItem('academic_user');
+    localStorage.removeItem('token');
     setUser(null);
     window.location.href = '/login'; 
   };
@@ -98,6 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth debe usarse dentro de un AuthProvider');

@@ -1,20 +1,13 @@
-// src/pages/docente/DocenteMensajesPage.tsx
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mail, Send, Search, User, Plus, Paperclip } from 'lucide-react';
-// Componentes atómicos reutilizables
 import Modal from '../../components/ui/Modal';
-
-// 🛑 IMPORTACIONES DE COMPONENTES ATÓMICOS
 import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import Badge from '../../components/ui/Badge';
 
-// ⚠️ CONFIGURACIÓN API
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// --- Tipos de Datos ---
 type MessageStatus = 'INBOX' | 'SENT';
 
 interface Mensaje {
@@ -23,20 +16,29 @@ interface Mensaje {
     subject: string;
     date: string;
     time: string;
+    fullContent: string;
     read: boolean;
     status: MessageStatus;
-    fullContent: string; // Agregado para mostrar el contenido real de la BD
 }
 
-// --- Componente de Fila de Mensaje ---
-interface MensajeRowProps {
-    mensaje: Mensaje;
-    isSelected: boolean;
-    onClick: (id: string) => void;
+interface ApiUser {
+    id: string;
+    email: string;
+    fullName?: string;
 }
 
-const MensajeRow: React.FC<MensajeRowProps> = ({ mensaje, isSelected, onClick }) => {
+interface ApiMessage {
+    id: string;
+    asunto: string;
+    cuerpoMensaje: string;
+    urlAdjunto?: string;
+    leido: boolean;
+    fechaEnvio: string;
+    remitente: ApiUser;
+    destinatario: ApiUser;
+}
 
+const MensajeRow: React.FC<{ mensaje: Mensaje; isSelected: boolean; onClick: (id: string) => void; }> = ({ mensaje, isSelected, onClick }) => {
     const baseClasses = 'flex items-center p-4 rounded-xl cursor-pointer transition-all duration-200 border';
     const selectedClasses = isSelected
         ? 'bg-blue-50 border-blue-500 shadow-md'
@@ -46,63 +48,43 @@ const MensajeRow: React.FC<MensajeRowProps> = ({ mensaje, isSelected, onClick })
     const subjectClasses = mensaje.read ? 'text-gray-500' : 'text-gray-700 font-medium';
 
     return (
-        <div
-            className={`${baseClasses} ${selectedClasses}`}
-            onClick={() => onClick(mensaje.id)}
-        >
+        <div className={`${baseClasses} ${selectedClasses}`} onClick={() => onClick(mensaje.id)}>
             <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 
                 ${mensaje.read ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white'}`}>
                 <User className="w-5 h-5" />
             </div>
-
             <div className="grow min-w-0">
                 <div className={`text-base truncate ${fontClasses}`}>
                     {mensaje.sender}
-                    {!mensaje.read && (
-                        <Badge variant="info" className="ml-3 h-auto py-0.5 px-2 text-[10px] tracking-normal">
-                            Nuevo
-                        </Badge>
-                    )}
+                    {!mensaje.read && <Badge variant="info" className="ml-3 h-auto py-0.5 px-2 text-[10px] tracking-normal">Nuevo</Badge>}
                 </div>
                 <div className={`text-sm truncate mt-0.5 ${subjectClasses}`}>
                     {mensaje.subject}
                 </div>
             </div>
-
             <div className="shrink-0 ml-4 text-right hidden sm:block">
-                <div className="text-sm text-gray-600 font-medium">
-                    {mensaje.date}
-                </div>
-                <div className="text-xs text-gray-400">
-                    {mensaje.time}
-                </div>
+                <div className="text-sm text-gray-600 font-medium">{mensaje.date}</div>
+                <div className="text-xs text-gray-400">{mensaje.time}</div>
             </div>
         </div>
     );
 };
 
-
-// --- PÁGINA PRINCIPAL: DocenteMensajesPage ---
 export const DocenteMensajesPage: React.FC = () => {
-
     const fileInputRef = useRef<HTMLInputElement>(null);
     const token = localStorage.getItem('token');
 
-    // Estado de Mensajes Reales
     const [messages, setMessages] = useState<Mensaje[]>([]);
-
     const [activeTab, setActiveTab] = useState<MessageStatus>('INBOX');
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
-    
-    // Formulario
-    const [to, setTo] = useState<string>('');
-    const [messageBody, setMessageBody] = useState<string>('');
-    const [isSending, setIsSending] = useState<boolean>(false);
-    const [errors, setErrors] = useState<{ to?: string, messageBody?: string }>({});
+    const [to, setTo] = useState('');
+    const [subject, setSubject] = useState('');
+    const [messageBody, setMessageBody] = useState('');
+    const [isSending, setIsSending] = useState(false);
+    const [errors, setErrors] = useState<{ to?: string, subject?: string, messageBody?: string }>({});
 
-    // --- 1. FUNCIÓN AUXILIAR: Formato de fecha ---
     const formatDateForUI = (isoDate: string) => {
         const d = new Date(isoDate);
         const now = new Date();
@@ -111,17 +93,14 @@ export const DocenteMensajesPage: React.FC = () => {
         const time = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
         let date = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
         
-        if (isToday) date = "Hoy"; // Manteniendo el estilo de tu mock
+        if (isToday) date = "Hoy"; 
         
         return { date, time };
     };
 
-    // --- 2. FETCH: Cargar Mensajes de BD ---
     const fetchMessages = useCallback(async () => {
         if (!token) return;
-        
         const endpoint = activeTab === 'INBOX' ? '/academic/messages/inbox' : '/academic/messages/sent';
-        
         try {
             const res = await fetch(`${API_URL}${endpoint}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -129,20 +108,21 @@ export const DocenteMensajesPage: React.FC = () => {
             const data = await res.json();
 
             if (Array.isArray(data)) {
-                const mappedMessages: Mensaje[] = data.map((msg: any) => {
+                const mappedMessages: Mensaje[] = data.map((msg: ApiMessage) => {
                     const { date, time } = formatDateForUI(msg.fechaEnvio);
+                    const displaySender = activeTab === 'INBOX' 
+                        ? (msg.remitente?.fullName || msg.remitente?.email || "Desconocido")
+                        : (msg.destinatario?.fullName || msg.destinatario?.email || "Desconocido");
+
                     return {
                         id: msg.id,
-                        // Si es Inbox, muestra quién envió. Si es Enviados, muestra a quién enviaste.
-                        sender: activeTab === 'INBOX' 
-                            ? (msg.remitente?.fullName || msg.remitente?.email || "Desconocido") 
-                            : (msg.destinatario?.fullName || msg.destinatario?.email || "Desconocido"),
+                        sender: displaySender,
                         subject: msg.asunto,
+                        fullContent: msg.cuerpoMensaje,
                         date: date,
                         time: time,
                         read: activeTab === 'SENT' ? true : msg.leido,
-                        status: activeTab,
-                        fullContent: msg.cuerpoMensaje // Contenido real
+                        status: activeTab
                     };
                 });
                 setMessages(mappedMessages);
@@ -152,25 +132,20 @@ export const DocenteMensajesPage: React.FC = () => {
         }
     }, [activeTab, token]);
 
-    // Recargar cuando cambia la pestaña
     useEffect(() => {
         fetchMessages();
         setSelectedMessageId(null);
     }, [fetchMessages]);
 
-    // --- 3. LÓGICA: Marcar como leído ---
     const handleMessageClick = useCallback(async (id: string) => {
         setSelectedMessageId(id);
-        
         const msg = messages.find(m => m.id === id);
-        // Solo marcamos como leído si está en Inbox y no ha sido leído aún
         if (msg && !msg.read && activeTab === 'INBOX') {
             try {
                 await fetch(`${API_URL}/academic/messages/read/${id}`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                // Actualizamos UI localmente para velocidad
                 setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
             } catch (e) { console.error(e); }
         }
@@ -187,18 +162,17 @@ export const DocenteMensajesPage: React.FC = () => {
         fileInputRef.current?.click();
     };
 
-    const validateFields = (): boolean => {
-        const newErrors: { to?: string, messageBody?: string } = {};
+    const validateFields = useCallback((): boolean => {
+        const newErrors: { to?: string, subject?: string, messageBody?: string } = {};
         if (!to.trim()) newErrors.to = 'El campo "Para" es requerido';
+        if (!subject.trim()) newErrors.subject = 'El Asunto es requerido';
         if (!messageBody.trim()) newErrors.messageBody = 'El mensaje no puede estar vacío';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
-    };
+    }, [to, subject, messageBody]);
 
-    // --- 4. LÓGICA: Enviar Mensaje Real ---
     const handleSendMessage = useCallback(async () => {
         if (!validateFields()) {
-            alert('❌ Por favor, completa todos los campos requeridos antes de enviar.');
             return;
         }
 
@@ -213,30 +187,33 @@ export const DocenteMensajesPage: React.FC = () => {
                 },
                 body: JSON.stringify({
                     to: to,
-                    subject: "Nuevo Mensaje Docente", // Asunto por defecto ya que no hay campo en UI
+                    subject: subject,
                     message: messageBody
                 })
             });
 
             if (res.ok) {
-                alert('✅ Mensaje enviado exitosamente.');
+                alert('Mensaje enviado exitosamente.');
                 setIsNewMessageOpen(false);
                 setTo('');
+                setSubject('');
                 setMessageBody('');
                 setErrors({});
-                if (activeTab === 'SENT') fetchMessages(); // Actualizar si estamos en enviados
+                if (activeTab === 'SENT') fetchMessages(); 
             } else {
-                alert('❌ Error: Verifica el correo del destinatario.');
+                alert('Error: Verifica el correo del destinatario.');
             }
         } catch (error) {
+            console.error("Error al enviar mensaje:", error);
             alert('Error de conexión con el servidor.');
         } finally {
             setIsSending(false);
         }
-    }, [to, messageBody, token, activeTab, fetchMessages]);
+    }, [to, subject, messageBody, token, activeTab, fetchMessages, validateFields]);
 
     const handleClearForm = () => {
         setTo('');
+        setSubject('');
         setMessageBody('');
         setErrors({});
     };
@@ -253,12 +230,10 @@ export const DocenteMensajesPage: React.FC = () => {
         return matchesSearch;
     });
 
-    // Encontrar el mensaje seleccionado real
-    const selectedMessageData = messages.find(m => m.id === selectedMessageId);
+    const selectedMessageDetail = messages.find(m => m.id === selectedMessageId);
 
     return (
         <div className="p-4 md:p-8 bg-gray-50 min-h-full">
-
             <header className="flex justify-between items-center mb-6 border-b border-gray-200 pb-4">
                 <h1 className="text-3xl font-bold text-gray-800 flex items-center">
                     <Mail className="w-7 h-7 mr-3 text-main-900" />
@@ -335,7 +310,6 @@ export const DocenteMensajesPage: React.FC = () => {
                         </div>
                     )}
                 </div>
-
             </Card>
 
             <Modal
@@ -346,9 +320,9 @@ export const DocenteMensajesPage: React.FC = () => {
             >
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm text-gray-600 mb-2">Para:</label>
+                        <label className="block text-sm text-gray-600 mb-2">Para (Email):</label>
                         <Input
-                            placeholder="Destinatario (ejemplo: admin@escuela.edu)"
+                            placeholder="Destinatario (ejemplo: director@escuela.edu)"
                             value={to}
                             onChange={(e) => {
                                 setTo(e.target.value);
@@ -356,7 +330,25 @@ export const DocenteMensajesPage: React.FC = () => {
                             }}
                             className={`bg-whiteBg-300 ${errors.to ? 'border-red-500' : ''}`}
                         />
-                        {errors.to && <p className="mt-1 text-xs text-red-500">{errors.to}</p>}
+                        {errors.to && (
+                            <p className="mt-1 text-xs text-red-500">{errors.to}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-2">Asunto:</label>
+                        <Input
+                            placeholder="Asunto del mensaje"
+                            value={subject}
+                            onChange={(e) => {
+                                setSubject(e.target.value);
+                                if (errors.subject) setErrors(prev => ({ ...prev, subject: undefined }));
+                            }}
+                            className={`bg-whiteBg-300 ${errors.subject ? 'border-red-500' : ''}`}
+                        />
+                        {errors.subject && (
+                            <p className="mt-1 text-xs text-red-500">{errors.subject}</p>
+                        )}
                     </div>
 
                     <div className="relative">
@@ -374,8 +366,7 @@ export const DocenteMensajesPage: React.FC = () => {
                                 setMessageBody(e.target.value);
                                 if (errors.messageBody) setErrors(prev => ({ ...prev, messageBody: undefined }));
                             }}
-                            className={`w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500 ${errors.messageBody ? 'border-red-500' : ''
-                                }`}
+                            className={`w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500 ${errors.messageBody ? 'border-red-500' : ''}`}
                         />
                         <div className="absolute right-3 top-8 text-gray-500">
                             <button
@@ -411,21 +402,20 @@ export const DocenteMensajesPage: React.FC = () => {
                 </div>
             </Modal>
 
-            {/* DETALLE DEL MENSAJE (DATOS REALES) */}
-            {selectedMessageData && (
+            {selectedMessageDetail && (
                 <div className="mt-8">
                     <Card header="Detalle del Mensaje" className="border-l-4 border-main-800">
                         <p className="text-sm text-gray-500 mb-2">
-                            {activeTab === 'INBOX' ? 'De:' : 'Para:'} <span className="font-semibold text-gray-800">{selectedMessageData.sender}</span>
+                            {activeTab === 'INBOX' ? 'De:' : 'Para:'} <span className="font-semibold text-gray-800">{selectedMessageDetail.sender}</span>
                         </p>
                         <p className="text-sm text-gray-500 mb-4">
-                            Fecha: <span className="font-semibold text-gray-800">{selectedMessageData.date} a las {selectedMessageData.time}</span>
+                            Fecha: <span className="font-semibold text-gray-800">{selectedMessageDetail.date} a las {selectedMessageDetail.time}</span>
                         </p>
                         <p className="text-lg font-bold text-gray-800 mb-4">
-                            {selectedMessageData.subject}
+                            {selectedMessageDetail.subject}
                         </p>
                         <div className="border-t border-gray-100 pt-4 text-gray-800 font-medium whitespace-pre-wrap">
-                            <p>{selectedMessageData.fullContent}</p>
+                            <p>{selectedMessageDetail.fullContent}</p>
                         </div>
                     </Card>
                 </div>

@@ -4,10 +4,8 @@ import { Card } from '../../components/ui/Card';
 import Modal from '../../components/ui/Modal';
 import { FileText, Download, Users, User } from 'lucide-react'; 
 
-// --- CONSTANTE ID (REEMPLAZAR CON ID REAL DE LA BD) ---
-const TEACHER_ID = "550e8400-e29b-41d4-a716-446655440000";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// --- DEFINICIÓN DE INTERFACES ---
 interface RendimientoMateria {
     materia: string;
     promedio: number;
@@ -25,7 +23,6 @@ interface ReporteSummary {
     estudiantesAsistenciaCritica: number;
 }
 
-// --- DATOS MOCK DE RESPALDO (Para evitar pantalla de error) ---
 const MOCK_DATA: ReporteSummary = {
     promedioFinalGrupo: 0,
     asistenciaPromedio: 0,
@@ -38,9 +35,7 @@ const MOCK_DATA: ReporteSummary = {
     estudiantesAsistenciaCritica: 0
 };
 
-// --- COMPONENTES DE APOYO (GRÁFICOS) ---
 const BarChartDynamic: React.FC<{ data: RendimientoMateria[] }> = ({ data }) => {
-    // Si no hay datos, mostramos vacío seguro
     if (!data || data.length === 0) return <div className="h-64 flex items-center justify-center text-gray-400">Sin datos registrados</div>;
 
     const totalPromedio = data.reduce((sum, item) => sum + item.promedio, 0);
@@ -82,8 +77,8 @@ const LineChartPlaceholder: React.FC = () => (
     </div>
 );
 
-// --- COMPONENTE PRINCIPAL ---
 const DocenteReportesPage: React.FC = () => {
+    const token = localStorage.getItem('token');
     const [summary, setSummary] = useState<ReporteSummary | null>(null); 
     const [loading, setLoading] = useState(true);
     const [openSelectorModal, setOpenSelectorModal] = useState(false);
@@ -91,31 +86,35 @@ const DocenteReportesPage: React.FC = () => {
 
     useEffect(() => {
         const fetchSummary = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
             try {
-                // INTENTO 1: FETCH REAL A LA API
-                const response = await fetch(`http://localhost:3000/academic/stats/${TEACHER_ID}`);
+                const response = await fetch(`${API_URL}/academic/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 
                 if (response.ok) {
                     const data = await response.json();
                     setSummary(data);
                 } else {
-                    // Si falla la API (404, 500), usamos datos vacíos seguros
                     console.warn("API falló, cargando datos vacíos seguros.");
                     setSummary(MOCK_DATA);
                 }
             } catch (error) {
-                console.error("Error de conexión (servidor apagado?), cargando respaldo:", error);
+                console.error("Error de conexión:", error);
                 setSummary(MOCK_DATA);
             } finally {
                 setLoading(false);
             }
         };
         fetchSummary();
-    }, []);
+    }, [token]);
 
     if (loading) return <div className="p-8 text-center text-gray-500">Calculando estadísticas...</div>;
     
-    // Si summary es null (caso extremo), usamos MOCK_DATA
     const safeSummary = summary || MOCK_DATA;
 
     return (
@@ -123,7 +122,6 @@ const DocenteReportesPage: React.FC = () => {
             <h1 className="text-4xl font-serif italic text-gray-800 mb-2">Reportes</h1>
             <p className="text-gray-600 text-sm mb-8">Resumen del Rendimiento Académico</p>
 
-            {/* HEADER CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                 <Card className="bg-slate-800 text-white p-6"> 
                     <p className="text-sm opacity-80">Promedio Final Grupo</p>
@@ -139,13 +137,11 @@ const DocenteReportesPage: React.FC = () => {
                 </Card>
             </div>
             
-            {/* GRÁFICOS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
                 <BarChartDynamic data={safeSummary.rendimientoMateria || []} /> 
                 <LineChartPlaceholder /> 
             </div>
 
-            {/* MÉTRICAS CLAVE */}
             <h2 className="text-xl font-bold text-gray-700 mb-4">Métricas Clave</h2>
             <Card className="p-6 bg-white mb-10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -174,7 +170,6 @@ const DocenteReportesPage: React.FC = () => {
                 </div>
             </Card>
 
-            {/* ACCIONES */}
             <div className="flex gap-4">
                 <Button variant="secondary" onClick={() => setOpenSelectorModal(true)}>
                     <FileText className="mr-2 w-5 h-5" /> Generar Reporte
@@ -184,7 +179,6 @@ const DocenteReportesPage: React.FC = () => {
                 </Button>
             </div>
 
-            {/* MODAL SELECCIÓN */}
             <Modal isOpen={openSelectorModal} onClose={() => setOpenSelectorModal(false)} title="Exportar Reportes">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <button 
