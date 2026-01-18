@@ -166,23 +166,45 @@ export const getHistorialAcademico = async (alumnoId: string): Promise<Historial
 };
 
 // =========================================================
-// 5. NOTIFICACIONES (Existente)
+// 5. NOTIFICACIONES (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export const getNotificaciones = async (alumnoId: string): Promise<NotificacionDashboard[]> => {
-  console.log(`[MOCK] Solicitando notificaciones para alumno: ${alumnoId}`);
-  await wait(600);
+  try {
+    // Llamada al endpoint: GET /communications/notifications/:userId
+    const response = await fetch(`${API_URL}/communications/notifications/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return [
-    { id: 'm1', mensaje: 'Tu calificación final de Matemáticas I es 9.5.', leida: false, fecha: '03/09/24' },
-    { id: 'm2', mensaje: 'Se ha creado una nueva tarea en Programación Web.', leida: false, fecha: '03/09/24' },
-    { id: 'm3', mensaje: 'El horario de la clase de Física ha sido modificado.', leida: true, fecha: '03/09/24' },
-    { id: 'm4', mensaje: 'Recordatorio de pago: Último día el 15 de septiembre.', leida: true, fecha: '03/08/24' },
-    { id: 'm5', mensaje: 'La Mtra. Ana García ha enviado un nuevo mensaje.', leida: false, fecha: '03/07/24' },
-    { id: 'm6', mensaje: 'Tu solicitud de constancia ha sido aprobada.', leida: true, fecha: '03/06/24' },
-  ];
+    if (!response.ok) {
+      throw new Error(`Error al cargar notificaciones: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // El backend ya devuelve la estructura exacta: [{ id, mensaje, leida, fecha }, ...]
+    // No hace falta mapear nada extra si el backend usa el formato correcto.
+    return data;
+
+  } catch (error) {
+    console.error("Error en getNotificaciones:", error);
+    // Retornamos array vacío para que la UI no se rompa si falla la conexión
+    return [];
+  }
 };
 
+// OPCIONAL: Si deseas agregar la función para marcar como leída (ya que tu backend lo soporta)
+export const marcarNotificacionComoLeida = async (notificacionId: string): Promise<void> => {
+  try {
+    await fetch(`${API_URL}/communications/notifications/${notificacionId}/read`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+    });
+  } catch (error) {
+    console.error("Error al marcar notificación:", error);
+  }
+};
 // =========================================================
 // 6. PERFIL DEL ALUMNO (✅ CONECTADO AL BACKEND)
 // =========================================================
@@ -282,24 +304,41 @@ export const getDocumentosSolicitados = async (alumnoId: string): Promise<Docume
     { fecha: '---', concepto: '---', pago: '---' },
   ];
 };
-
 // =========================================================
-// 8. DASHBOARD (Existente)
+// 8. DASHBOARD (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
-  console.log(`[MOCK] Obteniendo resumen de dashboard para alumno: ${alumnoId}`);
-  await wait(700);
+  try {
+    // Llamada al endpoint: GET /student/dashboard/summary/:userId
+    const response = await fetch(`${API_URL}/student/dashboard/summary/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return {
-    promedioGeneral: 8.5,
-    asistenciaPorcentaje: 90,
-    notificaciones: [
-      { id: 'n1', mensaje: 'Nueva tarea en Matemáticas I', leida: false, fecha: '04/10/24' },
-      { id: 'n2', mensaje: 'Recordatorio: Pago de colegiatura vence pronto', leida: false, fecha: '04/09/24' },
-      { id: 'n3', mensaje: 'Tu calificación de Física ya está disponible', leida: true, fecha: '03/10/24' },
-    ],
-  };
+    if (!response.ok) {
+      throw new Error(`Error al obtener resumen del dashboard: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // El backend devuelve: { promedioGeneral, asistenciaPorcentaje, notificaciones: [] }
+    // Mapeamos para asegurar tipos, por si acaso.
+    return {
+      promedioGeneral: Number(data.promedioGeneral) || 0,
+      asistenciaPorcentaje: Number(data.asistenciaPorcentaje) || 0,
+      notificaciones: data.notificaciones || [],
+    };
+
+  } catch (error) {
+    console.error("Error en getAlumnoDashboardSummary:", error);
+    // Retornamos estructura vacía/segura en caso de error para que no truene la pantalla
+    return {
+      promedioGeneral: 0,
+      asistenciaPorcentaje: 0,
+      notificaciones: [],
+    };
+  }
 };
 
 // Interfaz para la tabla de detalles
