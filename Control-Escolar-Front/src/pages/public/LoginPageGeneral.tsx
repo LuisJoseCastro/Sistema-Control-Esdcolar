@@ -20,7 +20,7 @@ export const LoginPageGeneral: React.FC = () => {
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
 
-  const [email, setEmail] = useState('carlos.profe@basico-v2.edu.mx');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +37,6 @@ export const LoginPageGeneral: React.FC = () => {
     setFormLoading(true);
     setError('');
 
-    // 1. Validación simple de formato de correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Formato de correo inválido");
@@ -45,7 +44,6 @@ export const LoginPageGeneral: React.FC = () => {
       return;
     }
 
-    // 2. Extraer el dominio
     const parts = email.split('@');
     const domainPart = parts[1]; 
     const schoolDomain = domainPart.split('.')[0]; 
@@ -103,7 +101,7 @@ export const LoginPageGeneral: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ej: usuario@escuela.edu"
+              placeholder="Ej: usuario@escuela.edu.com"
               required
             />
           </div>
