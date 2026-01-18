@@ -1,70 +1,69 @@
-// src/services/auth.service.ts (EN EL FRONTEND)
+import api from './api';
+import type { AuthResponse, User } from '../types/models';
 
-import axios from 'axios';
-
-// ⚠️ Asegúrate de que esta URL coincida con el puerto de tu Backend (NestJS)
-// Si tu backend corre en el 3000, déjalo así.
-const API_URL = 'http://localhost:3000/api/auth';
-
-/**
- * Función para iniciar sesión
- * Recibe: { email, password }
- */
-export const login = async (credentials: { email: string; password: string }) => {
+export const authService = {
+  /**
+   * 1. LOGIN: Solo se encarga de hablar con la API.
+   * La parte de guardar en localStorage la dejaremos al Contexto 
+   * para no duplicar código y evitar errores de sincronización.
+   */
+  login: async (email: string, password: string): Promise<AuthResponse> => {
     try {
-        const response = await axios.post(`${API_URL}/login`, credentials);
-        // Si el login es exitoso, guardamos el token en localStorage para no perder la sesión
-        if (response.data.accessToken) {
-            localStorage.setItem('token', response.data.accessToken);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-        }
-        return response.data;
+      const response = await api.post<AuthResponse>('/auth/login', { email, password });
+      return response.data;
     } catch (error: any) {
-        throw error.response?.data || { message: 'Error de conexión con el servidor' };
+      throw error.response?.data || { message: 'Error de conexión con el servidor' };
     }
-};
+  },
 
-/**
- * Función para cerrar sesión
- * Borra los datos del navegador
- */
-export const logout = () => {
+  // 🚨 AGREGA ESTA FUNCIÓN AQUÍ:
+    forgotPassword: async (email: string) => {
+        const { data } = await api.post('/auth/forgot-password', { email });
+        return data; 
+    },
+
+    /**
+     * Restablecer contraseña con token (NUEVA)
+     */
+    resetPassword: async (token: string, password: string) => {
+        const { data } = await api.post('/auth/reset-password', { token, password });
+        return data;
+    },
+
+  /**
+   * 2. LOGOUT: Limpia todo
+   * Aquí usamos 'academic_user' para coincidir con tu Contexto nuevo.
+   */
+  logout: () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login'; // Redirige al login
-};
+    localStorage.removeItem('academic_user'); // ⚠️ Corrección importante
+    // localStorage.removeItem('user'); // Por si quedó basura vieja
+    window.location.href = '/login'; 
+  },
 
-/**
- * Función para SOLICITAR recuperación de contraseña
- * Recibe: email
- */
-export const forgotPassword = async (email: string) => {
-    try {
-        const response = await axios.post(`${API_URL}/forgot-password`, { email });
-        return response.data; 
-    } catch (error: any) {
-        throw error.response?.data || { message: 'Error al solicitar recuperación' };
+  /**
+   * 3. OBTENER USUARIO ACTUAL
+   * Sirve para cuando recargas la página (F5)
+   */
+  getCurrentUser: (): User | null => {
+    const userStr = localStorage.getItem('academic_user'); // ⚠️ Debe coincidir con Context
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  /**
+   * 4. HELPER DE REDIRECCIÓN (Conservamos tu función útil)
+   * Esto ayuda al Login a saber a dónde mandar a la gente.
+   */
+  getRedirectPath: (role: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return '/admin/dashboard';
+      case 'DOCENTE':
+        return '/docente/dashboard'; // Asegúrate que la ruta en App.tsx sea esta
+      case 'ALUMNO':
+        return '/alumno/dashboard';
+      default:
+        return '/login'; // O una página 404
     }
-};
-
-/**
- * Función para CAMBIAR la contraseña usando el token
- * Recibe: token (del link), newPassword
- */
-export const resetPassword = async (token: string, newPassword: string) => {
-    try {
-        const response = await axios.post(`${API_URL}/reset-password`, { token, newPassword });
-        return response.data;
-    } catch (error: any) {
-        throw error.response?.data || { message: 'Error al restablecer contraseña' };
-    }
-};
-
-/**
- * Helper para obtener el usuario actual guardado
- */
-export const getCurrentUser = () => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) return JSON.parse(userStr);
-    return null;
+  }
 };

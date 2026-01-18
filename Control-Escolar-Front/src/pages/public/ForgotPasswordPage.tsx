@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
-import { forgotPassword } from '../../services/auth.service'; // Asegúrate de haber creado este servicio
+import { authService } from '../../services/auth.service'; // 👈 Usamos el servicio unificado
 
 // Componentes Atómicos
 import { Card } from '../../components/ui/Card';
@@ -23,16 +23,18 @@ export const ForgotPasswordPage: React.FC = () => {
 
         if (!email.includes('@')) {
             setError('Por favor ingresa un correo válido.');
+            setIsLoading(false); // 🚨 Importante detener el loading aquí
             return;
         }
 
         try {
-            const data = await forgotPassword(email);
+            // 1. Llamada real al backend
+            const data = await authService.forgotPassword(email);
             setIsSuccess(true);
-            setDebugLink(data.link); // Para pruebas en desarrollo
+            setDebugLink(data.link || ''); // El backend debe enviar este link en desarrollo
         } catch (err: any) {
-            // Mensaje genérico por seguridad o específico si prefieres
-            setError('No pudimos procesar tu solicitud. Verifica el correo.');
+            // 2. Manejo de error con el diseño original
+            setError(err.response?.data?.message || 'No pudimos procesar tu solicitud. Verifica el correo.');
         } finally {
             setIsLoading(false);
         }
@@ -95,11 +97,13 @@ export const ForgotPasswordPage: React.FC = () => {
                             Hemos enviado un enlace de recuperación a <strong>{email}</strong>.
                         </p>
                         
-                        {/* 🚧 SOLO DEV: Eliminar en producción */}
-                        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-left text-xs break-all mb-6">
-                            <strong>[DEV LINK]:</strong> <br/>
-                            <a href={debugLink} className="text-blue-600 underline">{debugLink}</a>
-                        </div>
+                        {/* 🚧 SOLO DEV: Mantenemos tu bloque de depuración */}
+                        {debugLink && (
+                            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded text-left text-xs break-all mb-6">
+                                <strong>[DEV LINK]:</strong> <br/>
+                                <a href={debugLink} className="text-blue-600 underline">{debugLink}</a>
+                            </div>
+                        )}
                     </div>
                 )}
 

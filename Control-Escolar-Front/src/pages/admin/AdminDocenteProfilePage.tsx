@@ -10,8 +10,8 @@ import Button from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import Modal from '../../components/ui/Modal';
 
-// Servicio y Tipos
-import { getDocenteProfileById, updateDocenteProfile } from '../../services/admin.service';
+// Servicio y Tipos (Sincronizados con los archivos que unificamos)
+import { adminService } from '../../services/admin.service';
 import { type DocenteProfile, type MateriaAsignada, type HorarioType } from '../../types/models';
 
 // Interfaz local para combinar materia con su franja horaria
@@ -23,14 +23,14 @@ interface MateriaHorarioItem extends MateriaAsignada {
 }
 
 // =========================================================
-// 1. Componente Modal: Datos Personales
+// 1. Componente Modal: Datos Personales (DISEÑO INTACTO)
 // =========================================================
 
 interface PersonalDataModalProps {
     profile: DocenteProfile;
     isOpen: boolean;
     onClose: () => void;
-    onSave: (newProfile: DocenteProfile) => Promise<void>; // Cambiado a Promise para manejar el loading
+    onSave: (newProfile: DocenteProfile) => Promise<void>;
 }
 
 const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, onClose, onSave }) => {
@@ -139,7 +139,7 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
 
 
 // =========================================================
-// 2. Componente Modal: Materias Asignadas
+// 2. Componente Modal: Materias Asignadas (DISEÑO INTACTO)
 // =========================================================
 interface AssignedSubjectsModalProps {
     profile: DocenteProfile;
@@ -167,24 +167,26 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
         const schedule: MateriaHorarioItem[] = [];
         daysOptions.forEach(day => {
             const dayKey = day as keyof HorarioType;
-            Object.entries(p.horario[dayKey]).forEach(([timeStart, description]) => {
-                const fullMatch = description.match(/(.*) \((.*)\) \[(.*)-(.*)\]/);
-                const simpleMatch = description.match(/(.*) \((.*)\)/);
-                const match = fullMatch || simpleMatch;
+            if (p.horario && p.horario[dayKey]) {
+                Object.entries(p.horario[dayKey]).forEach(([timeStart, description]) => {
+                    const fullMatch = description.match(/(.*) \((.*)\) \[(.*)-(.*)\]/);
+                    const simpleMatch = description.match(/(.*) \((.*)\)/);
+                    const match = fullMatch || simpleMatch;
 
-                if (match) {
-                    const nombre = match[1]?.trim() || '';
-                    const grupo = match[2]?.trim() || '';
-                    const start = fullMatch ? fullMatch[3] : timeStart;
-                    const end = fullMatch ? fullMatch[4] : timeOptions[timeOptions.indexOf(start) + 1] || start;
-                    const materiaId = p.materiasAsignadas.find(m => m.nombre === nombre && m.grupo === grupo)?.id || `temp-${nombre}-${grupo}`;
-                    const scheduleKey = `${dayKey}-${start}-${materiaId}`;
+                    if (match) {
+                        const nombre = match[1]?.trim() || '';
+                        const grupo = match[2]?.trim() || '';
+                        const start = fullMatch ? fullMatch[3] : timeStart;
+                        const end = fullMatch ? fullMatch[4] : timeOptions[timeOptions.indexOf(start) + 1] || start;
+                        const materiaId = p.materiasAsignadas.find(m => m.nombre === nombre && m.grupo === grupo)?.id || `temp-${nombre}-${grupo}`;
+                        const scheduleKey = `${dayKey}-${start}-${materiaId}`;
 
-                    schedule.push({
-                        id: materiaId, nombre, grupo, day: dayKey, timeStart: start, timeEnd: end, scheduleKey
-                    });
-                }
-            });
+                        schedule.push({
+                            id: materiaId, nombre, grupo, day: dayKey, timeStart: start, timeEnd: end, scheduleKey
+                        });
+                    }
+                });
+            }
         });
         setLocalSchedule(schedule);
     }, []);
@@ -389,7 +391,7 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 };
 
 // =========================================================
-// 3. Componente Principal AdminDocenteProfilePage
+// 3. Componente Principal AdminDocenteProfilePage (CONECTADO)
 // =========================================================
 export const AdminDocenteProfilePage: React.FC = () => {
     const { id: docenteId } = useParams<{ id: string }>();
@@ -405,8 +407,8 @@ export const AdminDocenteProfilePage: React.FC = () => {
 
     const handleProfileUpdate = useCallback(async (updatedProfile: DocenteProfile) => {
         try {
-            // Llamada al servicio real
-            await updateDocenteProfile(updatedProfile);
+            // Llamada al servicio real unificado
+            await adminService.updateDocenteProfile(updatedProfile);
             
             // Actualización del estado local
             setProfile(updatedProfile);
@@ -419,7 +421,7 @@ export const AdminDocenteProfilePage: React.FC = () => {
         } catch (err) {
             console.error("Error al guardar:", err);
             alert("No se pudieron guardar los cambios. Intente de nuevo.");
-            throw err; // Re-lanzar para que el modal sepa que falló
+            throw err;
         }
     }, []);
 
@@ -433,7 +435,8 @@ export const AdminDocenteProfilePage: React.FC = () => {
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                const data = await getDocenteProfileById(docenteId);
+                // Llamada al servicio real unificado
+                const data = await adminService.getDocenteProfileById(docenteId);
                 if (data) setProfile(data);
                 else setError('Perfil de Docente no encontrado.');
             } catch (err) {
@@ -449,9 +452,9 @@ export const AdminDocenteProfilePage: React.FC = () => {
     const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
 
     const timeSlots = useMemo(() => {
-        if (!profile) return [];
+        if (!profile || !profile.horario) return [];
         return Array.from(new Set(
-            days.flatMap(day => Object.keys(profile.horario[day as keyof typeof profile.horario]))
+            days.flatMap(day => Object.keys(profile.horario[day as keyof typeof profile.horario] || {}))
         )).sort();
     }, [profile]);
 
@@ -462,7 +465,7 @@ export const AdminDocenteProfilePage: React.FC = () => {
         return profile.materiasAsignadas.some(m => m.nombre === match[1].trim() && m.grupo === match[2].trim());
     }, [profile]);
 
-    if (loading) return <div className="p-8 flex justify-center items-center h-[calc(100vh-100px)]"><LoadingSpinner text="Cargando perfil..." /></div>;
+    if (loading) return <div className="p-8 flex justify-center items-center h-[calc(100vh-100px)]"><LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" /></div>;
     if (error || !profile) return <div className="p-8 text-center"><h1 className="text-3xl text-red-600">Error</h1><p>{error}</p><Button onClick={() => navigate('/admin/docentes')} className="mt-4">Volver</Button></div>;
 
     return (

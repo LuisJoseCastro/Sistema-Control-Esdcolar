@@ -1,20 +1,17 @@
 // src/pages/admin/AdminGestionPage.tsx
 
-import React, { useState, useMemo } from 'react'; 
+import React, { useState, useMemo, useEffect } from 'react'; 
 import { Search, Plus, Edit, Trash2, Calendar, GraduationCap, PlusCircle, MinusCircle, FilterX } from 'lucide-react';
-
-// Importación de componentes UI
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input'; 
 import Modal from '../../components/ui/Modal';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { adminService } from '../../services/admin.service'; // 👈 Conexión real
 
-// ----------------------------------------------------------------------
-// 1. TIPOS DE DATOS (Actualizados para IDs únicos)
-// ----------------------------------------------------------------------
-
+// --- TIPOS DE DATOS ---
 interface PlanEstudio {
-    id: string | number; // Acepta string para UUIDs
+    id: string | number;
     nombre: string;
     codigo: string;
     fechaInicio: string;
@@ -28,34 +25,16 @@ interface AsignaturaSimple {
 }
 
 interface Asignatura {
-    id: string | number; // Acepta string para UUIDs
+    id: string | number;
     materia: string;
     codigo: string;
     planEstudio: string;
 }
 
-const mockPlanes: PlanEstudio[] = [
-    { id: 1, nombre: 'Lic. en Educación', codigo: 'EDU-001', fechaInicio: '2024-01-01', fechaFinal: '2028-12-31' },
-    { id: 2, nombre: 'Ing. en Sistemas', codigo: 'ING-003', fechaInicio: '2024-01-01', fechaFinal: '2088-12-31' },
-    { id: 3, nombre: 'Lic. en Contabilidad', codigo: 'CON-002', fechaInicio: '2025-01-01', fechaFinal: '2030-12-31' },
-];
-
-const mockAsignaturas: Asignatura[] = [
-    { id: 1, materia: 'Pedagogía General', codigo: 'PED-101', planEstudio: 'Lic. en Educación' },
-    { id: 2, materia: 'Didáctica I', codigo: 'DID-102', planEstudio: 'Lic. en Educación' },
-    { id: 3, materia: 'Programación Avanzada', codigo: 'PRO-201', planEstudio: 'Ing. en Sistemas' },
-    { id: 4, materia: 'Bases de Datos', codigo: 'BD-202', planEstudio: 'Ing. en Sistemas' },
-    { id: 5, materia: 'Contabilidad Básica', codigo: 'CON-101', planEstudio: 'Lic. en Contabilidad' },
-];
-
-// ----------------------------------------------------------------------
-// 2. FORMULARIOS
-// ----------------------------------------------------------------------
-
-// --- FORMULARIO PLAN ---
+// --- FORMULARIO PLAN (DISEÑO IGUAL) ---
 interface PlanFormProps {
     plan?: PlanEstudio; 
-    onSave: (data: Omit<PlanEstudio, 'id'>) => void; 
+    onSave: (data: any) => void; 
     onClose: () => void;
 }
 
@@ -81,13 +60,8 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
         setAsignaturasList(newAsignaturas);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onSave({ ...planData, asignaturas: asignaturasList }); 
-    };
-
     return (
-        <form onSubmit={handleSubmit} className="p-4 space-y-6"> 
+        <form onSubmit={(e) => { e.preventDefault(); onSave({ ...planData, asignaturas: asignaturasList }); }} className="p-4 space-y-6"> 
             <div className="space-y-4">
                 <Input label="Nombre del plan" name="nombre" value={planData.nombre} onChange={handlePlanChange} required />
                 <Input label="Código" name="codigo" value={planData.codigo} onChange={handlePlanChange} required />
@@ -96,7 +70,6 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
                 <Input label="Fecha inicio" name="fechaInicio" type="date" value={planData.fechaInicio} onChange={handlePlanChange} required />
                 <Input label="Fecha finalización" name="fechaFinal" type="date" value={planData.fechaFinal} onChange={handlePlanChange} required />
             </div>
-            
             <div className="space-y-3 pt-3 border-t">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase">Asignaturas Iniciales</h3>
                 {asignaturasList.map((asig, index) => (
@@ -112,7 +85,6 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
                     <PlusCircle size={16} /> Agregar otra
                 </Button>
             </div>
-
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="secondary" onClick={onClose} type="button">Cancelar</Button>
                 <Button variant="primary" type="submit">Guardar</Button>
@@ -121,11 +93,11 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
     );
 };
 
-// --- FORMULARIO MATERIA ---
+// --- FORMULARIO MATERIA (DISEÑO IGUAL) ---
 interface AsignaturaFormProps {
     asignatura?: Asignatura; 
     planesDisponibles: PlanEstudio[]; 
-    onSave: (data: Omit<Asignatura, 'id'>) => void;
+    onSave: (data: any) => void;
     onClose: () => void;
 }
 
@@ -158,14 +130,11 @@ const AsignaturaForm: React.FC<AsignaturaFormProps> = ({ asignatura, planesDispo
     );
 };
 
-
-// ----------------------------------------------------------------------
-// 3. COMPONENTE PRINCIPAL
-// ----------------------------------------------------------------------
-
+// --- COMPONENTE PRINCIPAL (CONECTADO) ---
 const AdminGestionPage: React.FC = () => {
-    const [planes, setPlanes] = useState<PlanEstudio[]>(mockPlanes);
-    const [asignaturas, setAsignaturas] = useState<Asignatura[]>(mockAsignaturas);
+    const [planes, setPlanes] = useState<PlanEstudio[]>([]);
+    const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
     const [isMateriaModalOpen, setIsMateriaModalOpen] = useState(false);
@@ -174,21 +143,57 @@ const AdminGestionPage: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState(''); 
     const [selectedPlanId, setSelectedPlanId] = useState<string | number | null>(null);
 
-    // Handlers
-    const handleSavePlan = (data: Omit<PlanEstudio, 'id'>) => {
-        if (editingPlan) {
-            setPlanes(prev => prev.map(p => p.id === editingPlan.id ? { ...p, ...data, id: editingPlan.id } : p));
-        } else {
-            // ✅ CORRECCIÓN: Uso de UUID para evitar colisiones
-            const newId = crypto.randomUUID();
-            setPlanes(prev => [...prev, { id: newId, ...data }]);
+    // 1. CARGA INICIAL DESDE API
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [planesData, asigData] = await Promise.all([
+                adminService.getPlanes(),
+                adminService.getAsignaturas()
+            ]);
+            setPlanes(planesData);
+            setAsignaturas(asigData);
+        } catch (error) {
+            console.error("Error al cargar gestión académica", error);
+        } finally {
+            setLoading(false);
         }
-        setIsPlanModalOpen(false);
-        setEditingPlan(null);
     };
 
-    const handleDeletePlan = (id: string | number) => {
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // 2. HANDLERS CON API
+    const handleSavePlan = async (data: any) => {
+        try {
+            if (editingPlan) {
+                await adminService.actualizarPlan(editingPlan.id, data);
+            } else {
+                await adminService.crearPlan(data);
+            }
+            fetchData();
+            setIsPlanModalOpen(false);
+            setEditingPlan(null);
+        } catch (error) { alert("Error al guardar plan"); }
+    };
+
+    const handleSaveAsignatura = async (data: any) => {
+        try {
+            if (editingAsignatura) {
+                await adminService.actualizarAsignatura(editingAsignatura.id, data);
+            } else {
+                await adminService.crearAsignatura(data);
+            }
+            fetchData();
+            setIsMateriaModalOpen(false);
+            setEditingAsignatura(null);
+        } catch (error) { alert("Error al guardar materia"); }
+    };
+
+    const handleDeletePlan = async (id: string | number) => {
         if (window.confirm('¿Eliminar este plan?')) {
+            // await adminService.eliminarPlan(id); // Agregar si existe en backend
             setPlanes(prev => prev.filter(p => p.id !== id));
             if (selectedPlanId === id) setSelectedPlanId(null);
         }
@@ -196,18 +201,6 @@ const AdminGestionPage: React.FC = () => {
 
     const handleSelectPlan = (id: string | number) => {
         setSelectedPlanId(prev => prev === id ? null : id);
-    };
-
-    const handleSaveAsignatura = (data: Omit<Asignatura, 'id'>) => {
-        if (editingAsignatura) {
-            setAsignaturas(prev => prev.map(a => a.id === editingAsignatura.id ? { ...a, ...data, id: editingAsignatura.id } : a));
-        } else {
-            // ✅ CORRECCIÓN: Uso de UUID para evitar colisiones
-            const newId = crypto.randomUUID();
-            setAsignaturas(prev => [...prev, { id: newId, ...data }]);
-        }
-        setIsMateriaModalOpen(false);
-        setEditingAsignatura(null);
     };
 
     const filteredPlanes = useMemo(() => {
@@ -221,10 +214,10 @@ const AdminGestionPage: React.FC = () => {
         return asignaturas.filter(a => a.planEstudio === planName);
     }, [asignaturas, planes, selectedPlanId]);
 
+    if (loading) return <div className="flex h-screen items-center justify-center bg-whiteBg-50"><LoadingSpinner className="w-12 h-12 text-main-800" /></div>;
 
     return (
         <div className="min-h-screen bg-whiteBg-50 p-8">
-            
             <header className="mb-6">
                 <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
                     <GraduationCap size={32} className="mr-3 text-main-800" />
@@ -234,23 +227,14 @@ const AdminGestionPage: React.FC = () => {
             </header>
 
             <div className="flex justify-end space-x-3 mb-8">
-                <Button 
-                    variant="secondary" 
-                    icon={<Calendar size={18} />} 
-                    onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-                >
+                <Button variant="secondary" icon={<Calendar size={18} />} onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}>
                     Nuevo Plan
                 </Button>
-                <Button 
-                    variant="primary" 
-                    icon={<Plus size={18} />} 
-                    onClick={() => { setEditingAsignatura(null); setIsMateriaModalOpen(true); }}
-                >
+                <Button variant="primary" icon={<Plus size={18} />} onClick={() => { setEditingAsignatura(null); setIsMateriaModalOpen(true); }}>
                     Nueva Materia
                 </Button>
             </div>
 
-            {/* TABLA PLANES */}
             <Card className="p-6 bg-white shadow-xl shadow-grayDark-200 mb-10 border-2 border-gray-400">
                 <div className="flex justify-between items-end mb-4 border-b pb-2">
                     <div>
@@ -279,15 +263,8 @@ const AdminGestionPage: React.FC = () => {
                             {filteredPlanes.map((plan) => {
                                 const isSelected = selectedPlanId === plan.id;
                                 return (
-                                    <tr 
-                                        key={plan.id}
-                                        onClick={() => handleSelectPlan(plan.id)}
-                                        className={`transition-colors duration-200 cursor-pointer ${
-                                            isSelected 
-                                                ? 'bg-blue-50 border-l-4 border-l-main-600'
-                                                : 'hover:bg-whiteBg-100 border-l-4 border-l-transparent'
-                                        }`}
-                                    >
+                                    <tr key={plan.id} onClick={() => handleSelectPlan(plan.id)}
+                                        className={`transition-colors duration-200 cursor-pointer ${isSelected ? 'bg-blue-50 border-l-4 border-l-main-600' : 'hover:bg-whiteBg-100 border-l-4 border-l-transparent'}`}>
                                         <td className="p-3 text-center text-gray-500 text-[10px] font-mono">
                                             {typeof plan.id === 'string' ? plan.id.slice(0, 8) : plan.id}
                                         </td>
@@ -311,17 +288,14 @@ const AdminGestionPage: React.FC = () => {
                 </div>
             </Card>
 
-            {/* TABLA ASIGNATURAS */}
-            <Card className="p-6 bg-white shadow-xl  border-2 border-gray-400">
+            <Card className="p-6 bg-white shadow-xl border-2 border-gray-400">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-semibold">Asignaturas</h2>
                         {selectedPlanId && (
                             <div className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full animate-fadeIn">
                                 <span>Filtrado por: <strong>{planes.find(p => p.id === selectedPlanId)?.nombre}</strong></span>
-                                <button onClick={() => setSelectedPlanId(null)} className="ml-2">
-                                    <FilterX size={16} />
-                                </button>
+                                <button onClick={() => setSelectedPlanId(null)} className="ml-2"><FilterX size={16} /></button>
                             </div>
                         )}
                     </div>
@@ -352,18 +326,12 @@ const AdminGestionPage: React.FC = () => {
                                             <Button variant="ghost" className="p-1" onClick={() => { setEditingAsignatura(asig); setIsMateriaModalOpen(true); }}>
                                                 <Edit size={16} />
                                             </Button>
-                                            <Button variant="ghost" className="p-1" onClick={() => { /* Eliminar Asig */ }}>
-                                                <Trash2 size={16} />
-                                            </Button>
+                                            <Button variant="ghost" className="p-1"><Trash2 size={16} /></Button>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
-                                <tr>
-                                    <td colSpan={5} className="p-8 text-center text-gray-400 italic">
-                                        No hay materias disponibles.
-                                    </td>
-                                </tr>
+                                <tr><td colSpan={5} className="p-8 text-center text-gray-400 italic">No hay materias disponibles.</td></tr>
                             )}
                         </tbody>
                     </table>

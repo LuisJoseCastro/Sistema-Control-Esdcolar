@@ -1,48 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, X, Download } from 'lucide-react';
+import { Search, X, Download, Trash2 } from 'lucide-react'; // 👈 Icono importado
 import { Card } from '../../components/ui/Card';
 import Table from '../../components/ui/Table';
 import Input from '../../components/ui/Input';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { adminService } from '../../services/admin.service'; 
 
 interface Alumno {
-  id: number;
+  id: string | number;
   matricula: string;
   nombre: string;
 }
 
 export const AdminListaAlumnosPage: React.FC = () => {
-  const { grupoId = '3A' } = useParams<{ grupoId: string }>();
+  const { grupoId } = useParams<{ grupoId: string }>();
   const navigate = useNavigate();
+  
+  const [alumnos, setAlumnos] = useState<Alumno[]>([]);
+  const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoAlumno, setNuevoAlumno] = useState({
     matricula: '',
     nombre: ''
   });
-  const [alumnos, setAlumnos] = useState<Alumno[]>([
-    { id: 1, matricula: 'A001', nombre: 'Juan Pérez López' },
-    { id: 2, matricula: 'A002', nombre: 'María González Ruiz' },
-    { id: 3, matricula: 'A003', nombre: 'Carlos Rodríguez Sánchez' },
-    { id: 4, matricula: 'A004', nombre: 'Ana Martínez Torres' },
-    { id: 5, matricula: 'A005', nombre: 'Pedro Fernández García' },
-    { id: 6, matricula: 'A006', nombre: 'Laura Díaz Méndez' },
-    { id: 7, matricula: 'A007', nombre: 'Miguel Ángel Ruiz Castro' },
-    { id: 8, matricula: 'A008', nombre: 'Sofía Herrera Vargas' },
-  ]);
-  
-  // Filtrar alumnos según búsqueda
-  const alumnosFiltrados = alumnos.filter(alumno =>
-    alumno.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    alumno.matricula.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
-  const handleVerPerfil = (alumnoId: number) => {
+  const cargarAlumnos = async () => {
+    if (!grupoId) return;
+    try {
+      setLoading(true);
+      const data = await adminService.getAlumnosPorGrupo(grupoId);
+      // Aseguramos que sea un array para evitar errores de map
+      setAlumnos(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error al cargar alumnos:", error);
+      setAlumnos([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarAlumnos();
+  }, [grupoId]);
+
+  const alumnosFiltrados = alumnos.filter(alumno => {
+    const nombre = (alumno?.nombre || '').toLowerCase();
+    const matricula = (alumno?.matricula || '').toLowerCase();
+    return (
+      nombre.includes(busqueda.toLowerCase()) ||
+      matricula.includes(busqueda.toLowerCase())
+    );
+  });
+
+  const handleVerPerfil = (alumnoId: string | number) => {
     navigate(`/admin/alumnos/${grupoId}/${alumnoId}/perfil`);
   };
 
-  const handleVerHistorial = (alumnoId: number) => {
+  const handleVerHistorial = (alumnoId: string | number) => {
     navigate(`/admin/alumnos/${grupoId}/${alumnoId}/historial`);
+  };
+
+  // ✅ LOGICA DE ELIMINAR
+  const handleEliminarAlumno = async (alumnoId: string | number) => {
+    if (window.confirm('⚠️ ¿Seguro que quieres eliminar a este alumno? Se liberará su matrícula.')) {
+        try {
+            await adminService.eliminarAlumno(String(alumnoId));
+            alert('✅ Alumno eliminado.');
+            cargarAlumnos(); // Recarga la lista
+        } catch (error) {
+            console.error('Error al eliminar', error);
+            alert('❌ Hubo un error al eliminar el alumno.');
+        }
+    }
   };
 
   const handleAgregarAlumno = () => {
@@ -54,106 +85,63 @@ export const AdminListaAlumnosPage: React.FC = () => {
     setNuevoAlumno({ matricula: '', nombre: '' });
   };
 
-  const handleSubmitAlumno = (e: React.FormEvent) => {
+  const handleSubmitAlumno = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!nuevoAlumno.matricula.trim() || !nuevoAlumno.nombre.trim()) {
       alert('Por favor complete todos los campos');
       return;
     }
 
-    // Verificar si la matrícula ya existe
-    const matriculaExiste = alumnos.some(
-      alumno => alumno.matricula.toLowerCase() === nuevoAlumno.matricula.toLowerCase()
-    );
-    
-    if (matriculaExiste) {
-      alert('La matrícula ya existe. Por favor ingrese una matrícula diferente.');
-      return;
+    try {
+        await adminService.registrarAlumno({
+            matricula: nuevoAlumno.matricula.toUpperCase().trim(),
+            nombre: nuevoAlumno.nombre.trim(),
+            grupoId: grupoId || ""
+        });
+
+        alert(`Alumno ${nuevoAlumno.nombre} agregado exitosamente`);
+        handleCerrarModal();
+        await cargarAlumnos(); 
+    } catch (error: any) {
+        alert(error.response?.data?.message || 'Error al registrar alumno');
     }
-
-    // Crear nuevo alumno con ID único
-    const nuevoAlumnoConId: Alumno = {
-      id: alumnos.length > 0 ? Math.max(...alumnos.map(a => a.id)) + 1 : 1,
-      matricula: nuevoAlumno.matricula.toUpperCase(),
-      nombre: nuevoAlumno.nombre
-    };
-
-    // Agregar al estado
-    setAlumnos([...alumnos, nuevoAlumnoConId]);
-    
-    // Limpiar formulario y cerrar modal
-    setNuevoAlumno({ matricula: '', nombre: '' });
-    setMostrarModal(false);
-    
-    // Opcional: Mostrar mensaje de éxito
-    alert(`Alumno ${nuevoAlumnoConId.nombre} agregado exitosamente al grupo ${grupoId}`);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNuevoAlumno(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setNuevoAlumno(prev => ({ ...prev, [name]: value }));
   };
 
   const handleExportarLista = () => {
-    // Crear contenido CSV
-    const alumnosAExportar = busqueda ? alumnosFiltrados : alumnos;
-    
-    // Encabezados del CSV
     const headers = ['No.', 'Matrícula', 'Nombre Completo'];
-    
-    // Filas de datos
-    const rows = alumnosAExportar.map((alumno, index) => [
+    const rows = alumnosFiltrados.map((alumno, index) => [
       index + 1,
-      alumno.matricula,
-      alumno.nombre
+      alumno?.matricula || '',
+      alumno?.nombre || ''
     ]);
-
-    // Combinar encabezados y filas
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    // Crear blob y descargar archivo
-    const blob = new Blob(['\ufeff',csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download', 
-      `lista_alumnos_${grupoId}_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = `lista_alumnos_${grupoId}.csv`;
     link.click();
-    document.body.removeChild(link);
-    
-    // Mostrar mensaje de éxito
-    alert(`Se ha exportado la lista de ${alumnosAExportar.length} alumno(s) del grupo ${grupoId}`);
   };
 
-  // Función alternativa para exportar como Excel (usando xlsx library si está disponible)
-  const handleExportarExcel = () => {
-    // Si quieres exportar como Excel necesitarías la librería xlsx
-    // Por ahora, exportaremos como CSV que es más simple
-    handleExportarLista();
-  };
+  if (loading) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-gray-50">
+              <LoadingSpinner className="w-12 h-12 text-teal-600" />
+          </div>
+      );
+  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-full font-['Lato']">
-      {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-gray-300 pb-6 mb-8">
         <h1 className="text-5xl text-black font-['Kaushan_Script'] mb-4 md:mb-0">
           {grupoId}
         </h1>
         
-        {/* Barra de búsqueda */}
         <div className="relative w-full md:w-80">
           <Input
             placeholder="Buscar alumno..."
@@ -167,7 +155,6 @@ export const AdminListaAlumnosPage: React.FC = () => {
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL */}
       <Card variant="flat" className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">
@@ -178,7 +165,6 @@ export const AdminListaAlumnosPage: React.FC = () => {
           </span>
         </div>
 
-        {/* TABLA DE ALUMNOS */}
         <div className="overflow-x-auto">
           <Table>
             <Table.Header>
@@ -188,19 +174,21 @@ export const AdminListaAlumnosPage: React.FC = () => {
                 <Table.Head>Nombre Completo</Table.Head>
                 <Table.Head>Perfil</Table.Head>
                 <Table.Head>Historial</Table.Head>
+                {/* 1. ENCUEZA DE LA NUEVA COLUMNA */}
+                <Table.Head className="text-center">Eliminar</Table.Head> 
               </Table.Row>
             </Table.Header>
             <Table.Body>
               {alumnosFiltrados.map((alumno, index) => (
-                <Table.Row key={alumno.id} className="hover:bg-whiteBg-100">
+                <Table.Row key={alumno?.id || index} className="hover:bg-whiteBg-100">
                   <Table.Cell className="text-center font-medium text-gray-500">
                     {index + 1}
                   </Table.Cell>
                   <Table.Cell className="font-medium text-[#2E4156]">
-                    {alumno.matricula}
+                    {alumno?.matricula || '---'}
                   </Table.Cell>
                   <Table.Cell className="text-gray-800">
-                    {alumno.nombre}
+                    {alumno?.nombre || 'Sin nombre registrado'}
                   </Table.Cell>
                   <Table.Cell>
                     <button
@@ -218,25 +206,31 @@ export const AdminListaAlumnosPage: React.FC = () => {
                       Historial Académico
                     </button>
                   </Table.Cell>
+                  
+                  {/* 2. CELDA DE LA NUEVA COLUMNA CON EL BOTÓN */}
+                  <Table.Cell className="text-center">
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => handleEliminarAlumno(alumno.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 p-2 rounded-full transition-colors cursor-pointer border border-red-200"
+                            title="Eliminar Alumno"
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                    </div>
+                  </Table.Cell>
+
                 </Table.Row>
               ))}
             </Table.Body>
           </Table>
         </div>
-
-        {/* Si no hay resultados */}
-        {alumnosFiltrados.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No se encontraron alumnos con "{busqueda}"
-          </div>
-        )}
       </Card>
 
-      {/* BOTONES DE ACCIÓN */}
       <div className="flex justify-between items-center mt-8">
         <button
           onClick={() => navigate('/admin/alumnos')}
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
         >
           ← Volver a Grupos
         </button>
@@ -244,7 +238,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
         <div className="flex gap-3">
           <button 
             onClick={handleExportarLista}
-            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
           >
             <Download size={18} />
             Exportar Lista
@@ -258,7 +252,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL PARA AGREGAR ALUMNO */}
+      {/* MODAL AGREGAR ALUMNO */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
@@ -266,10 +260,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
               <h3 className="text-2xl font-bold text-gray-800">
                 Agregar Nuevo Alumno
               </h3>
-              <button
-                onClick={handleCerrarModal}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
+              <button onClick={handleCerrarModal} className="text-gray-500 hover:text-gray-700 transition-colors">
                 <X size={24} />
               </button>
             </div>
@@ -277,54 +268,21 @@ export const AdminListaAlumnosPage: React.FC = () => {
             <form onSubmit={handleSubmitAlumno} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Matrícula *
-                  </label>
-                  <Input
-                    name="matricula"
-                    value={nuevoAlumno.matricula}
-                    onChange={handleInputChange}
-                    placeholder="Ej: A009"
-                    className="w-full"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    La matrícula debe ser única
-                  </p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Matrícula *</label>
+                  <Input name="matricula" value={nuevoAlumno.matricula} onChange={handleInputChange} placeholder="Ej: A009" className="w-full" required />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre Completo *
-                  </label>
-                  <Input
-                    name="nombre"
-                    value={nuevoAlumno.nombre}
-                    onChange={handleInputChange}
-                    placeholder="Ej: Carlos Sánchez García"
-                    className="w-full"
-                    required
-                  />
-                </div>
-
-                <div className="text-sm text-gray-600">
-                  <p>El alumno será agregado al grupo: <strong>{grupoId}</strong></p>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+                  <Input name="nombre" value={nuevoAlumno.nombre} onChange={handleInputChange} placeholder="Ej: Carlos Sánchez García" className="w-full" required />
                 </div>
               </div>
 
               <div className="flex gap-3 mt-8 pt-6 border-t">
-                <button
-                  type="button"
-                  onClick={handleCerrarModal}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors"
-                >
+                <button type="button" onClick={handleCerrarModal} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors">
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-main-800 hover:bg-main-900 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  Agregar Alumno
+                <button type="submit" className="flex-1 bg-main-800 hover:bg-main-900 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
+                  Confirmar
                 </button>
               </div>
             </form>

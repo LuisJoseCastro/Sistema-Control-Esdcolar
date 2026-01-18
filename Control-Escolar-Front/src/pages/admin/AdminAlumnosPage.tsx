@@ -1,28 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/ui/Card';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'; 
 import { Edit2, Save, X, Users, Clock, Plus } from 'lucide-react';
+import { adminService } from '../../services/admin.service'; 
+
+// Interfaz para el tipo de dato que viene del backend
+interface Grupo {
+  id: number | string;
+  nombre: string;
+  alumnos: number;
+  grado: string;
+  turno: string;
+}
 
 export const AdminAlumnosPage: React.FC = () => {
   const navigate = useNavigate();
   
-  // Estado inicial de grupos
-  const [grupos, setGrupos] = useState([
-    { id: 1, nombre: 'GRUPO 3A', alumnos: 25, grado: '3', turno: 'Matutino' },
-    { id: 2, nombre: 'GRUPO 3B', alumnos: 28, grado: '3', turno: 'Matutino' },
-    { id: 3, nombre: 'GRUPO 3C', alumnos: 22, grado: '3', turno: 'Matutino' },
-    { id: 4, nombre: 'GRUPO 4A', alumnos: 30, grado: '4', turno: 'Vespertino' },
-    { id: 5, nombre: 'GRUPO 4B', alumnos: 26, grado: '4', turno: 'Vespertino' },
-    { id: 6, nombre: 'GRUPO 4C', alumnos: 24, grado: '4', turno: 'Vespertino' },
-  ]);
+  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Estado para el modal de edición
+  // Cargar grupos reales al iniciar
+  useEffect(() => {
+    cargarGrupos();
+  }, []);
+
+  const cargarGrupos = async () => {
+    try {
+      setIsLoading(true);
+      const data = await adminService.getGrupos();
+      
+      // MAPEO CORREGIDO: 
+      // Vinculamos 'totalAlumnos' del backend con la propiedad 'alumnos' de tu diseño
+      const gruposMapeados = data.map((g: any) => ({
+        ...g,
+        id: g.id,
+        nombre: g.nombre,
+        alumnos: g.totalAlumnos ?? 0, // 👈 Aquí se recibe el conteo real del Backend
+        grado: g.semestre?.toString() || '1',
+        turno: g.turno || 'Matutino'
+      }));
+      setGrupos(gruposMapeados);
+    } catch (error) {
+      console.error("Error al cargar grupos", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); 
+  
   const [grupoEditando, setGrupoEditando] = useState({
-    id: 0,
+    id: 0 as number | string,
     nombre: '',
     alumnos: 0,
     grado: '',
@@ -30,14 +63,17 @@ export const AdminAlumnosPage: React.FC = () => {
   });
 
   const handleVerAlumnos = (grupoNombre: string) => {
-    const grupoId = grupoNombre.replace('GRUPO ', '');
+    const grupoId = grupoNombre.replace('GRUPO ', '').trim();
     navigate(`/admin/alumnos/${grupoId}`);
   };
 
-  const abrirModalEdicion = (grupo: typeof grupos[0]) => {
+  const abrirModalEdicion = (grupo: Grupo) => {
+    // Intentamos extraer la letra del grupo
+    let letraGrupo = grupo.nombre.replace('GRUPO', '').replace(grupo.grado, '').trim();
+    
     setGrupoEditando({
       id: grupo.id,
-      nombre: grupo.nombre.replace('GRUPO ', ''),
+      nombre: letraGrupo, 
       alumnos: grupo.alumnos,
       grado: grupo.grado,
       turno: grupo.turno
@@ -56,55 +92,49 @@ export const AdminAlumnosPage: React.FC = () => {
     });
   };
 
-  const guardarCambiosGrupo = () => {
-    if (grupoEditando.id === 0) {
-      // Crear nuevo grupo
-      const nuevoId = Math.max(...grupos.map(g => g.id), 0) + 1;
-      const nuevoGrupo = {
-        id: nuevoId,
-        nombre: `GRUPO ${grupoEditando.grado}${grupoEditando.nombre}`,
-        alumnos: grupoEditando.alumnos,
-        grado: grupoEditando.grado,
-        turno: grupoEditando.turno
-      };
-      
-      setGrupos([...grupos, nuevoGrupo]);
-      console.log('Creando nuevo grupo:', nuevoGrupo);
-    } else {
-      // Editar grupo existente
-      setGrupos(grupos.map(grupo => 
-        grupo.id === grupoEditando.id 
-          ? { 
-              ...grupo, 
-              nombre: `GRUPO ${grupoEditando.grado}${grupoEditando.nombre}`,
-              alumnos: grupoEditando.alumnos,
-              grado: grupoEditando.grado,
-              turno: grupoEditando.turno
-            }
-          : grupo
-      ));
-      console.log('Editando grupo:', grupoEditando);
+  const guardarCambiosGrupo = async () => {
+    setIsSaving(true);
+    try {
+        const nombreCompleto = `GRUPO ${grupoEditando.grado}${grupoEditando.nombre.toUpperCase()}`;
+        
+        const datosParaEnviar = {
+            nombre: nombreCompleto,
+            semestre: Number(grupoEditando.grado), // IMPORTANTE: Enviamos número al backend
+            turno: grupoEditando.turno,
+        };
+
+        if (grupoEditando.id === 0) {
+            await adminService.crearGrupo(datosParaEnviar);
+        } else {
+            await adminService.actualizarGrupo(grupoEditando.id, datosParaEnviar);
+        }
+        
+        await cargarGrupos();
+        cerrarModalEdicion();
+    } catch (error) {
+        console.error("Error guardando grupo", error);
+        alert("Hubo un error al guardar el grupo.");
+    } finally {
+        setIsSaving(false);
     }
-    
-    // Aquí puedes agregar una llamada API para guardar en el backend
-    
-    cerrarModalEdicion();
   };
 
-  const eliminarGrupo = (id: number) => {
+  const eliminarGrupo = async (id: number | string) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este grupo?')) {
-      setGrupos(grupos.filter(grupo => grupo.id !== id));
-      // Aquí puedes agregar una llamada API para eliminar en el backend
-      console.log('Eliminando grupo con ID:', id);
+      try {
+          await adminService.eliminarGrupo(id);
+          setGrupos(grupos.filter(grupo => grupo.id !== id));
+      } catch (error) {
+          console.error("Error eliminando", error);
+          alert("No se pudo eliminar el grupo.");
+      }
     }
   };
 
   const agregarNuevoGrupo = () => {
-    const nuevoId = Math.max(...grupos.map(g => g.id), 0) + 1;
-    
     setGrupoEditando({
-      id: 0, // ID 0 indica que es un nuevo grupo
-      nombre: 'A',
+      id: 0, 
+      nombre: '', 
       alumnos: 0,
       grado: '1',
       turno: 'Matutino'
@@ -112,20 +142,23 @@ export const AdminAlumnosPage: React.FC = () => {
     setModalAbierto(true);
   };
 
-  // Validar si los campos están completos
   const camposCompletos = () => {
-    return grupoEditando.grado.trim() !== '' && 
-           grupoEditando.nombre.trim() !== '' &&
-           grupoEditando.alumnos >= 0;
+    return grupoEditando.grado.toString().trim() !== '' && 
+           grupoEditando.nombre.trim() !== '';
   };
+
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center h-screen bg-gray-50">
+            <LoadingSpinner className="w-12 h-12 text-teal-600" />
+        </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-gray-50 min-h-full">
-      {/* HEADER */}
       <header className="flex justify-between items-end border-b-2 border-gray-400 pb-4 mb-8">
-        <h1 
-          className="text-5xl text-black font-['Kaushan_Script']"
-        >
+        <h1 className="text-5xl text-black font-['Kaushan_Script']">
           Grupos de Alumnos
         </h1>
         <div className="text-sm text-gray-600">
@@ -133,7 +166,6 @@ export const AdminAlumnosPage: React.FC = () => {
         </div>
       </header>
 
-      {/* CONTENIDO DE GRUPOS */}
       <div className="font-['Lato']">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {grupos.map((grupo) => (
@@ -145,13 +177,15 @@ export const AdminAlumnosPage: React.FC = () => {
             >
               <div className="w-full h-48 bg-[#D4D8DD] rounded-t-lg mb-4 flex items-center justify-center relative">
                 <div className="text-5xl font-bold text-[#2E4156] opacity-50">
-                  {grupo.nombre.slice(-2)}
+                  {/* Visualización limpia del número grande */}
+                  {grupo.nombre.replace('GRUPO', '').trim()}
                 </div>
               </div>
               
               <div className="p-4">
+                {/* Título limpio: "1C" en lugar de "GRUPO 1C" */}
                 <h3 className="text-xl font-bold text-[#2E4156] mb-2">
-                  {grupo.nombre}
+                  {grupo.nombre.replace('GRUPO', '').replace('Grupo', '').trim()}
                 </h3>
                 
                 <div className="space-y-3 mb-4">
@@ -168,50 +202,29 @@ export const AdminAlumnosPage: React.FC = () => {
                 
                 <div className="mb-4">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    grupo.alumnos > 25 
-                      ? 'bg-red-100 text-red-800' 
-                      : grupo.alumnos > 20 
-                        ? 'bg-yellow-100 text-yellow-800' 
-                        : 'bg-green-100 text-green-800'
+                    grupo.alumnos > 25 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                   }`}>
-                    {grupo.alumnos > 25 ? 'Lleno' : grupo.alumnos > 20 ? 'Casi lleno' : 'Disponible'}
+                    {grupo.alumnos > 25 ? 'Lleno' : 'Disponible'}
                   </span>
                 </div>
                 
-                {/* Acciones */}
                 <div className="mt-4 flex gap-2">
                   <button 
-                    className="flex-1 bg-main-700 hover:bg-main-900 text-white px-3 py-2 rounded transition-colors text-sm flex items-center justify-center gap-1 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleVerAlumnos(grupo.nombre);
-                    }}
+                    className="flex-1 bg-main-700 hover:bg-main-900 text-white px-3 py-2 rounded text-sm flex items-center justify-center gap-1 cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); handleVerAlumnos(grupo.nombre); }}
                   >
-                    <Users size={14} />
-                    Ver Alumnos
+                    <Users size={14} /> Ver Alumnos
                   </button>
                   <button 
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded transition-colors text-sm flex items-center justify-center gap-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      abrirModalEdicion(grupo);
-                    }}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded text-sm flex items-center justify-center gap-1"
+                    onClick={(e) => { e.stopPropagation(); abrirModalEdicion(grupo); }}
                   >
-                    <Edit2 size={14} />
-                    Editar
+                    <Edit2 size={14} /> Editar
                   </button>
                 </div>
                 
-                {/* Botón eliminar */}
                 <div className="mt-3 text-center">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      eliminarGrupo(grupo.id);
-                    }}
-                    className="text-red-500 hover:text-red-700 transition-colors text-xs"
-                    title="Eliminar grupo"
-                  >
+                  <button onClick={(e) => { e.stopPropagation(); eliminarGrupo(grupo.id); }} className="text-red-500 hover:text-red-700 text-xs">
                     Eliminar grupo
                   </button>
                 </div>
@@ -220,19 +233,14 @@ export const AdminAlumnosPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Botón para agregar nuevo grupo */}
         <div className="mt-8 flex justify-end">
-          <button 
-            onClick={agregarNuevoGrupo}
-            className="bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-2 cursor-pointer"
-          >
-            <Plus size={20} />
-            Agregar Nuevo Grupo
+          <button onClick={agregarNuevoGrupo} className="bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg shadow-md flex items-center gap-2 cursor-pointer">
+            <Plus size={20} /> Agregar Nuevo Grupo
           </button>
         </div>
       </div>
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL RESTAURADO CON EL DISEÑO COMPLETO */}
       <Modal
         isOpen={modalAbierto}
         onClose={cerrarModalEdicion}
@@ -265,17 +273,18 @@ export const AdminAlumnosPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
+              {/* Input de alumnos deshabilitado (Diseño original) */}
               <Input
                 label="Número de Alumnos"
                 value={grupoEditando.alumnos.toString()}
-                onChange={(e) => setGrupoEditando({...grupoEditando, alumnos: parseInt(e.target.value) || 0})}
+                onChange={(_) => {/* No hacemos nada */}}
                 type="number"
-                min="0"
-                max="40"
+                disabled={true} 
               />
             </div>
             
             <div>
+              {/* Select de Turno (Restaurado) */}
               <label className="block text-gray-700 text-sm font-medium mb-1.5">
                 Turno
               </label>
@@ -290,6 +299,7 @@ export const AdminAlumnosPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Caja de previsualización (Restaurada) */}
           <div className="bg-whiteBg-100 p-3 rounded-lg border border-grayDark-400 hover:bg-whiteBg-50">
             <p className="text-sm text-main-800">
               <strong>Nombre completo del grupo:</strong> GRUPO {grupoEditando.grado}{grupoEditando.nombre}
@@ -313,10 +323,10 @@ export const AdminAlumnosPage: React.FC = () => {
               variant="gradient"
               onClick={guardarCambiosGrupo}
               className="flex items-center gap-2"
-              disabled={!camposCompletos()}
+              disabled={!camposCompletos() || isSaving}
             >
               <Save size={18} />
-              {grupoEditando.id === 0 ? "Crear Grupo" : "Guardar Cambios"}
+              {isSaving ? "Guardando..." : (grupoEditando.id === 0 ? "Crear Grupo" : "Guardar Cambios")}
             </Button>
           </div>
         </div>

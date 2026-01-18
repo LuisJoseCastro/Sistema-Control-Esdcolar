@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth'; // Tu hook existente
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -25,6 +25,7 @@ export const LoginPageGeneral: React.FC = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Efecto de Redirección automática
   useEffect(() => {
     if (isLoggedIn && !isLoading && role) {
       const destination = returnTo ? decodeURIComponent(returnTo) : getDefaultDashboard(role);
@@ -37,7 +38,7 @@ export const LoginPageGeneral: React.FC = () => {
     setFormLoading(true);
     setError('');
 
-    // 1. Validación simple de formato de correo
+    // Validación básica
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Formato de correo inválido");
@@ -45,23 +46,21 @@ export const LoginPageGeneral: React.FC = () => {
       return;
     }
 
-    // 2. Extraer el dominio
-    const parts = email.split('@');
-    const domainPart = parts[1]; 
-    const schoolDomain = domainPart.split('.')[0]; 
-
     try {
-      await login(email, password, schoolDomain);
-    } catch (err) {
+      // ⚠️ CAMBIO IMPORTANTE: Solo pasamos email y password
+      // El backend deduce la escuela por el correo del usuario
+      await login(email, password); 
+      
+    } catch (err: any) {
       console.error(err);
-      if (err instanceof Error) {
-          if (err.message === "Failed to fetch" || err.message.includes("NetworkError")) {
-             setError("No se pudo conectar con el servidor. Verifica tu conexión.");
-          } else {
-             setError(err.message);
-          }
+      const msg = err.message || '';
+
+      if (msg.includes("Network Error") || msg === "Failed to fetch") {
+         setError("Error de conexión. Verifica que tu VPN/Tailscale esté activa.");
+      } else if (msg.includes("401") || msg.includes("Unauthorized")) {
+         setError("Credenciales incorrectas.");
       } else {
-          setError("Ocurrió un error inesperado al iniciar sesión");
+         setError(msg || "Ocurrió un error inesperado.");
       }
       setFormLoading(false);
     }
@@ -72,7 +71,7 @@ export const LoginPageGeneral: React.FC = () => {
       <div className="flex flex-col items-center justify-center h-screen bg-whiteBg-100">
         <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
         <p className="text-gray-500 font-medium animate-pulse">
-          {isLoggedIn ? 'Ingresando al sistema...' : 'Verificando sesión...'}
+          {isLoggedIn ? 'Ingresando...' : 'Verificando sesión...'}
         </p>
       </div>
     );
@@ -136,7 +135,7 @@ export const LoginPageGeneral: React.FC = () => {
             {formLoading ? 'Validando...' : 'Iniciar Sesión'}
           </Button>
         </div>
-        {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
+        {error && <p className="mt-4 text-red-500 text-center bg-red-100 p-2 rounded font-semibold">{error}</p>}
       </form>
     </div>
   );

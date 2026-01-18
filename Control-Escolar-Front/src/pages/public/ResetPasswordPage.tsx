@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
-import { resetPassword } from '../../services/auth.service';
+import { authService } from '../../services/auth.service'; // 👈 Importamos el servicio unificado
 
 // Componentes Atómicos
 import { Card } from '../../components/ui/Card';
@@ -20,10 +20,11 @@ export const ResetPasswordPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Vista de Error (Diseño intacto)
     if (!token) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-whiteBg-50 p-4">
-                <Card className="p-8 text-center max-w-md bg-white border-red-100 border">
+                <Card className="p-8 text-center max-w-md bg-white border-red-100 border shadow-lg rounded-2xl">
                     <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-gray-800">Enlace inválido</h2>
                     <p className="text-gray-600 mt-2">El enlace de recuperación no es válido o ha expirado.</p>
@@ -50,19 +51,21 @@ export const ResetPasswordPage: React.FC = () => {
 
         setIsLoading(true);
         try {
-            await resetPassword(token, password);
-            // Éxito: Redirigir
+            // 1. Llamada real a la API
+            await authService.resetPassword(token, password);
+            
             alert('¡Contraseña actualizada con éxito!');
             navigate('/login');
         } catch (err: any) {
-            setError('El enlace ha expirado. Por favor solicita uno nuevo.');
+            // 2. Manejo de error (Token expirado o inválido)
+            setError(err.response?.data?.message || 'El enlace ha expirado. Por favor solicita uno nuevo.');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-whiteBg-50 flex flex-col items-center justify-center p-6">
+        <div className="min-h-screen bg-whiteBg-50 flex flex-col items-center justify-center p-6 font-sans">
             <header className="mb-8 text-center">
                 <h1 className="text-4xl font-serif italic font-bold tracking-tighter mb-2">
                     Academy<span className="text-teal-600">+</span>

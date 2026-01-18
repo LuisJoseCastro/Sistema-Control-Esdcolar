@@ -3,9 +3,10 @@ import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import { Send, Mail, UserCheck } from 'lucide-react';
+import { adminService } from '../../services/admin.service'; // 👈 Conexión real
 
 // =================================================================================
-// COMPONENTE PARA LA COMPOSICIÓN DEL MENSAJE (EL CONTENIDO DEL MODAL)
+// COMPONENTE PARA LA COMPOSICIÓN DEL MENSAJE (CONECTADO)
 // =================================================================================
 
 interface MensajeFormProps {
@@ -18,31 +19,33 @@ const ComposicionMensajeForm: React.FC<MensajeFormProps> = ({ onClose }) => {
     const [destinatario, setDestinatario] = useState('');
     const [enviando, setEnviando] = useState(false);
 
-    // Opciones simuladas para el campo "Para:"
     const destinatariosOpciones = [
-        { label: 'Seleccionar Destinatario', value: '' }, // Valor vacío por defecto
+        { label: 'Seleccionar Destinatario', value: '' },
         { label: 'Todos los Docentes', value: 'docentes' },
         { label: 'Todos los Alumnos', value: 'alumnos' },
         { label: 'Grupo específico', value: 'grupo' },
         { label: 'Usuario específico', value: 'usuario' },
     ];
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validación extra de seguridad antes de enviar
         if (!destinatario) return;
 
         setEnviando(true);
-        setTimeout(() => {
-            console.log('Mensaje enviado:', { destinatario, asunto, cuerpo });
-            setEnviando(false);
+        try {
+            // 1. Llamada real al servidor
+            await adminService.enviarMensaje({ destinatario, asunto, cuerpo });
+            
+            alert('Mensaje enviado con éxito');
             onClose();
-        }, 1500);
+        } catch (error) {
+            console.error('Error al enviar mensaje:', error);
+            alert('Hubo un error al procesar el envío');
+        } finally {
+            setEnviando(false);
+        }
     };
 
-    // 🚨 LÓGICA DE VALIDACIÓN: El formulario es válido solo si hay destinatario, asunto y cuerpo.
-    // Esto asegura que el botón "Enviar" cumpla con lo que pidió el equipo de testing.
     const esFormularioInvalido = !destinatario || !asunto.trim() || !cuerpo.trim();
 
     return (
@@ -91,7 +94,6 @@ const ComposicionMensajeForm: React.FC<MensajeFormProps> = ({ onClose }) => {
                     Cancelar
                 </Button>
                 
-                {/* 🚨 SOLUCIÓN AL TESTING: Se agrega !destinatario a la propiedad disabled */}
                 <Button 
                     variant="primary" 
                     type="submit" 
@@ -107,7 +109,7 @@ const ComposicionMensajeForm: React.FC<MensajeFormProps> = ({ onClose }) => {
 
 
 // =================================================================================
-// PANTALLA PRINCIPAL DEL ADMINISTRADOR (Sin cambios necesarios aquí)
+// PANTALLA PRINCIPAL DEL ADMINISTRADOR (Diseño intacto)
 // =================================================================================
 
 const AdminMensajesPage: React.FC = () => {

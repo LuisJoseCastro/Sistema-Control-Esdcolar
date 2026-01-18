@@ -4,6 +4,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input'; 
 import Modal from '../../components/ui/Modal'; 
 import { BarChart3, ChevronDown, Download, User, FileText, FileSpreadsheet } from 'lucide-react'; 
+import { adminService } from '../../services/admin.service'; // 👈 Conexión real
 
 // --- TIPOS DE DATOS ---
 interface FilterOption {
@@ -11,25 +12,6 @@ interface FilterOption {
     label: string;
 }
 
-// --- MOCK DATA PARA SIMULAR LA RESPUESTA DE LA API ---
-const mockPeriodosData: FilterOption[] = [
-    { value: '2024-1', label: 'Enero - Junio 2024' },
-    { value: '2023-2', label: 'Julio - Diciembre 2023' },
-];
-
-const mockAsignaturasData: FilterOption[] = [
-    { value: 'matematicas', label: 'Matemáticas I' },
-    { value: 'programacion', label: 'Programación Avanzada' },
-    { value: 'contabilidad', label: 'Fundamentos de Contabilidad' },
-];
-
-const mockGruposData: FilterOption[] = [
-    { value: '3A', label: 'Grupo 3A' },
-    { value: '5B', label: 'Grupo 5B' },
-    { value: '1C', label: 'Grupo 1C' },
-];
-
-// --- COMPONENTE PRINCIPAL ---
 const AdminReportesPage: React.FC = () => {
     const [periodos, setPeriodos] = useState<FilterOption[]>([]);
     const [asignaturas, setAsignaturas] = useState<FilterOption[]>([]);
@@ -46,17 +28,20 @@ const AdminReportesPage: React.FC = () => {
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
+    // 1. CARGA DE FILTROS REALES DESDE EL BACKEND
     useEffect(() => {
         const fetchFilters = async () => {
             try {
-                await new Promise(resolve => setTimeout(resolve, 500)); 
-                setPeriodos(mockPeriodosData);
-                setAsignaturas(mockAsignaturasData);
-                setGrupos(mockGruposData);
+                setIsLoadingFilters(true);
+                const data = await adminService.getReportFilters();
+                
+                setPeriodos(data.periodos || []);
+                setAsignaturas(data.asignaturas || []);
+                setGrupos(data.grupos || []);
 
-                if (mockPeriodosData.length > 0) setSelectedPeriodo(mockPeriodosData[0].value);
-                if (mockAsignaturasData.length > 0) setSelectedAsignatura(mockAsignaturasData[0].value);
-                if (mockGruposData.length > 0) setSelectedGrupo(mockGruposData[0].value);
+                if (data.periodos?.length > 0) setSelectedPeriodo(data.periodos[0].value);
+                if (data.asignaturas?.length > 0) setSelectedAsignatura(data.asignaturas[0].value);
+                if (data.grupos?.length > 0) setSelectedGrupo(data.grupos[0].value);
 
             } catch (error) {
                 console.error("Error al cargar los filtros:", error);
@@ -67,7 +52,7 @@ const AdminReportesPage: React.FC = () => {
         fetchFilters();
     }, []); 
 
-    // --- LÓGICA PARA GENERAR REPORTE CORREGIDA ---
+    // 2. GENERAR REPORTE (CONECTADO A API)
     const handleGenerarReporte = async () => {
         if (!selectedPeriodo || !selectedAsignatura || !selectedGrupo) {
             alert("Por favor, selecciona un Periodo, Asignatura y Grupo.");
@@ -85,42 +70,11 @@ const AdminReportesPage: React.FC = () => {
         };
         
         try {
-            // 🚨 SOLUCIÓN AL TESTING: Uso de variable de entorno
-            // Si VITE_API_URL no existe en .env, usará un string vacío para ruta relativa
-            const baseUrl = import.meta.env.VITE_API_URL || '';
-            const endpoint = `${baseUrl}/api/v1/reportes/generar`;
-
-            const response = await fetch(endpoint, {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Error en la API: ${response.statusText}`);
-            }
-
-            const data = await response.json();
+            const data = await adminService.generarReporteAcademico(payload);
             setReportData(JSON.stringify(data, null, 2));
-            
         } catch (error) {
-            // 🛑 FALLBACK: Si no hay backend, ejecutamos la simulación aquí
-            console.warn("Backend no disponible. Generando reporte simulado...");
-            
-            const reportName = asignaturas.find(a => a.value === selectedAsignatura)?.label;
-            const periodName = periodos.find(p => p.value === selectedPeriodo)?.label;
-
-            const simulatedReport = (
-                `[MODO DESARROLLO - DATOS SIMULADOS]\n\n` +
-                `Reporte de Calificaciones Generado:\n\n` +
-                `Asignatura: ${reportName}\n` +
-                `Grupo: ${selectedGrupo}\n` +
-                `Periodo: ${periodName}\n` +
-                (selectedMatricula ? `Matrícula Filtrada: ${selectedMatricula}` : `Datos de 30 alumnos procesados exitosamente.`)
-            );
-
-            setReportData(simulatedReport); 
-            
+            console.error("Error al generar reporte:", error);
+            setReportData("Error al conectar con el servidor para generar el reporte.");
         } finally {
             setIsLoadingReporte(false);
         }
@@ -130,11 +84,34 @@ const AdminReportesPage: React.FC = () => {
         if (reportData) setIsExportModalOpen(true);
     };
 
-    const handleExportSelection = (format: 'pdf' | 'xlsx') => {
-        alert(`Llamando API para exportar el reporte a ${format.toUpperCase()}.`);
-        setIsExportModalOpen(false);
+    // 3. EXPORTAR ARCHIVO REAL
+    const handleExportSelection = async (format: 'pdf' | 'xlsx') => {
+        try {
+            const payload = {
+                periodo: selectedPeriodo,
+                asignatura: selectedAsignatura,
+                grupo: selectedGrupo,
+                matricula: selectedMatricula
+            };
+            
+            const blob = await adminService.exportarReporte(payload, format);
+            
+            // Lógica de descarga de archivo
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Reporte_${selectedGrupo}_${selectedPeriodo}.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            
+            setIsExportModalOpen(false);
+        } catch (error) {
+            alert("Error al descargar el archivo.");
+        }
     }
 
+    // --- RENDERIZADO (DISEÑO INTACTO) ---
     const SelectControl: React.FC<{ label: string; name: string; value: string; options: FilterOption[]; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; disabled: boolean }> = ({ label, name, value, options, onChange, disabled }) => (
         <div>
             <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
@@ -149,7 +126,7 @@ const AdminReportesPage: React.FC = () => {
                     disabled={disabled}
                     className="appearance-none w-full border border-gray-300 rounded-lg p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 pr-10 disabled:bg-gray-200 disabled:text-gray-500"
                 >
-                    {options.length === 0 ? <option value="">Cargando...</option> : null}
+                    {options.length === 0 && !isLoadingFilters ? <option value="">Sin opciones</option> : null}
                     {options.map(option => (
                         <option key={option.value} value={option.value}>
                             {option.label}
@@ -174,6 +151,7 @@ const AdminReportesPage: React.FC = () => {
             </header>
 
             <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
+                {/* PANEL DE FILTROS */}
                 <Card className="p-6 bg-white shadow-xl lg:w-1/3 border-2 border-gray-200">
                     <h2 className="text-xl font-semibold mb-6 border-b pb-2">Filtros</h2>
                     {isLoadingFilters ? (
@@ -229,19 +207,18 @@ const AdminReportesPage: React.FC = () => {
                     </div>
                 </Card>
 
+                {/* PANEL DE VISTA PREVIA */}
                 <Card className="p-6 bg-white shadow-xl lg:w-2/3 flex flex-col">
                     <h2 className="text-xl font-semibold mb-6 border-b pb-2">Vista Previa</h2>
                     
                     <div className="flex-grow min-h-[300px] bg-gray-50 border p-4 overflow-auto rounded-lg mb-6 text-gray-700 whitespace-pre-wrap">
-                        {isLoadingReporte && (
+                        {isLoadingReporte ? (
                             <div className="text-center py-10 text-blue-500">Procesando solicitud...</div>
-                        )}
-                        {!isLoadingFilters && !isLoadingReporte && reportData === null && (
+                        ) : reportData === null ? (
                             <div className="text-center py-10 text-gray-500 italic">
                                 Selecciona los filtros y haz clic en "Generar reporte".
                             </div>
-                        )}
-                        {!isLoadingReporte && reportData !== null && (
+                        ) : (
                             <pre className="text-sm font-mono">{reportData}</pre>
                         )}
                     </div>
@@ -259,6 +236,7 @@ const AdminReportesPage: React.FC = () => {
                 </Card>
             </div>
 
+            {/* MODAL DE EXPORTACIÓN (DISEÑO INTACTO) */}
             <Modal 
                 isOpen={isExportModalOpen} 
                 onClose={() => setIsExportModalOpen(false)} 
