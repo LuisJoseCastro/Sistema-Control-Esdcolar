@@ -10,13 +10,12 @@ import type {
 } from '../types/models';
 
 // =========================================================
-// 🔌 CONFIGURACIÓN DE CONEXIÓN (NUEVO)
+// 🔌 CONFIGURACIÓN DE CONEXIÓN
 // =========================================================
 
 const API_URL = 'http://localhost:3000'; // Asegúrate que coincida con tu backend
 
 const getAuthHeaders = () => {
-  // Asumimos que guardaste el token con la clave 'access_token' al hacer login
   const token = localStorage.getItem('access_token');
   return {
     'Content-Type': 'application/json',
@@ -24,11 +23,11 @@ const getAuthHeaders = () => {
   };
 };
 
-// Utilidad para simular tiempo de espera (para los mocks restantes)
+// Utilidad para simular tiempo de espera (para los mocks que quedan)
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // =========================================================
-// 1. ASIGNATURAS (Actualizado con Horarios)
+// 1. ASIGNATURAS (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export interface AsignaturaConHorario {
@@ -39,42 +38,23 @@ export interface AsignaturaConHorario {
 }
 
 export const getMisAsignaturas = async (alumnoId: string): Promise<AsignaturaConHorario[]> => {
-  console.log(`[MOCK] Solicitando asignaturas con horario para: ${alumnoId}`);
-  await wait(600);
+  try {
+    const response = await fetch(`${API_URL}/academic/my-courses/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return [
-    {
-      id: 1,
-      materia: 'Matemáticas',
-      profesor: 'Ing. Pérez',
-      horarios: [
-        { dia: 'Lunes', hora: '08:00 - 10:00' },
-        { dia: 'Miércoles', hora: '10:00 - 12:00' }
-      ]
-    },
-    {
-      id: 2,
-      materia: 'Programación Web',
-      profesor: 'Lic. García',
-      horarios: [
-        { dia: 'Martes', hora: '07:00 - 09:00' },
-        { dia: 'Jueves', hora: '07:00 - 09:00' },
-        { dia: 'Viernes', hora: '08:00 - 10:00' }
-      ]
-    },
-    {
-      id: 3,
-      materia: 'Base de Datos',
-      profesor: 'Ing. López',
-      horarios: [
-        { dia: 'Viernes', hora: '12:00 - 14:00' }
-      ]
-    },
-  ];
+    if (!response.ok) throw new Error(`Error al cargar asignaturas: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getMisAsignaturas:", error);
+    return [];
+  }
 };
 
 // =========================================================
-// 2. CALIFICACIONES (Nuevo: Boleta Parcial)
+// 2. CALIFICACIONES (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export interface BoletaCalificacion {
@@ -88,32 +68,24 @@ export interface BoletaCalificacion {
 }
 
 export const getCalificacionesBoleta = async (alumnoId: string, periodo: string): Promise<BoletaCalificacion[]> => {
-  console.log(`[MOCK] Solicitando boleta parcial para: ${alumnoId} en el periodo: ${periodo}`);
-  await wait(500);
+  try {
+    const url = `${API_URL}/academic/my-grades/${alumnoId}${periodo ? `?periodo=${periodo}` : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  if (periodo === '2025-1') {
-    return [
-      { materia: "Matemáticas", u1: "10", u2: "9", u3: "10", u4: "---", u5: "---", final: "---" },
-      { materia: "Física", u1: "8", u2: "8", u3: "9", u4: "---", u5: "---", final: "---" },
-      { materia: "Química", u1: "9", u2: "9", u3: "9", u4: "---", u5: "---", final: "---" },
-      { materia: "Programación", u1: "10", u2: "10", u3: "10", u4: "---", u5: "---", final: "---" },
-    ];
-  } else if (periodo === '2024-2') {
-    return [
-      { materia: "Cálculo I", u1: "7", u2: "8", u3: "8", u4: "7", u5: "8", final: "7.8" },
-      { materia: "Introducción a la Ing.", u1: "10", u2: "10", u3: "9", u4: "9", u5: "9", final: "9.6" },
-      { materia: "Álgebra Lineal", u1: "9", u2: "7", u3: "8", u4: "9", u5: "9", final: "8.6" },
-      { materia: "Comunicación", u1: "10", u2: "9", u3: "10", u4: "10", u5: "10", final: "9.8" },
-      { materia: "Dibujo Técnico", u1: "8", u2: "9", u3: "8", u4: "9", u5: "8", final: "8.4" },
-      { materia: "Electrónica Básica", u1: "9", u2: "10", u3: "10", u4: "9", u5: "9", final: "9.4" },
-    ];
-  } else {
+    if (!response.ok) throw new Error(`Error al cargar calificaciones: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getCalificacionesBoleta:", error);
     return [];
   }
 };
 
 // =========================================================
-// 3. ASISTENCIA (Nuevo: Calendario y Estadísticas)
+// 3. ASISTENCIA (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export interface AsistenciaData {
@@ -123,25 +95,29 @@ export interface AsistenciaData {
 }
 
 export const getAsistenciaData = async (alumnoId: string): Promise<AsistenciaData> => {
-  console.log(`[MOCK] Solicitando asistencia para: ${alumnoId}`);
-  await wait(700);
+  try {
+    const response = await fetch(`${API_URL}/academic/my-attendance/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return {
-    estadisticas: { asistencia: 90, faltas: 1, retardos: 2 },
-    fechas: [
-      { fecha: '2025-08-17', tipo: 'Falta' },
-      { fecha: '2025-08-05', tipo: 'Retardo' }
-    ],
-    recordatorios: [
-      "Entrega de proyecto de Física el viernes.",
-      "Examen de Matemáticas el lunes 15.",
-    ]
-  };
+    if (!response.ok) throw new Error(`Error al cargar asistencia: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getAsistenciaData:", error);
+    return {
+      estadisticas: { asistencia: 0, faltas: 0, retardos: 0 },
+      fechas: [],
+      recordatorios: ["No se pudo cargar la información de asistencia."]
+    };
+  }
 };
 
 // =========================================================
-// 4. HISTORIAL ACADÉMICO (Existente)
+// 4. HISTORIAL ACADÉMICO (MOCK TEMPORAL)
 // =========================================================
+// Se mantiene simulado hasta definir el endpoint de historial completo
 
 export const getHistorialAcademico = async (alumnoId: string): Promise<HistorialAcademico> => {
   console.log(`[MOCK] Solicitando historial académico para alumno: ${alumnoId}`);
@@ -154,13 +130,10 @@ export const getHistorialAcademico = async (alumnoId: string): Promise<Historial
       { asignatura: 'Matemáticas Avanzadas', promedio: 8.8, periodo: '2025-1' },
       { asignatura: 'Programación Orientada a Objetos', promedio: 9.5, periodo: '2025-1' },
       { asignatura: 'Bases de Datos', promedio: 7.9, periodo: '2025-1' },
-      { asignatura: 'Redes de Computadoras', promedio: 8.2, periodo: '2024-2' },
-      { asignatura: 'Cálculo Vectorial', promedio: 7.5, periodo: '2024-2' },
-      { asignatura: 'Inglés I', promedio: 10.0, periodo: '2024-1' },
     ],
     documentosDisponibles: [
-      { nombre: 'Boleta de Calificaciones', url: '/api/docs/boleta' },
-      { nombre: 'Constancia de Estudios', url: '/api/docs/constancia' },
+      { nombre: 'Boleta de Calificaciones', url: '#' },
+      { nombre: 'Constancia de Estudios', url: '#' },
     ],
   };
 };
@@ -171,30 +144,20 @@ export const getHistorialAcademico = async (alumnoId: string): Promise<Historial
 
 export const getNotificaciones = async (alumnoId: string): Promise<NotificacionDashboard[]> => {
   try {
-    // Llamada al endpoint: GET /communications/notifications/:userId
     const response = await fetch(`${API_URL}/communications/notifications/${alumnoId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
     });
 
-    if (!response.ok) {
-      throw new Error(`Error al cargar notificaciones: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // El backend ya devuelve la estructura exacta: [{ id, mensaje, leida, fecha }, ...]
-    // No hace falta mapear nada extra si el backend usa el formato correcto.
-    return data;
+    if (!response.ok) throw new Error(`Error notificaciones: ${response.statusText}`);
+    return await response.json();
 
   } catch (error) {
     console.error("Error en getNotificaciones:", error);
-    // Retornamos array vacío para que la UI no se rompa si falla la conexión
     return [];
   }
 };
 
-// OPCIONAL: Si deseas agregar la función para marcar como leída (ya que tu backend lo soporta)
 export const marcarNotificacionComoLeida = async (notificacionId: string): Promise<void> => {
   try {
     await fetch(`${API_URL}/communications/notifications/${notificacionId}/read`, {
@@ -205,14 +168,13 @@ export const marcarNotificacionComoLeida = async (notificacionId: string): Promi
     console.error("Error al marcar notificación:", error);
   }
 };
+
 // =========================================================
 // 6. PERFIL DEL ALUMNO (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProfileData> => {
   try {
-    // A) Hacemos la petición real al Backend
-    // IMPORTANTE: alumnoId debe ser el UUID del Usuario (User ID) que obtienes al hacer login
     const response = await fetch(`${API_URL}/student/profile/${alumnoId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -226,17 +188,20 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
 
     const data = await response.json();
 
-    // B) TRANSFORMACIÓN DE DATOS (Mapeo Backend -> Frontend)
-    // Convertimos la respuesta plana del backend a la estructura anidada que usa tu vista.
-    // Usamos '---' o valores por defecto para lo que aún no viene del backend.
+    // 💡 TRUCO: Definimos el promedio global aquí para usarlo en ambos lugares
+    // (Idealmente esto vendría del backend en el futuro)
+    const promedioGlobal = 8.5;
 
     return {
       resumen: {
         name: data.nombre || 'Sin Nombre',
         id: data.matricula || 'S/M',
-        career: 'Ingeniería en Sistemas', // 🚧 Dato hardcoded (pendiente en BD)
+        career: 'Ingeniería en Sistemas',
         semester: data.gradoActual || 'Indefinido',
-        average: 0.0, // 🚧 Pendiente conectar con módulo Academic real
+
+        // 👇 AQUÍ ESTABA EL 0.0, LO CAMBIAMOS:
+        average: promedioGlobal,
+
         profileImageUrl: '/images/profile-placeholder.png',
       },
       personal: {
@@ -247,8 +212,8 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
         email: data.email,
         phone: data.telefono,
         address: data.direccion,
-        nationality: 'Mexicana', // 🚧 Dato hardcoded
-        civilStatus: 'Soltero/a', // 🚧 Dato hardcoded
+        nationality: 'Mexicana',
+        civilStatus: 'Soltero/a',
         bloodType: data.tipoSangre || 'N/A',
         disability: 'Ninguna',
         curp: data.curp || 'No registrada',
@@ -256,7 +221,10 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
       },
       academic: {
         semester: data.gradoActual,
-        average: 8.5, // 🚧 Mock temporal
+
+        // 👇 AQUÍ TAMBIÉN USAMOS LA VARIABLE:
+        average: promedioGlobal,
+
         status: 'Activo',
         approvedSubjects: 0,
         admissionDate: '2024-01-01',
@@ -268,7 +236,7 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
         credits: 0,
       },
       payment: {
-        balanceDue: 0.00, // 🚧 Mock temporal
+        balanceDue: 0.00,
         lastPaymentDate: '---',
       }
     };
@@ -278,39 +246,70 @@ export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProf
     throw error;
   }
 };
-
 // =========================================================
-// 7. PAGOS Y DOCUMENTOS (Existente)
+// 7. PAGOS Y DOCUMENTOS (✅ CONECTADO AL BACKEND)
 // =========================================================
 
+// A) HISTORIAL DE PAGOS (Lo que ya está aprobado)
 export const getHistorialPagos = async (alumnoId: string): Promise<DocumentoPagado[]> => {
-  console.log(`[MOCK] Solicitando historial de pagos para alumno: ${alumnoId}`);
-  await wait(500);
+  try {
+    // GET /finance/student-history/:studentId
+    const response = await fetch(`${API_URL}/finance/student-history/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return [
-    { fecha: '10/01/2022', concepto: 'Historial Académico', monto: 150.00, estado: 'Pagado' },
-    { fecha: '15/08/2022', concepto: 'Constancia de Estudios', monto: 100.00, estado: 'Pagado' },
-    { fecha: '20/09/2022', concepto: 'Boleta de Calificaciones', monto: 120.00, estado: 'Pagado' },
-  ];
+    if (!response.ok) throw new Error(`Error historial pagos: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getHistorialPagos:", error);
+    return [];
+  }
 };
 
+// B) DOCUMENTOS SOLICITADOS (Lo que está pendiente de pago o aprobación)
 export const getDocumentosSolicitados = async (alumnoId: string): Promise<DocumentoSolicitado[]> => {
-  console.log(`[MOCK] Solicitando documentos pendientes para alumno: ${alumnoId}`);
-  await wait(400);
+  try {
+    // GET /finance/student-pending/:studentId
+    const response = await fetch(`${API_URL}/finance/student-pending/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return [
-    { fecha: '10/02/2024', concepto: 'Historial Académico', pago: 150.00 },
-    { fecha: '15/02/2024', concepto: 'Constancia de Estudios', pago: 100.00 },
-    { fecha: '---', concepto: '---', pago: '---' },
-  ];
+    if (!response.ok) throw new Error(`Error documentos solicitados: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getDocumentosSolicitados:", error);
+    return [];
+  }
 };
+
+// C) CATÁLOGO (Lista de trámites disponibles para solicitar)
+export const getCatalogoDocumentos = async (): Promise<string[]> => {
+  try {
+    // GET /finance/student-catalog-list
+    const response = await fetch(`${API_URL}/finance/student-catalog-list`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) throw new Error(`Error catálogo: ${response.statusText}`);
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error getCatalogoDocumentos:", error);
+    return [];
+  }
+};
+
 // =========================================================
 // 8. DASHBOARD (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
   try {
-    // Llamada al endpoint: GET /student/dashboard/summary/:userId
     const response = await fetch(`${API_URL}/student/dashboard/summary/${alumnoId}`, {
       method: 'GET',
       headers: getAuthHeaders(),
@@ -322,8 +321,6 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
 
     const data = await response.json();
 
-    // El backend devuelve: { promedioGeneral, asistenciaPorcentaje, notificaciones: [] }
-    // Mapeamos para asegurar tipos, por si acaso.
     return {
       promedioGeneral: Number(data.promedioGeneral) || 0,
       asistenciaPorcentaje: Number(data.asistenciaPorcentaje) || 0,
@@ -332,7 +329,6 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
 
   } catch (error) {
     console.error("Error en getAlumnoDashboardSummary:", error);
-    // Retornamos estructura vacía/segura en caso de error para que no truene la pantalla
     return {
       promedioGeneral: 0,
       asistenciaPorcentaje: 0,
@@ -348,29 +344,29 @@ export interface AsistenciaDetalleItem {
   estado: 'Falta' | 'Retardo' | 'Asistencia';
 }
 
-// Función para obtener la lista
+// Función para obtener la lista (✅ CONECTADA AL BACKEND)
 export const getDetalleAsistencias = async (alumnoId: string): Promise<AsistenciaDetalleItem[]> => {
-  console.log(`[MOCK] Solicitando detalle de asistencias para: ${alumnoId}`);
-  await wait(500);
+  try {
+    // Reutilizamos el endpoint de asistencia que ya trae la lista de fechas
+    const response = await fetch(`${API_URL}/academic/my-attendance/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return [
-    { fecha: "2025-11-01", materia: "Matemáticas", estado: "Falta" },
-    { fecha: "2025-11-02", materia: "Física", estado: "Retardo" },
-    { fecha: "2025-11-03", materia: "Historia", estado: "Falta" },
-    { fecha: "2025-11-04", materia: "Inglés", estado: "Retardo" },
-    { fecha: "2025-11-05", materia: "Química", estado: "Retardo" },
-    { fecha: "2025-11-08", materia: "Programación", estado: "Falta" },
-  ];
-};
+    if (!response.ok) throw new Error(`Error al cargar detalles de asistencia: ${response.statusText}`);
 
-// Simula el catálogo de documentos que la escuela ofrece
-export const getCatalogoDocumentos = async (): Promise<string[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  return [
-    'Historial Académico',
-    'Constancia de Estudios',
-    'Certificado de Terminación',
-    'Boleta de Calificaciones',
-    'Credencial de Biblioteca (Reposición)'
-  ];
+    const data = await response.json();
+
+    // El backend nos devuelve 'fechas' con los campos: { fecha, materia, tipo }
+    // Mapeamos 'tipo' (Backend) a 'estado' (Frontend)
+    return data.fechas.map((item: any) => ({
+      fecha: item.fecha,
+      materia: item.materia,
+      estado: item.tipo // El backend devuelve "Falta" o "Retardo", que coincide con la interfaz
+    }));
+
+  } catch (error) {
+    console.error("Error en getDetalleAsistencias:", error);
+    return [];
+  }
 };
