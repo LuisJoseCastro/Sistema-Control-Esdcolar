@@ -20,7 +20,7 @@ export const LoginPageGeneral: React.FC = () => {
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
 
-  const [email, setEmail] = useState('carlos.profe@basico-v2.edu.mx');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +37,6 @@ export const LoginPageGeneral: React.FC = () => {
     e.preventDefault();
     setFormLoading(true);
     setError('');
-
     // Validación básica
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -102,7 +101,7 @@ export const LoginPageGeneral: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ej: usuario@escuela.edu"
+              placeholder="Ej: usuario@escuela.edu.com"
               required
             />
           </div>
