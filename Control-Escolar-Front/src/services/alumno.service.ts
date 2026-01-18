@@ -1,15 +1,36 @@
 // src/services/alumno.service.ts
 
-import type { HistorialAcademico, NotificacionDashboard, AlumnoProfileData, DocumentoSolicitado, DocumentoPagado, AlumnoDashboardSummary } from '../types/models';
+import type {
+  HistorialAcademico,
+  NotificacionDashboard,
+  AlumnoProfileData,
+  DocumentoSolicitado,
+  DocumentoPagado,
+  AlumnoDashboardSummary
+} from '../types/models';
 
-// Utilidad para simular tiempo de espera
+// =========================================================
+// 🔌 CONFIGURACIÓN DE CONEXIÓN (NUEVO)
+// =========================================================
+
+const API_URL = 'http://localhost:3000'; // Asegúrate que coincida con tu backend
+
+const getAuthHeaders = () => {
+  // Asumimos que guardaste el token con la clave 'access_token' al hacer login
+  const token = localStorage.getItem('access_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+};
+
+// Utilidad para simular tiempo de espera (para los mocks restantes)
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // =========================================================
 // 1. ASIGNATURAS (Actualizado con Horarios)
 // =========================================================
 
-// Interfaz específica para el detalle de la página de asignaturas
 export interface AsignaturaConHorario {
   id: number | string;
   materia: string;
@@ -66,14 +87,11 @@ export interface BoletaCalificacion {
   final: string;
 }
 
-// Acepta el periodo como un string (ej: "2025-1" o "2024-2")
 export const getCalificacionesBoleta = async (alumnoId: string, periodo: string): Promise<BoletaCalificacion[]> => {
   console.log(`[MOCK] Solicitando boleta parcial para: ${alumnoId} en el periodo: ${periodo}`);
   await wait(500);
 
-  // --- Lógica Dinámica de Mocking ---
   if (periodo === '2025-1') {
-    // Periodo con 4 materias (como en la imagen original)
     return [
       { materia: "Matemáticas", u1: "10", u2: "9", u3: "10", u4: "---", u5: "---", final: "---" },
       { materia: "Física", u1: "8", u2: "8", u3: "9", u4: "---", u5: "---", final: "---" },
@@ -81,7 +99,6 @@ export const getCalificacionesBoleta = async (alumnoId: string, periodo: string)
       { materia: "Programación", u1: "10", u2: "10", u3: "10", u4: "---", u5: "---", final: "---" },
     ];
   } else if (periodo === '2024-2') {
-    // Periodo con más materias (ej: 6 materias) para simular el cambio
     return [
       { materia: "Cálculo I", u1: "7", u2: "8", u3: "8", u4: "7", u5: "8", final: "7.8" },
       { materia: "Introducción a la Ing.", u1: "10", u2: "10", u3: "9", u4: "9", u5: "9", final: "9.6" },
@@ -91,17 +108,17 @@ export const getCalificacionesBoleta = async (alumnoId: string, periodo: string)
       { materia: "Electrónica Básica", u1: "9", u2: "10", u3: "10", u4: "9", u5: "9", final: "9.4" },
     ];
   } else {
-    // Por defecto o si no encuentra el periodo
     return [];
   }
 };
+
 // =========================================================
 // 3. ASISTENCIA (Nuevo: Calendario y Estadísticas)
 // =========================================================
 
 export interface AsistenciaData {
   estadisticas: { asistencia: number; faltas: number; retardos: number };
-  fechas: { fecha: string; tipo: 'Falta' | 'Retardo' }[]; // Ej: '2025-08-17'
+  fechas: { fecha: string; tipo: 'Falta' | 'Retardo' }[];
   recordatorios: string[];
 }
 
@@ -109,7 +126,6 @@ export const getAsistenciaData = async (alumnoId: string): Promise<AsistenciaDat
   console.log(`[MOCK] Solicitando asistencia para: ${alumnoId}`);
   await wait(700);
 
-  // NOTA: Para pruebas, asegúrate que las fechas coincidan con el mes que visualizas en el calendario
   return {
     estadisticas: { asistencia: 90, faltas: 1, retardos: 2 },
     fechas: [
@@ -168,55 +184,77 @@ export const getNotificaciones = async (alumnoId: string): Promise<NotificacionD
 };
 
 // =========================================================
-// 6. PERFIL DEL ALUMNO (Existente)
+// 6. PERFIL DEL ALUMNO (✅ CONECTADO AL BACKEND)
 // =========================================================
 
 export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProfileData> => {
-  console.log(`[MOCK] Solicitando datos de perfil para alumno: ${alumnoId}`);
-  await wait(800);
+  try {
+    // A) Hacemos la petición real al Backend
+    // IMPORTANTE: alumnoId debe ser el UUID del Usuario (User ID) que obtienes al hacer login
+    const response = await fetch(`${API_URL}/student/profile/${alumnoId}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-  return {
-    resumen: {
-      name: 'Sofia Rodriguez',
-      id: '12345678910',
-      career: 'Ingeniería en Sistemas Computacionales',
-      semester: 'Quinto Semestre',
-      average: 8.5,
-      profileImageUrl: '/images/profile-placeholder.png',
-    },
-    personal: {
-      fullName: 'Sofia Rodriguez',
-      id: '12345678910',
-      birthDate: '2000-03-15',
-      gender: 'Femenino',
-      email: 'sofia.rodriguez@email.com',
-      phone: '+52 55 1234 5678',
-      address: 'Calle Principal #123, Colonia Centro, Ciudad de México, CP 06000',
-      nationality: 'Mexicana',
-      civilStatus: 'Soltera',
-      bloodType: 'O+',
-      disability: 'Ninguna',
-      curp: 'RORS000315MDDFDFAS',
-      nss: '123456789Y1',
-    },
-    academic: {
-      semester: 'Quinto Semestre',
-      average: 8.5,
-      status: 'Activo',
-      approvedSubjects: 42,
-      admissionDate: 'Agosto 2021',
-      faculty: 'Ingeniería',
-      studyPlan: 'ISC 2010',
-      modality: 'Escolarizada',
-      turn: 'Matutino',
-      period: 'Semestral',
-      credits: 210,
-    },
-    payment: {
-      balanceDue: 1092.00,
-      lastPaymentDate: '2025-11-18',
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('Sesión expirada o no autorizada');
+      if (response.status === 404) throw new Error('Perfil de alumno no encontrado');
+      throw new Error(`Error del servidor: ${response.statusText}`);
     }
-  };
+
+    const data = await response.json();
+
+    // B) TRANSFORMACIÓN DE DATOS (Mapeo Backend -> Frontend)
+    // Convertimos la respuesta plana del backend a la estructura anidada que usa tu vista.
+    // Usamos '---' o valores por defecto para lo que aún no viene del backend.
+
+    return {
+      resumen: {
+        name: data.nombre || 'Sin Nombre',
+        id: data.matricula || 'S/M',
+        career: 'Ingeniería en Sistemas', // 🚧 Dato hardcoded (pendiente en BD)
+        semester: data.gradoActual || 'Indefinido',
+        average: 0.0, // 🚧 Pendiente conectar con módulo Academic real
+        profileImageUrl: '/images/profile-placeholder.png',
+      },
+      personal: {
+        fullName: data.nombre,
+        id: data.matricula,
+        birthDate: data.fechaNacimiento,
+        gender: data.genero,
+        email: data.email,
+        phone: data.telefono,
+        address: data.direccion,
+        nationality: 'Mexicana', // 🚧 Dato hardcoded
+        civilStatus: 'Soltero/a', // 🚧 Dato hardcoded
+        bloodType: data.tipoSangre || 'N/A',
+        disability: 'Ninguna',
+        curp: data.curp || 'No registrada',
+        nss: 'No registrado',
+      },
+      academic: {
+        semester: data.gradoActual,
+        average: 8.5, // 🚧 Mock temporal
+        status: 'Activo',
+        approvedSubjects: 0,
+        admissionDate: '2024-01-01',
+        faculty: 'Ingeniería',
+        studyPlan: '2020',
+        modality: 'Escolarizada',
+        turn: 'Matutino',
+        period: 'Semestral',
+        credits: 0,
+      },
+      payment: {
+        balanceDue: 0.00, // 🚧 Mock temporal
+        lastPaymentDate: '---',
+      }
+    };
+
+  } catch (error) {
+    console.error("Error en getAlumnoProfileData:", error);
+    throw error;
+  }
 };
 
 // =========================================================
@@ -264,9 +302,6 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
   };
 };
 
-
-// --- EN alumno.service.ts ---
-
 // Interfaz para la tabla de detalles
 export interface AsistenciaDetalleItem {
   fecha: string;
@@ -277,8 +312,7 @@ export interface AsistenciaDetalleItem {
 // Función para obtener la lista
 export const getDetalleAsistencias = async (alumnoId: string): Promise<AsistenciaDetalleItem[]> => {
   console.log(`[MOCK] Solicitando detalle de asistencias para: ${alumnoId}`);
-  // Simulamos un pequeño tiempo de carga
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await wait(500);
 
   return [
     { fecha: "2025-11-01", materia: "Matemáticas", estado: "Falta" },
@@ -290,18 +324,14 @@ export const getDetalleAsistencias = async (alumnoId: string): Promise<Asistenci
   ];
 };
 
-
-// --- EN alumno.service.ts ---
-
 // Simula el catálogo de documentos que la escuela ofrece
 export const getCatalogoDocumentos = async (): Promise<string[]> => {
-  // No necesitamos ID de alumno aquí, es un catálogo general
   await new Promise(resolve => setTimeout(resolve, 300));
   return [
     'Historial Académico',
     'Constancia de Estudios',
     'Certificado de Terminación',
     'Boleta de Calificaciones',
-    'Credencial de Biblioteca (Reposición)' // Agregué uno nuevo de ejemplo
+    'Credencial de Biblioteca (Reposición)'
   ];
 };
