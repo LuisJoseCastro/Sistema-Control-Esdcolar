@@ -120,6 +120,9 @@ export interface NotificacionDashboard {
     mensaje: string;
     leida: boolean;
     fecha: string;
+
+    titulo?: string;
+    tipo?: string;
 }
 
 export interface AlumnoDashboardSummary {
