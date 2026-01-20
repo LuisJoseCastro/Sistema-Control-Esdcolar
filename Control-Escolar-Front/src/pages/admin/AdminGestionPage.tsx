@@ -7,11 +7,11 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input'; 
 import Modal from '../../components/ui/Modal';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
-import { adminService } from '../../services/admin.service'; // 👈 Conexión real
+import { adminService } from '../../services/admin.service';
 
 // --- TIPOS DE DATOS ---
 interface PlanEstudio {
-    id: string | number;
+    id: string;
     nombre: string;
     codigo: string;
     fechaInicio: string;
@@ -25,13 +25,15 @@ interface AsignaturaSimple {
 }
 
 interface Asignatura {
-    id: string | number;
+    id: string;
     materia: string;
     codigo: string;
     planEstudio: string;
 }
 
-// --- FORMULARIO PLAN (DISEÑO IGUAL) ---
+// =================================================================================
+// FORMULARIO PLAN DE ESTUDIO (CARRERA)
+// =================================================================================
 interface PlanFormProps {
     plan?: PlanEstudio; 
     onSave: (data: any) => void; 
@@ -63,37 +65,41 @@ const PlanEstudioForm: React.FC<PlanFormProps> = ({ plan, onSave, onClose }) => 
     return (
         <form onSubmit={(e) => { e.preventDefault(); onSave({ ...planData, asignaturas: asignaturasList }); }} className="p-4 space-y-6"> 
             <div className="space-y-4">
-                <Input label="Nombre del plan" name="nombre" value={planData.nombre} onChange={handlePlanChange} required />
-                <Input label="Código" name="codigo" value={planData.codigo} onChange={handlePlanChange} required />
+                <Input label="Nombre de la Carrera / Plan" name="nombre" value={planData.nombre} onChange={handlePlanChange} required />
+                <Input label="Código del Plan" name="codigo" value={planData.codigo} onChange={handlePlanChange} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <Input label="Fecha inicio" name="fechaInicio" type="date" value={planData.fechaInicio} onChange={handlePlanChange} required />
                 <Input label="Fecha finalización" name="fechaFinal" type="date" value={planData.fechaFinal} onChange={handlePlanChange} required />
             </div>
             <div className="space-y-3 pt-3 border-t">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase">Asignaturas Iniciales</h3>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase">Carga Académica Inicial</h3>
                 {asignaturasList.map((asig, index) => (
-                    <div key={index} className="flex gap-2">
-                        <Input name="materia" value={asig.materia} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Nombre Materia" className="flex-1" />
-                        <Input name="codigo" value={asig.codigo} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Cód." className="flex-2" />
+                    <div key={index} className="flex gap-2 animate-in slide-in-from-left-2">
+                        <Input name="materia" value={asig.materia} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Materia" className="flex-1" />
+                        <Input name="codigo" value={asig.codigo} onChange={(e) => handleAsignaturaChange(index, e)} placeholder="Cód." className="w-24" />
                         {asignaturasList.length > 1 && (
-                            <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => prev.filter((_, i) => i !== index))} className="p-2"><MinusCircle size={20} /></Button>
+                            <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => prev.filter((_, i) => i !== index))} className="p-2 text-red-500 hover:text-red-700">
+                                <MinusCircle size={20} />
+                            </Button>
                         )}
                     </div>
                 ))}
-                <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => [...prev, { materia: '', codigo: '' }])} className="text-blue-600 text-sm flex items-center gap-1">
-                    <PlusCircle size={16} /> Agregar otra
+                <Button type="button" variant="ghost" onClick={() => setAsignaturasList(prev => [...prev, { materia: '', codigo: '' }])} className="text-blue-600 text-sm flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded">
+                    <PlusCircle size={16} /> Agregar otra materia
                 </Button>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="secondary" onClick={onClose} type="button">Cancelar</Button>
-                <Button variant="primary" type="submit">Guardar</Button>
+                <Button variant="primary" type="submit">Guardar Carrera</Button>
             </div>
         </form>
     );
 };
 
-// --- FORMULARIO MATERIA (DISEÑO IGUAL) ---
+// =================================================================================
+// FORMULARIO ASIGNATURA INDIVIDUAL
+// =================================================================================
 interface AsignaturaFormProps {
     asignatura?: Asignatura; 
     planesDisponibles: PlanEstudio[]; 
@@ -105,7 +111,7 @@ const AsignaturaForm: React.FC<AsignaturaFormProps> = ({ asignatura, planesDispo
     const [data, setData] = useState({
         materia: asignatura?.materia || '',
         codigo: asignatura?.codigo || '',
-        planEstudio: asignatura?.planEstudio || planesDisponibles[0]?.nombre || '',
+        planEstudio: asignatura?.planEstudio || '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -117,20 +123,29 @@ const AsignaturaForm: React.FC<AsignaturaFormProps> = ({ asignatura, planesDispo
             <Input label="Materia" name="materia" value={data.materia} onChange={handleChange} required />
             <Input label="Código" name="codigo" value={data.codigo} onChange={handleChange} required />
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plan de Estudio</label>
-                <select name="planEstudio" value={data.planEstudio} onChange={handleChange} className="w-full border p-2 rounded-md">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vincular a Carrera</label>
+                <select 
+                    name="planEstudio" 
+                    value={data.planEstudio} 
+                    onChange={handleChange} 
+                    className="w-full border p-2 rounded-md outline-none focus:ring-2 focus:ring-blue-500 border-gray-300 bg-white"
+                    required
+                >
+                    <option value="">Seleccione una carrera...</option>
                     {planesDisponibles.map(p => <option key={p.id} value={p.nombre}>{p.nombre}</option>)}
                 </select>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t mt-4">
                 <Button variant="secondary" onClick={onClose} type="button">Cancelar</Button>
-                <Button variant="primary" type="submit">Guardar</Button>
+                <Button variant="primary" type="submit">Guardar Asignatura</Button>
             </div>
         </form>
     );
 };
 
-// --- COMPONENTE PRINCIPAL (CONECTADO) ---
+// =================================================================================
+// COMPONENTE PRINCIPAL
+// =================================================================================
 const AdminGestionPage: React.FC = () => {
     const [planes, setPlanes] = useState<PlanEstudio[]>([]);
     const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
@@ -141,20 +156,19 @@ const AdminGestionPage: React.FC = () => {
     const [editingPlan, setEditingPlan] = useState<PlanEstudio | null>(null);
     const [editingAsignatura, setEditingAsignatura] = useState<Asignatura | null>(null);
     const [searchTerm, setSearchTerm] = useState(''); 
-    const [selectedPlanId, setSelectedPlanId] = useState<string | number | null>(null);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-    // 1. CARGA INICIAL DESDE API
     const fetchData = async () => {
         setLoading(true);
         try {
             const [planesData, asigData] = await Promise.all([
-                adminService.getPlanes(),
+                adminService.getPlanes(), // Aquí vendrán solo los que tú crees
                 adminService.getAsignaturas()
             ]);
             setPlanes(planesData);
             setAsignaturas(asigData);
         } catch (error) {
-            console.error("Error al cargar gestión académica", error);
+            console.error("Error al cargar datos");
         } finally {
             setLoading(false);
         }
@@ -164,7 +178,6 @@ const AdminGestionPage: React.FC = () => {
         fetchData();
     }, []);
 
-    // 2. HANDLERS CON API
     const handleSavePlan = async (data: any) => {
         try {
             if (editingPlan) {
@@ -174,175 +187,140 @@ const AdminGestionPage: React.FC = () => {
             }
             fetchData();
             setIsPlanModalOpen(false);
-            setEditingPlan(null);
-        } catch (error) { alert("Error al guardar plan"); }
+        } catch (error) { alert("Error al guardar"); }
     };
 
     const handleSaveAsignatura = async (data: any) => {
         try {
-            if (editingAsignatura) {
-                await adminService.actualizarAsignatura(editingAsignatura.id, data);
-            } else {
-                await adminService.crearAsignatura(data);
-            }
+            await adminService.crearAsignatura(data);
             fetchData();
             setIsMateriaModalOpen(false);
-            setEditingAsignatura(null);
-        } catch (error) { alert("Error al guardar materia"); }
-    };
-
-    const handleDeletePlan = async (id: string | number) => {
-        if (window.confirm('¿Eliminar este plan?')) {
-            // await adminService.eliminarPlan(id); // Agregar si existe en backend
-            setPlanes(prev => prev.filter(p => p.id !== id));
-            if (selectedPlanId === id) setSelectedPlanId(null);
-        }
-    };
-
-    const handleSelectPlan = (id: string | number) => {
-        setSelectedPlanId(prev => prev === id ? null : id);
+        } catch (error) { alert("Error al guardar"); }
     };
 
     const filteredPlanes = useMemo(() => {
-        return planes.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || p.codigo.toLowerCase().includes(searchTerm.toLowerCase()));
+        return planes.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [planes, searchTerm]);
 
     const filteredAsignaturas = useMemo(() => {
-        if (selectedPlanId === null) return asignaturas; 
+        if (!selectedPlanId) return asignaturas; 
         const planName = planes.find(p => p.id === selectedPlanId)?.nombre;
-        if (!planName) return asignaturas;
         return asignaturas.filter(a => a.planEstudio === planName);
     }, [asignaturas, planes, selectedPlanId]);
 
-    if (loading) return <div className="flex h-screen items-center justify-center bg-whiteBg-50"><LoadingSpinner className="w-12 h-12 text-main-800" /></div>;
+    if (loading) return <div className="flex h-screen items-center justify-center bg-white"><LoadingSpinner className="w-12 h-12 text-blue-600" /></div>;
 
     return (
-        <div className="min-h-screen bg-whiteBg-50 p-8">
-            <header className="mb-6">
-                <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
-                    <GraduationCap size={32} className="mr-3 text-main-800" />
-                    Gestión Académica
-                </h1>
-                <p className="text-gray-600 ml-10">Administración de planes y asignaturas</p>
+        <div className="min-h-screen bg-[#F8FAFC] p-8 space-y-8 font-sans">
+            <header className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-4xl font-serif italic text-gray-800 flex items-center">
+                        <GraduationCap size={40} className="mr-4 text-[#527191]" />
+                        Gestión Académica
+                    </h1>
+                    <p className="text-gray-500 ml-14">Panel de Administración de Carreras y Oferta Educativa</p>
+                </div>
+                <div className="flex gap-3">
+                    <Button variant="secondary" icon={<Calendar size={18} />} onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}>
+                        Crear Carrera
+                    </Button>
+                    <Button variant="primary" icon={<Plus size={18} />} onClick={() => { setEditingAsignatura(null); setIsMateriaModalOpen(true); }}>
+                        Agregar Asignatura
+                    </Button>
+                </div>
             </header>
 
-            <div className="flex justify-end space-x-3 mb-8">
-                <Button variant="secondary" icon={<Calendar size={18} />} onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}>
-                    Nuevo Plan
-                </Button>
-                <Button variant="primary" icon={<Plus size={18} />} onClick={() => { setEditingAsignatura(null); setIsMateriaModalOpen(true); }}>
-                    Nueva Materia
-                </Button>
-            </div>
-
-            <Card className="p-6 bg-white shadow-xl shadow-grayDark-200 mb-10 border-2 border-gray-400">
-                <div className="flex justify-between items-end mb-4 border-b pb-2">
-                    <div>
-                        <h2 className="text-2xl font-semibold">Planes de Estudio</h2>
-                        <p className="text-xs text-gray-500 mt-1">Haz clic en una fila para ver sus materias.</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Input placeholder="Buscar plan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-64" />
-                        <Button variant="secondary" className="p-2" icon={<Search size={18} />}>{''}</Button>
+            {/* TABLA DE PLANES (CARRERAS) */}
+            <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+                <div className="p-6 flex justify-between items-center border-b border-gray-100">
+                    <h2 className="text-2xl font-bold text-gray-800">Planes de Estudio Vigentes</h2>
+                    <div className="relative">
+                        <Input placeholder="Buscar por nombre..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-80 pr-10" />
+                        <Search className="absolute right-3 top-3 text-gray-400" size={18} />
                     </div>
                 </div>
-
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-grayDark-200 text-sm font-semibold text-gray-700">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-[#DDE3E9] text-[#4A5568] font-bold text-xs uppercase tracking-widest">
                             <tr>
-                                <th className="p-3 text-center text-xl">ID</th>
-                                <th className="p-3 text-left text-xl">Nombre del Plan</th>
-                                <th className="p-3 text-left text-xl">Código</th>
-                                <th className="p-3 text-left text-xl">Inicio</th>
-                                <th className="p-3 text-left text-xl">Fin</th>
-                                <th className="p-3 text-center text-xl">Acciones</th>
+                                <th className="p-4 text-center">#</th>
+                                <th className="p-4">Nombre de la Carrera</th>
+                                <th className="p-4">Código</th>
+                                <th className="p-4">Fecha Inicio</th>
+                                <th className="p-4">Fecha Fin</th>
+                                <th className="p-4 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-whiteBg-50 divide-y divide-gray-200">
-                            {filteredPlanes.map((plan) => {
-                                const isSelected = selectedPlanId === plan.id;
-                                return (
-                                    <tr key={plan.id} onClick={() => handleSelectPlan(plan.id)}
-                                        className={`transition-colors duration-200 cursor-pointer ${isSelected ? 'bg-blue-50 border-l-4 border-l-main-600' : 'hover:bg-whiteBg-100 border-l-4 border-l-transparent'}`}>
-                                        <td className="p-3 text-center text-gray-500 text-[10px] font-mono">
-                                            {typeof plan.id === 'string' ? plan.id.slice(0, 8) : plan.id}
-                                        </td>
-                                        <td className={`p-3 font-medium ${isSelected ? 'text-blue-700' : 'text-gray-900'}`}>{plan.nombre}</td>
-                                        <td className="p-3 text-gray-500 font-mono text-xs">{plan.codigo}</td>
-                                        <td className="p-3 text-sm">{plan.fechaInicio}</td>
-                                        <td className="p-3 text-sm">{plan.fechaFinal}</td>
-                                        <td className="p-3 text-center flex justify-center gap-2" onClick={(e) => e.stopPropagation()}> 
-                                            <Button variant="ghost" className="p-1" onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }}>
-                                                <Edit size={16} />
-                                            </Button>
-                                            <Button variant="ghost" className="p-1" onClick={() => handleDeletePlan(plan.id)}>
-                                                <Trash2 size={16} />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-
-            <Card className="p-6 bg-white shadow-xl border-2 border-gray-400">
-                <div className="flex justify-between items-center mb-4 border-b pb-2">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-semibold">Asignaturas</h2>
-                        {selectedPlanId && (
-                            <div className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full animate-fadeIn">
-                                <span>Filtrado por: <strong>{planes.find(p => p.id === selectedPlanId)?.nombre}</strong></span>
-                                <button onClick={() => setSelectedPlanId(null)} className="ml-2"><FilterX size={16} /></button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-grayDark-200 text-xl font-semibold text-gray-700">
-                            <tr>
-                                <th className="p-3 text-center text-xl">ID</th>
-                                <th className="p-3 text-left text-xl">Materia</th>
-                                <th className="p-3 text-left text-xl">Código</th>
-                                <th className="p-3 text-left text-xl">Plan de Estudio</th>
-                                <th className="p-3 text-center text-xl">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-whiteBg-50 divide-y divide-gray-200">
-                            {filteredAsignaturas.length > 0 ? (
-                                filteredAsignaturas.map((asig) => (
-                                    <tr key={asig.id} className="border-b hover:bg-whiteBg-100">
-                                        <td className="p-3 text-center text-gray-500 text-[10px] font-mono">
-                                            {typeof asig.id === 'string' ? asig.id.slice(0, 8) : asig.id}
-                                        </td>
-                                        <td className="p-3 font-medium text-gray-800">{asig.materia}</td>
-                                        <td className="p-3 font-mono text-xs text-gray-500">{asig.codigo}</td>
-                                        <td className="p-3 text-sm text-blue-600 bg-blue-50/50 rounded">{asig.planEstudio}</td>
-                                        <td className="p-3 text-center flex justify-center gap-2">
-                                            <Button variant="ghost" className="p-1" onClick={() => { setEditingAsignatura(asig); setIsMateriaModalOpen(true); }}>
-                                                <Edit size={16} />
-                                            </Button>
-                                            <Button variant="ghost" className="p-1"><Trash2 size={16} /></Button>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr><td colSpan={5} className="p-8 text-center text-gray-400 italic">No hay materias disponibles.</td></tr>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredPlanes.length > 0 ? filteredPlanes.map((plan, index) => (
+                                <tr key={plan.id} onClick={() => setSelectedPlanId(selectedPlanId === plan.id ? null : plan.id)}
+                                    className={`cursor-pointer transition-colors ${selectedPlanId === plan.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                                    <td className="p-4 text-center text-gray-400 text-xs font-mono">{index + 1}</td>
+                                    <td className="p-4 font-bold text-gray-700">{plan.nombre}</td>
+                                    <td className="p-4 text-gray-500 font-mono text-xs">{plan.codigo}</td>
+                                    <td className="p-4 text-sm text-gray-600">{plan.fechaInicio}</td>
+                                    <td className="p-4 text-sm text-gray-600">{plan.fechaFinal}</td>
+                                    <td className="p-4 flex justify-center gap-2" onClick={e => e.stopPropagation()}>
+                                        <button onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }} className="p-2 text-white bg-[#527191] rounded-lg hover:bg-[#3E566E] shadow-sm"><Edit size={16}/></button>
+                                        <button className="p-2 text-white bg-[#527191] rounded-lg hover:bg-red-600 shadow-sm"><Trash2 size={16}/></button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr><td colSpan={6} className="p-10 text-center text-gray-400 italic font-serif text-lg">No hay planes creados. Presiona "Crear Carrera" para comenzar.</td></tr>
                             )}
                         </tbody>
                     </table>
                 </div>
             </Card>
 
-            <Modal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} title={editingPlan ? 'Editar Plan' : 'Nuevo Plan'} size="lg">
+            {/* TABLA DE ASIGNATURAS */}
+            <Card className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-2xl font-bold text-gray-800">Asignaturas</h2>
+                        {selectedPlanId && (
+                            <button onClick={() => setSelectedPlanId(null)} className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full flex items-center gap-1 hover:bg-blue-200">
+                                <FilterX size={14}/> Ver todas
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-[#DDE3E9] text-[#4A5568] font-bold text-xs uppercase tracking-widest">
+                            <tr>
+                                <th className="p-4 text-center">#</th>
+                                <th className="p-4">Materia</th>
+                                <th className="p-4">Código</th>
+                                <th className="p-4">Pertenece a</th>
+                                <th className="p-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredAsignaturas.length > 0 ? filteredAsignaturas.map((asig, index) => (
+                                <tr key={asig.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-4 text-center text-gray-400 text-xs font-mono">{index + 1}</td>
+                                    <td className="p-4 font-bold text-gray-700">{asig.materia}</td>
+                                    <td className="p-4 text-gray-500 font-mono text-xs uppercase">{asig.codigo}</td>
+                                    <td className="p-4"><span className="text-blue-600 font-medium text-sm">{asig.planEstudio}</span></td>
+                                    <td className="p-4 flex justify-center gap-2">
+                                        <button className="p-2 text-white bg-[#527191] rounded-lg hover:bg-[#3E566E] shadow-sm"><Edit size={16}/></button>
+                                        <button onClick={async () => { if(window.confirm("¿Borrar?")) { await adminService.eliminarMateria(asig.id); fetchData(); } }} className="p-2 text-white bg-[#527191] rounded-lg hover:bg-red-600 shadow-sm"><Trash2 size={16}/></button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr><td colSpan={5} className="p-10 text-center text-gray-400 italic">No hay materias registradas.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+
+            <Modal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} title={editingPlan ? 'Editar Carrera' : 'Crear Nueva Carrera'} size="lg">
                 <PlanEstudioForm plan={editingPlan || undefined} onSave={handleSavePlan} onClose={() => setIsPlanModalOpen(false)} />
             </Modal>
 
-            <Modal isOpen={isMateriaModalOpen} onClose={() => setIsMateriaModalOpen(false)} title={editingAsignatura ? 'Editar Materia' : 'Nueva Materia'} size="md">
+            <Modal isOpen={isMateriaModalOpen} onClose={() => setIsMateriaModalOpen(false)} title={editingAsignatura ? 'Editar Asignatura' : 'Registrar Nueva Asignatura'} size="md">
                 <AsignaturaForm asignatura={editingAsignatura || undefined} planesDisponibles={planes} onSave={handleSaveAsignatura} onClose={() => setIsMateriaModalOpen(false)} />
             </Modal>
         </div>

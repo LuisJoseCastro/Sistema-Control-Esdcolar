@@ -10,8 +10,6 @@ import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
 import { RegisterSchoolPage } from '../pages/public/RegisterSchoolPage';
 import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
-
-// 👇👇👇 NUEVAS PÁGINAS AGREGADAS AQUÍ 👇👇👇
 import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage';
 import { ResetPasswordPage } from '../pages/public/ResetPasswordPage';
 
@@ -50,8 +48,7 @@ import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
-
-// === PrivateRoute: LÓGICA DE URL ===
+// === PrivateRoute: LÓGICA DE PROTECCIÓN ===
 const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
   const { isLoggedIn, role, isLoading } = useAuth();
   const location = useLocation();
@@ -60,7 +57,7 @@ const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
         <LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" />
-        <p className="text-gray-500 font-medium">Cargando...</p>
+        <p className="text-gray-500 font-medium">Cargando sesión...</p>
       </div>
     );
   }
@@ -90,34 +87,37 @@ export const AppRouter: React.FC = () => {
         <Route path="/login" element={<LoginPageGeneral />} />
         <Route path="/register-school" element={<RegisterSchoolPage />} />
         <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
-
-        {/* 👇👇👇 RUTAS DE RECUPERACIÓN (SOLUCIÓN AL 404) 👇👇👇 */}
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/recovery" element={<ResetPasswordPage />} />
 
         {/* --- REDIRECTS --- */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
-        <Route path="/admin/login" element={<Navigate to="/login" replace />} />
-        <Route path="/docente/login" element={<Navigate to="/login" replace />} />
-        <Route path="/alumno/login" element={<Navigate to="/login" replace />} />
 
-        {/* --- RUTAS PROTEGIDAS --- */}
+        {/* --- RUTAS PROTEGIDAS CON LAYOUT --- */}
         <Route element={<AppLayout />}>
-          {/* ADMIN */}
+          
+          {/* SECCIÓN ADMINISTRADOR */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
-            <Route path="/admin/docentes" element={<AdminDocentesPage />} />
-            <Route path="/admin/mensajes" element={<AdminMensajesPage />} /> 
-            <Route path="/admin/plan-estudios" element={<AdminGestionPage />} /> 
-            <Route path="/admin/reportes" element={<AdminReportesPage />} /> 
+            
+            {/* ✅ Rutas de Grupos y Alumnos corregidas */}
+            <Route path="/admin/grupos" element={<AdminAlumnosPage />} /> 
             <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/perfil" element={<AdminPerfilAlumnoPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/historial" element={<AdminHistorialAcademicoPage />} />
+            
+            {/* ✅ Rutas de Docentes */}
+            <Route path="/admin/docentes" element={<AdminDocentesPage />} />
             <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
+            
+            {/* ✅ Otras herramientas */}
+            <Route path="/admin/mensajes" element={<AdminMensajesPage />} /> 
+            <Route path="/admin/plan-estudios" element={<AdminGestionPage />} /> 
+            <Route path="/admin/reportes" element={<AdminReportesPage />} /> 
           </Route>
 
-          {/* DOCENTE */}
+          {/* SECCIÓN DOCENTE */}
           <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
             <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
@@ -128,7 +128,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/perfil" element={<DocentePerfilPage />} />
           </Route>
 
-          {/* ALUMNO */}
+          {/* SECCIÓN ALUMNO */}
           <Route element={<PrivateRoute allowedRoles={['ALUMNO']} />}>
             <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
             <Route path="/alumno/asignaturas" element={<AlumnoAsignaturasPage />} />
@@ -142,7 +142,19 @@ export const AppRouter: React.FC = () => {
           </Route>
         </Route>
 
-        <Route path="*" element={<div className="flex items-center justify-center h-screen"><h1 className="text-2xl font-bold">404 | Página no encontrada</h1></div>} />
+        {/* MANEJO DE 404 */}
+        <Route path="*" element={
+          <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+            <h1 className="text-6xl font-bold text-gray-200 mb-4">404</h1>
+            <p className="text-xl text-gray-600 mb-8">La página que buscas no existe.</p>
+            <button 
+              onClick={() => window.location.href = '/login'}
+              className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        } />
       </Routes>
     </BrowserRouter>
   );

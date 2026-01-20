@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Edit, BookOpen, Clock, PlusCircle, Trash2, CheckCircle } from 'lucide-react';
+// ✅ Agregado icono de Home
+import { User, Mail, Phone, Edit, BookOpen, Clock, PlusCircle, Trash2, CheckCircle, Home } from 'lucide-react';
 
 // Importación de Componentes UI
 import { Card } from '../../components/ui/Card';
@@ -10,7 +11,7 @@ import Button from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import Modal from '../../components/ui/Modal';
 
-// Servicio y Tipos (Sincronizados con los archivos que unificamos)
+// Servicio y Tipos
 import { adminService } from '../../services/admin.service';
 import { type DocenteProfile, type MateriaAsignada, type HorarioType } from '../../types/models';
 
@@ -37,19 +38,19 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [clave, setClave] = useState(profile.clave);
-    const [nombre, setNombre] = useState(profile.nombre);
-    const [email, setEmail] = useState(profile.email);
-    const [telefono, setTelefono] = useState(profile.telefono);
-    const [especialidad, setEspecialidad] = useState(profile.especialidad);
+    const [clave, setClave] = useState(profile?.clave || '');
+    const [nombre, setNombre] = useState(profile?.nombre || '');
+    const [email, setEmail] = useState(profile?.email || '');
+    const [telefono, setTelefono] = useState(profile?.telefono || '');
+    const [especialidad, setEspecialidad] = useState(profile?.especialidad || '');
 
     useEffect(() => {
-        if (isOpen) {
-            setClave(profile.clave);
-            setNombre(profile.nombre);
-            setEmail(profile.email);
-            setTelefono(profile.telefono);
-            setEspecialidad(profile.especialidad);
+        if (isOpen && profile) {
+            setClave(profile.clave || '');
+            setNombre(profile.nombre || '');
+            setEmail(profile.email || '');
+            setTelefono(profile.telefono || '');
+            setEspecialidad(profile.especialidad || '');
             setIsEditing(false);
         }
     }, [isOpen, profile]);
@@ -139,7 +140,7 @@ const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, 
 
 
 // =========================================================
-// 2. Componente Modal: Materias Asignadas (DISEÑO INTACTO)
+// 2. Componente Modal: Materias Asignadas (VINCULACIÓN A GRUPOS)
 // =========================================================
 interface AssignedSubjectsModalProps {
     profile: DocenteProfile;
@@ -151,6 +152,7 @@ interface AssignedSubjectsModalProps {
 const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, onSave, isOpen, onClose }) => {
     const [localSchedule, setLocalSchedule] = useState<MateriaHorarioItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [gruposBD, setGruposBD] = useState<any[]>([]); // Lista de grupos reales
 
     const [newMateriaNombre, setNewMateriaNombre] = useState('');
     const [newMateriaGrupo, setNewMateriaGrupo] = useState('');
@@ -163,12 +165,28 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 
     const [editingKey, setEditingKey] = useState<string | null>(null);
 
+    // Cargar grupos desde la base de datos al abrir
+    useEffect(() => {
+        const fetchGrupos = async () => {
+            try {
+                const data = await adminService.getGrupos();
+                setGruposBD(data);
+                if (data.length > 0) setNewMateriaGrupo(data[0].nombre);
+            } catch (err) {
+                console.error("Error cargando grupos", err);
+            }
+        };
+        if (isOpen) fetchGrupos();
+    }, [isOpen]);
+
     const rehydrateSchedule = useCallback((p: DocenteProfile) => {
         const schedule: MateriaHorarioItem[] = [];
+        if (!p?.horario) return;
+        
         daysOptions.forEach(day => {
             const dayKey = day as keyof HorarioType;
             if (p.horario && p.horario[dayKey]) {
-                Object.entries(p.horario[dayKey]).forEach(([timeStart, description]) => {
+                Object.entries(p.horario[dayKey] || {}).forEach(([timeStart, description]) => {
                     const fullMatch = description.match(/(.*) \((.*)\) \[(.*)-(.*)\]/);
                     const simpleMatch = description.match(/(.*) \((.*)\)/);
                     const match = fullMatch || simpleMatch;
@@ -178,7 +196,8 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                         const grupo = match[2]?.trim() || '';
                         const start = fullMatch ? fullMatch[3] : timeStart;
                         const end = fullMatch ? fullMatch[4] : timeOptions[timeOptions.indexOf(start) + 1] || start;
-                        const materiaId = p.materiasAsignadas.find(m => m.nombre === nombre && m.grupo === grupo)?.id || `temp-${nombre}-${grupo}`;
+                        const materiasAsignadasArr = p.materiasAsignadas || [];
+                        const materiaId = materiasAsignadasArr.find(m => m.nombre === nombre && m.grupo === grupo)?.id || `temp-${nombre}-${grupo}`;
                         const scheduleKey = `${dayKey}-${start}-${materiaId}`;
 
                         schedule.push({
@@ -192,14 +211,12 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
     }, []);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && profile) {
             rehydrateSchedule(profile);
             setEditingKey(null);
             setNewMateriaNombre('');
-            setNewMateriaGrupo('');
         }
     }, [isOpen, profile, rehydrateSchedule]);
-
 
     const handleUpdateField = (scheduleKey: string, field: 'day' | 'timeStart' | 'timeEnd', value: string) => {
         setLocalSchedule(prev => prev.map(item =>
@@ -213,6 +230,13 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validación de existencia del grupo seleccionado
+        if (!gruposBD.some(g => g.nombre === newMateriaGrupo)) {
+            alert('El grupo seleccionado no es válido o no existe.');
+            return;
+        }
+
         if (!newMateriaNombre.trim() || !newMateriaGrupo.trim() || !newTimeStart || !newTimeEnd) return;
         if (newTimeStart >= newTimeEnd) {
             alert('La hora de inicio debe ser anterior a la hora de fin.');
@@ -237,7 +261,6 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
 
         setLocalSchedule(prev => [...prev, newItem]);
         setNewMateriaNombre('');
-        setNewMateriaGrupo('');
     };
 
     const handleSave = async () => {
@@ -285,10 +308,18 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                             <input type="text" value={newMateriaNombre} onChange={(e) => setNewMateriaNombre(e.target.value)} required
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Ej: Bases de Datos" />
                         </div>
-                        <div className="w-20">
+                        <div className="w-20 col-span-1">
                             <label className="block text-sm font-medium text-gray-700">Grupo</label>
-                            <input type="text" value={newMateriaGrupo} onChange={(e) => setNewMateriaGrupo(e.target.value)} required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="101" />
+                            {/* ✅ SELECT DINÁMICO VINCULADO A LA BD */}
+                            <select 
+                                value={newMateriaGrupo} 
+                                onChange={(e) => setNewMateriaGrupo(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
+                            >
+                                {gruposBD.map(g => (
+                                    <option key={g.id} value={g.nombre}>{g.nombre.replace('GRUPO ', '')}</option>
+                                ))}
+                            </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Día</label>
@@ -301,14 +332,14 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                             <label className="block text-sm font-medium text-gray-700">Inicio</label>
                             <select value={newTimeStart} onChange={(e) => setNewTimeStart(e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                                {timeOptions.filter(t => t < newTimeEnd).map(time => <option key={time} value={time}>{time}</option>)}
+                                {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Fin</label>
                             <select value={newTimeEnd} onChange={(e) => setNewTimeEnd(e.target.value)}
                                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                                {timeOptions.filter(t => t > newTimeStart).map(time => <option key={time} value={time}>{time}</option>)}
+                                {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
                             </select>
                         </div>
                         <Button type="submit" variant="primary" className="h-[42px] col-span-6 md:col-span-1" icon={<PlusCircle size={20} />}>
@@ -330,7 +361,7 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                                 </tr>
                             </thead>
                             <tbody className="bg-whiteBg-50 divide-y divide-gray-100">
-                                {localSchedule.length > 0 ? (
+                                {localSchedule && localSchedule.length > 0 ? (
                                     daysOptions.flatMap(day =>
                                         localSchedule.filter(item => item.day === day)
                                             .sort((a, b) => (a.timeStart || '00:00').localeCompare(b.timeStart || '00:00'))
@@ -347,11 +378,11 @@ const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, 
                                                         {editingKey === item.scheduleKey ? (
                                                             <div className="flex gap-1">
                                                                 <select value={item.timeStart} onChange={(e) => handleUpdateField(item.scheduleKey, 'timeStart', e.target.value)} className="border rounded p-1 w-14">
-                                                                    {timeOptions.filter(t => t < (item.timeEnd || '23:59')).map(time => <option key={time} value={time}>{time}</option>)}
+                                                                    {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
                                                                 </select>
                                                                 -
                                                                 <select value={item.timeEnd} onChange={(e) => handleUpdateField(item.scheduleKey, 'timeEnd', e.target.value)} className="border rounded p-1 w-14">
-                                                                    {timeOptions.filter(t => t > (item.timeStart || '00:00')).map(time => <option key={time} value={time}>{time}</option>)}
+                                                                    {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
                                                                 </select>
                                                             </div>
                                                         ) : `${item.timeStart} - ${item.timeEnd}`}
@@ -407,17 +438,10 @@ export const AdminDocenteProfilePage: React.FC = () => {
 
     const handleProfileUpdate = useCallback(async (updatedProfile: DocenteProfile) => {
         try {
-            // Llamada al servicio real unificado
             await adminService.updateDocenteProfile(updatedProfile);
-            
-            // Actualización del estado local
             setProfile(updatedProfile);
-
-            // Retroalimentación visual de éxito
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
-            
-            console.log("Perfil actualizado y persistido con éxito.");
         } catch (err) {
             console.error("Error al guardar:", err);
             alert("No se pudieron guardar los cambios. Intente de nuevo.");
@@ -435,7 +459,6 @@ export const AdminDocenteProfilePage: React.FC = () => {
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                // Llamada al servicio real unificado
                 const data = await adminService.getDocenteProfileById(docenteId);
                 if (data) setProfile(data);
                 else setError('Perfil de Docente no encontrado.');
@@ -451,18 +474,27 @@ export const AdminDocenteProfilePage: React.FC = () => {
 
     const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
 
+    // ✅ TIME SLOTS DINÁMICOS BASADOS EN EL HORARIO
     const timeSlots = useMemo(() => {
         if (!profile || !profile.horario) return [];
-        return Array.from(new Set(
-            days.flatMap(day => Object.keys(profile.horario[day as keyof typeof profile.horario] || {}))
-        )).sort();
+        const slots = new Set<string>();
+        days.forEach(day => {
+            const dayKey = day as keyof HorarioType;
+            if (profile.horario?.[dayKey]) {
+                Object.keys(profile.horario[dayKey]).forEach(time => slots.add(time));
+            }
+        });
+        return Array.from(slots).sort();
     }, [profile]);
 
+    // ✅ VALIDACIÓN PARA MOSTRAR EN LA TABLA
     const isMateriaAssigned = useCallback((materiaDescription: string) => {
-        if (!profile) return false;
+        if (!profile || !profile.materiasAsignadas) return false;
         const match = materiaDescription.match(/(.*) \((.*)\)/);
         if (!match) return false;
-        return profile.materiasAsignadas.some(m => m.nombre === match[1].trim() && m.grupo === match[2].trim());
+        return profile.materiasAsignadas.some(m => 
+            m.nombre.trim() === match[1].trim() && m.grupo.trim() === match[2].trim()
+        );
     }, [profile]);
 
     if (loading) return <div className="p-8 flex justify-center items-center h-[calc(100vh-100px)]"><LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" /></div>;
@@ -470,7 +502,6 @@ export const AdminDocenteProfilePage: React.FC = () => {
 
     return (
         <div className="p-8 bg-white min-h-full font-sans relative">
-            {/* Mensaje de éxito flotante */}
             {showSuccess && (
                 <div className="fixed top-20 right-8 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-2 z-50 animate-bounce">
                     <CheckCircle size={20} />
@@ -478,10 +509,19 @@ export const AdminDocenteProfilePage: React.FC = () => {
                 </div>
             )}
 
-            <header className="mb-8">
-                <h1 className="text-5xl text-black border-b border-gray-400 pb-2" style={{ fontFamily: '"Kaushan Script", cursive' }}>
+            <header className="mb-8 flex justify-between items-center border-b border-gray-400 pb-2">
+                <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     perfil docente
                 </h1>
+                {/* ✅ Botón agregado para regresar al dashboard */}
+                <Button 
+                    variant="ghost" 
+                    onClick={() => navigate('/admin/dashboard')} 
+                    className="flex items-center gap-2 text-main-800 hover:bg-gray-100"
+                    icon={<Home size={24} />}
+                >
+                    Volver al Dashboard
+                </Button>
             </header>
 
             <div className="flex items-center gap-6 mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
@@ -489,9 +529,9 @@ export const AdminDocenteProfilePage: React.FC = () => {
                     <User size={40} />
                 </div>
                 <div className="flex flex-col text-gray-700">
-                    <p className="text-2xl font-bold">{profile.nombre}</p>
-                    <p className="text-lg mt-1">Clave: <span className="font-mono text-purple-600">{profile.clave}</span></p>
-                    <p className="text-md">Especialidad: <strong>{profile.especialidad}</strong></p>
+                    <p className="text-2xl font-bold">{profile?.nombre}</p>
+                    <p className="text-lg mt-1">Clave: <span className="font-mono text-purple-600 font-bold">{profile?.clave || 'Cargando...'}</span></p>
+                    <p className="text-md">Especialidad: <strong>{profile?.especialidad}</strong></p>
                 </div>
             </div>
 
@@ -501,10 +541,10 @@ export const AdminDocenteProfilePage: React.FC = () => {
                         <Edit size={20} />
                     </button>
                     <p className="flex items-center gap-3 text-gray-700">
-                        <Mail size={20} className="text-main-800" /><span className="font-semibold">correo:</span> {profile.email}
+                        <Mail size={20} className="text-main-800" /><span className="font-semibold">correo:</span> {profile?.email}
                     </p>
                     <p className="flex items-center gap-3 mt-2 text-gray-700">
-                        <Phone size={20} className="text-main-800" /><span className="font-semibold">Tel:</span> {profile.telefono || 'No disponible'}
+                        <Phone size={20} className="text-main-800" /><span className="font-semibold">Tel:</span> {profile?.telefono || 'No disponible'}
                     </p>
                 </Card>
 
@@ -512,15 +552,15 @@ export const AdminDocenteProfilePage: React.FC = () => {
                     <button className="absolute top-4 right-4 font-bold text-main-700 hover:text-main-800 cursor-pointer" onClick={() => setMateriasModalOpen(true)}>
                         <Edit size={20} />
                     </button>
-                    {profile.materiasAsignadas.length > 0 ? (
+                    {profile?.materiasAsignadas && profile.materiasAsignadas.length > 0 ? (
                         <ul className="list-disc pl-5 space-y-2">
-                            {profile.materiasAsignadas.slice(0, 2).map((materia) => (
+                            {profile.materiasAsignadas.slice(0, 3).map((materia) => (
                                 <li key={materia.id} className="text-gray-700">
                                     <BookOpen size={16} className="inline mr-2 text-teal-600" />
                                     {materia.nombre} (# Grupo: <strong>{materia.grupo}</strong>)
                                 </li>
                             ))}
-                            {profile.materiasAsignadas.length > 2 && (
+                            {profile.materiasAsignadas.length > 3 && (
                                 <li className="text-blue-600 cursor-pointer" onClick={() => setMateriasModalOpen(true)}>... ver más.</li>
                             )}
                         </ul>
@@ -537,12 +577,12 @@ export const AdminDocenteProfilePage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-whiteBg-50 divide-y divide-grayLight-300">
-                        {timeSlots.length > 0 ? (
+                        {timeSlots && timeSlots.length > 0 ? (
                             timeSlots.map(time => (
                                 <tr key={time} className="hover:bg-grayLight-100">
                                     <td className="p-3 text-sm font-mono text-gray-800 border-b border-gray-100">{time}</td>
                                     {days.map(day => {
-                                        const lesson = profile.horario[day as keyof typeof profile.horario]?.[time];
+                                        const lesson = profile?.horario?.[day as keyof typeof profile.horario]?.[time];
                                         const showLesson = lesson && isMateriaAssigned(lesson);
                                         const timeMatch = lesson ? lesson.match(/\[(\d{2}:\d{2}-\d{2}:\d{2})\]/) : null;
                                         return (

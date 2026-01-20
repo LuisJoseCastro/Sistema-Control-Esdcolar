@@ -1,4 +1,9 @@
 // src/types/models.ts
+
+// =========================================================
+// 1. Tipos de Autenticación y Usuarios
+// =========================================================
+
 export type Role = 'ADMIN' | 'DOCENTE' | 'ALUMNO';
 
 export interface User {
@@ -18,47 +23,55 @@ export interface AuthResponse {
     user: User;
 }
 
-// ✅ Agregamos export a estas interfaces para que AdminDocenteProfilePage las reconozca
+// =========================================================
+// 2. Módulo de Gestión Docente (Perfil y Horarios)
+// =========================================================
+
 export interface MateriaAsignada {
     id: string;
     nombre: string;
     grupo: string;
 }
 
+/**
+ * Representa la estructura del horario semanal del docente.
+ * Ejemplo: horario['Lunes']['08:00'] = "Matemáticas (Grupo A)"
+ */
 export type HorarioType = Record<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes', Record<string, string>>;
 
+/**
+ * Perfil completo del Docente. 
+ * Extiende de User para incluir nombre y email en el primer nivel.
+ */
 export interface DocenteProfile extends User {
-    clave: string;
+    clave: string;           // Clave institucional (claveEmpleado)
     especialidad: string;
     telefono: string;
     materiasAsignadas: MateriaAsignada[];
     horario: HorarioType;
 }
 
+// =========================================================
+// 3. Gestión Institucional y Académica
+// =========================================================
+
 export interface TenantConfig {
-    id: string; // ID interno del Tenant (Ej: T-123)
+    id: string;
     nombre: string;
     logoUrl?: string;
     colorPrimario?: string;
 }
 
-
-// =========================================================
-// 3. Tipos para Módulos Específicos (Resto de tus tipos)
-// =========================================================
-
-// 🚨 CORRECCIÓN CLAVE: Interfaz RendimientoMateria extraída y exportada
 export interface RendimientoMateria {
     materia: string;
     promedio: number;
 }
 
-// Tipos para el Módulo de Docente (Reportes y Calificaciones)
 export interface ReporteSummary {
     promedioFinalGrupo: number;
     asistenciaPromedio: number;
     tasaAprobacion: number;
-    rendimientoMateria: { materia: string; promedio: number; }[];
+    rendimientoMateria: RendimientoMateria[];
 }
 
 export interface CalificacionDetalle {
@@ -71,15 +84,16 @@ export interface CalificacionDetalle {
     extraordinario?: string | 'NA';
 }
 
-// Tipos para el Módulo de Alumno
+// =========================================================
+// 4. Módulo de Alumno y Expediente Académico
+// =========================================================
+
 export interface Asignatura {
     id: string;
     nombre: string;
     docente: string;
     promedio: number;
 }
-
-// --- Nuevos tipos para Historial Académico ---
 
 export interface CalificacionHistorial {
     asignatura: string;
@@ -99,7 +113,8 @@ export interface HistorialAcademico {
     documentosDisponibles: DocumentoAcademico[];
 }
 
-// --- Tipos para el AlumnoDashboardPage ---
+// --- Dashboard Alumno ---
+
 export interface NotificacionDashboard {
     id: string;
     mensaje: string;
@@ -113,7 +128,9 @@ export interface AlumnoDashboardSummary {
     notificaciones: NotificacionDashboard[];
 }
 
-// --- Tipos para la Página de Perfil (AlumnoPerfilPage) ---
+// =========================================================
+// 5. Datos Personales y Financieros del Estudiante
+// =========================================================
 
 export interface StudentProfileSummary {
     name: string;
@@ -165,8 +182,6 @@ export interface AlumnoProfileData {
     academic: AcademicInfoType;
     payment: PaymentInfo;
 }
-
-// --- Tipos para la Página de Documentos y Pagos ---
 
 export interface DocumentoPagado {
     fecha: string;

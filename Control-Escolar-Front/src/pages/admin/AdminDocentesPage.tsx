@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Search, Trash2, Briefcase, Eye } from 'lucide-react';
+import { PlusCircle, Search, Trash2, Briefcase, Eye, Home } from 'lucide-react';
 
 // Importación de Componentes UI
 import { Card } from '../../components/ui/Card';
@@ -18,31 +18,26 @@ import { DocenteFormModal } from '../../components/admin/DocenteFormModal';
 import { useTenant } from '../../contexts/TenantContext';
 // 🛑 IMPORTAMOS el objeto adminService unificado
 import { adminService } from '../../services/admin.service'; 
-import { type DocenteProfile } from '../../types/models'; 
 
 export const AdminDocentesPage: React.FC = () => {
-    const { config } = useTenant(); // Usamos 'tenant' que es el nombre en tu Contexto
+    const { config } = useTenant(); 
     const navigate = useNavigate();
 
-    const [docentes, setDocentes] = useState<DocenteProfile[]>([]);
-    const [filteredDocentes, setFilteredDocentes] = useState<DocenteProfile[]>([]);
+    const [docentes, setDocentes] = useState<any[]>([]);
+    const [filteredDocentes, setFilteredDocentes] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
     
     const [isNewDocenteModalOpen, setIsNewDocenteModalOpen] = useState(false);
 
-    // 1. Carga inicial de datos de docentes reales
+    // 1. Carga de datos usando el nuevo endpoint de docentes
     const fetchDocentes = async () => {
         setLoading(true);
         try {
-            // Llamamos a la función del objeto adminService
-            const allUsers = await adminService.getAllUsersByTenant(); 
-            
-            // Filtramos para asegurar que solo vemos docentes
-            const initialDocentes = allUsers.filter(u => u.rol === 'DOCENTE') as DocenteProfile[];
-            
-            setDocentes(initialDocentes);
-            setFilteredDocentes(initialDocentes);
+            // Cambiamos a la función específica que creamos en el backend
+            const data = await adminService.getTeachers(); 
+            setDocentes(data);
+            setFilteredDocentes(data);
         } catch (error) {
             console.error("Error al cargar docentes:", error);
         } finally {
@@ -54,14 +49,13 @@ export const AdminDocentesPage: React.FC = () => {
         fetchDocentes();
     }, [config]);
 
-    // 2. Lógica de búsqueda/filtrado (DISEÑO INTACTO)
+    // 2. Lógica de búsqueda (MANTENIENDO TU DISEÑO)
     useEffect(() => {
         const lowerCaseSearch = searchTerm.toLowerCase();
         const results = docentes.filter(docente =>
-            docente.nombre.toLowerCase().includes(lowerCaseSearch) ||
-            docente.email.toLowerCase().includes(lowerCaseSearch) ||
-            (docente.clave && docente.clave.toLowerCase().includes(lowerCaseSearch)) ||
-            (docente.especialidad && docente.especialidad.toLowerCase().includes(lowerCaseSearch))
+            docente.nombre?.toLowerCase().includes(lowerCaseSearch) ||
+            docente.email?.toLowerCase().includes(lowerCaseSearch) ||
+            docente.clave?.toLowerCase().includes(lowerCaseSearch)
         );
         setFilteredDocentes(results);
     }, [searchTerm, docentes]);
@@ -71,10 +65,10 @@ export const AdminDocentesPage: React.FC = () => {
         setIsNewDocenteModalOpen(true);
     };
 
-    // GUARDAR EN BD REAL
     const handleSaveNewDocente = async (data: any) => {
         try {
-            const success = await adminService.addNewUser({
+            // Usamos la ruta corregida del backend
+            await adminService.registrarDocente({
                 nombre: data.nombre,
                 email: data.email,
                 clave: data.clave,
@@ -82,14 +76,11 @@ export const AdminDocentesPage: React.FC = () => {
                 telefono: data.telefono
             });
 
-            if (success) {
-                await fetchDocentes(); // Recargamos la lista desde el servidor
-                setIsNewDocenteModalOpen(false);
-            } else {
-                alert("Error al registrar el docente en el servidor.");
-            }
+            await fetchDocentes(); 
+            setIsNewDocenteModalOpen(false);
         } catch (error) {
             console.error("Error saving docente:", error);
+            alert("Error al registrar docente");
         }
     };
 
@@ -98,12 +89,10 @@ export const AdminDocentesPage: React.FC = () => {
     };
 
     const handleDelete = async (docenteId: string, docenteNombre: string) => {
-        if (window.confirm(`¿Está seguro de que desea eliminar al docente ${docenteNombre}? Esta acción es irreversible.`)) {
+        if (window.confirm(`¿Está seguro de que desea eliminar al docente ${docenteNombre}?`)) {
             try {
-                // Aquí podrías agregar adminService.deleteUser(docenteId) si lo creamos
-                // Por ahora lo removemos del estado para que visualmente desaparezca
+                await adminService.deleteDocente(docenteId);
                 setDocentes(prev => prev.filter(d => d.id !== docenteId));
-                console.log(`Docente ${docenteId} eliminado.`);
             } catch (error) {
                 console.error("Error deleting docente:", error);
             }
@@ -112,10 +101,21 @@ export const AdminDocentesPage: React.FC = () => {
 
     return (
         <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
-            <header className="flex justify-between items-end border-b border-grayDark-500 pb-2 mb-8">
-                <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
-                    Docentes
-                </h1>
+            <header className="flex justify-between items-center border-b border-grayDark-500 pb-2 mb-8">
+                <div className="flex items-center gap-6">
+                    <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
+                        Docentes
+                    </h1>
+                    {/* ✅ Botón agregado para regresar al dashboard */}
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => navigate('/admin/dashboard')} 
+                        className="flex items-center gap-2 text-main-800 hover:bg-gray-100"
+                        icon={<Home size={24} />}
+                    >
+                        Dashboard
+                    </Button>
+                </div>
                 <Button 
                     variant="ghost" 
                     onClick={handleNewDocente}
@@ -164,8 +164,9 @@ export const AdminDocentesPage: React.FC = () => {
                             <Table.Body>
                                 {filteredDocentes.map((docente) => (
                                     <TableRow key={docente.id}>
-                                        <TableCell className="font-mono text-gray-600">
-                                            {docente.clave || docente.id} 
+                                        <TableCell className="font-mono text-gray-600 font-bold">
+                                            {/* ✅ Muestra el ID corto generado por el backend */}
+                                            {docente.clave} 
                                         </TableCell> 
                                         <TableCell className="font-medium text-gray-800">{docente.nombre}</TableCell>
                                         <TableCell>{docente.email}</TableCell>
@@ -173,7 +174,7 @@ export const AdminDocentesPage: React.FC = () => {
                                             <Button 
                                                 variant="ghost" 
                                                 onClick={() => handleViewProfile(docente.id)} 
-                                                className="px-2 py-1 text-sm text-whiteBG-50 hover: underline"
+                                                className="px-2 py-1 text-sm text-blue-600 hover:underline"
                                                 icon={<Eye size={16} className="mr-1" />}
                                             >
                                                 ver perfil
@@ -183,7 +184,7 @@ export const AdminDocentesPage: React.FC = () => {
                                             <Button 
                                                 variant="ghost"
                                                 onClick={() => handleDelete(docente.id, docente.nombre)}
-                                                className="px-2 py-1 hover:bg-main-900"
+                                                className="px-2 py-1 hover:bg-red-50 text-red-500"
                                                 title={`Eliminar a ${docente.nombre}`}
                                             >
                                                 <Trash2 size={20} />

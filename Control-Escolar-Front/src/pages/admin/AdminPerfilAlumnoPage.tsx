@@ -8,7 +8,6 @@ import { adminService } from '../../services/admin.service';
 
 type TabType = 'informacion' | 'pagos' | 'solicitudes';
 
-// Interfaces (Se mantienen igual)
 interface AlumnoData {
   id: string;
   nombre: string;
@@ -49,13 +48,13 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
         setLoading(true);
         const data = await adminService.getAlumnoFullProfile(alumnoId);
         
-        // Mapeo seguro: si el campo no existe en el backend, ponemos un string vacío para evitar errores
+        // Mapeo refinado para asegurar que los datos del tutor y fecha se carguen correctamente
         const mappedAlumno = {
           id: data?.id || '',
-          nombre: data?.nombreCompleto || data?.fullName || data?.nombre || 'Sin Nombre',
-          matricula: data?.matricula || 'S/M',
-          grado: data?.grado || 'N/A',
-          grupo: data?.grupo || 'N/A',
+          nombre: data?.nombreCompleto || data?.nombre || '',
+          matricula: data?.matricula || '',
+          grado: data?.gradoActual || data?.grado || '',
+          grupo: data?.grupo?.nombre || data?.grupo || '',
           promedio: data?.promedio || 0,
           faltas: data?.faltas || 0,
           fechaNacimiento: data?.fechaNacimiento || '',
@@ -87,11 +86,15 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
   const handleGuardarCambios = async () => {
     if (!datosEditados || !alumnoId) return;
     try {
-      await adminService.updateAlumnoPerfil(alumnoId, datosEditados);
+      // ✅ AJUSTE: Enviamos el objeto datosEditados al servicio
+      // Asegúrate de que en admin.service.ts el método se llame updateStudentProfile
+      await adminService.updateStudentProfile(alumnoId, datosEditados);
+      
       setAlumno({ ...datosEditados });
       setMostrarModalEditar(false);
       alert('Perfil actualizado correctamente');
     } catch (error) {
+      console.error("Error al actualizar:", error);
       alert('Error al actualizar el perfil');
     }
   };
@@ -218,7 +221,6 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
       <Card variant="elevated" className="mb-8 bg-whiteBg-100">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
           <div className="w-24 h-24 bg-gray-300 rounded-full flex items-center justify-center text-3xl font-bold text-gray-600">
-            {/* CORRECCIÓN: charAt seguro con respaldo de string vacío y un valor por defecto 'A' */}
             {(alumno.nombre || "A").charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
@@ -255,7 +257,6 @@ export const AdminPerfilAlumnoPage: React.FC = () => {
         <button onClick={handleDescargarHistorial} className="flex items-center gap-2 bg-main-800 hover:bg-main-900 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"><Download size={18} /> Descargar Historial</button>
       </div>
 
-      {/* MODAL EDITAR */}
       {mostrarModalEditar && datosEditados && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-grayDark-200 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">

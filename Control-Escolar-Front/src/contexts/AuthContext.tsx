@@ -10,8 +10,8 @@ type AuthContextType = {
   isLoggedIn: boolean;
   user: User | null;
   role: Role | null;
-  // Mantenemos la firma para no romper tus componentes, aunque schoolKey ya no se use en el back
-  login: (email: string, password: string, schoolKey: string) => Promise<Role>;
+  // ✅ CAMBIO 1: Quitamos schoolKey de la definición del tipo
+  login: (email: string, password: string) => Promise<Role>;
   logout: () => void;
   isLoading: boolean;
 };
@@ -35,24 +35,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Efecto para recargar configuración si hay usuario guardado (persistencia)
   useEffect(() => {
     const initTenant = async () => {
-      // Si tenemos usuario y token, validamos que el tenant esté cargado
-      const token = localStorage.getItem('access_token');
+      // ✅ IMPORTANTE: Buscamos 'token' para ser consistentes con api.ts
+      const token = localStorage.getItem('token'); 
       if (user && token) {
-        // Aquí podrías opcionalmente cargar datos extra de la escuela si tienes el ID
-        // await loadTenant(user.schoolId); 
+        // Lógica de carga de tenant si fuera necesaria
       }
     };
     initTenant();
   }, [user]);
 
-  const login = async (email: string, password: string, schoolKey: string) => {
+  // ✅ CAMBIO 2: Quitamos 'schoolKey' de los argumentos de la función
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // 1. PETICIÓN REAL AL BACKEND 🚀
+      // 1. PETICIÓN REAL AL BACKEND
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }) // Ya no enviamos schoolKey al back
+        // Al backend solo le mandamos email y password, él deduce la escuela
+        body: JSON.stringify({ email, password }) 
       });
 
       if (!response.ok) {
@@ -60,22 +61,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         throw new Error(errorData.message || 'Error en las credenciales');
       }
 
-      // 2. RECIBIMOS EL TOKEN Y DATOS
+      // 2. RECIBIMOS EL TOKEN
       const data = await response.json();
       const { access_token, user: userData } = data;
 
-      // 3. TRANSFORMACIÓN DE DATOS (Backend -> Frontend Model)
-      // Adaptamos la respuesta del back a tu interfaz 'User' del front
       const appUser: User = {
         id: userData.id,
         nombre: userData.fullName,
         email: userData.email,
-        rol: userData.rol, // Asegúrate de que el enum coincida (ALUMNO vs STUDENT)
-        tenantId: 'default-tenant', // O el ID real de la escuela si viene en el login
+        rol: userData.rol, 
+        tenantId: 'default-tenant',
       };
 
-      // 4. GUARDAR EN LOCALSTORAGE (CRÍTICO PARA QUE FUNCIONE EL PERFIL)
-      localStorage.setItem('access_token', access_token); // 👈 ¡ESTO FALTABA!
+      // ✅ 3. GUARDADO CRÍTICO (Usamos 'token' para coincidir con api.ts)
+      localStorage.setItem('token', access_token); 
       localStorage.setItem('academic_user', JSON.stringify(appUser));
 
       setUser(appUser);
@@ -91,10 +90,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = () => {
     // Borramos todo rastro
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('token');
     localStorage.removeItem('academic_user');
     setUser(null);
-    // Redirigir o limpiar estado
     window.location.href = '/login';
   };
 
@@ -109,4 +107,4 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth debe usarse dentro de un AuthProvider');
   return context;
-};  
+};

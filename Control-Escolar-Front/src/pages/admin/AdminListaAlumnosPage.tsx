@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, X, Download, Trash2 } from 'lucide-react'; // 👈 Icono importado
+import { Search, X, Download, Trash2 } from 'lucide-react'; 
 import { Card } from '../../components/ui/Card';
 import Table from '../../components/ui/Table';
 import Input from '../../components/ui/Input';
@@ -14,6 +14,7 @@ interface Alumno {
 }
 
 export const AdminListaAlumnosPage: React.FC = () => {
+  // Aquí 'grupoId' viene de la URL (ej: "1A")
   const { grupoId } = useParams<{ grupoId: string }>();
   const navigate = useNavigate();
   
@@ -30,8 +31,14 @@ export const AdminListaAlumnosPage: React.FC = () => {
     if (!grupoId) return;
     try {
       setLoading(true);
-      const data = await adminService.getAlumnosPorGrupo(grupoId);
-      // Aseguramos que sea un array para evitar errores de map
+      
+      // 🔥 TRUCO 1: Reconstruimos el nombre oficial para buscar la lista
+      // Si la URL dice "1A", pedimos "GRUPO 1A"
+      const idParaBackend = (grupoId && !grupoId.includes('GRUPO') && !grupoId.includes('-')) 
+        ? `GRUPO ${grupoId}` 
+        : grupoId;
+
+      const data = await adminService.getAlumnosPorGrupo(idParaBackend);
       setAlumnos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al cargar alumnos:", error);
@@ -62,13 +69,12 @@ export const AdminListaAlumnosPage: React.FC = () => {
     navigate(`/admin/alumnos/${grupoId}/${alumnoId}/historial`);
   };
 
-  // ✅ LOGICA DE ELIMINAR
   const handleEliminarAlumno = async (alumnoId: string | number) => {
     if (window.confirm('⚠️ ¿Seguro que quieres eliminar a este alumno? Se liberará su matrícula.')) {
         try {
             await adminService.eliminarAlumno(String(alumnoId));
             alert('✅ Alumno eliminado.');
-            cargarAlumnos(); // Recarga la lista
+            cargarAlumnos(); 
         } catch (error) {
             console.error('Error al eliminar', error);
             alert('❌ Hubo un error al eliminar el alumno.');
@@ -93,17 +99,29 @@ export const AdminListaAlumnosPage: React.FC = () => {
     }
 
     try {
+        // 🔥 TRUCO 2 (LA SOLUCIÓN AL 404): 
+        // Si grupoId es "1A", lo convertimos a "GRUPO 1A" antes de enviarlo.
+        // El backend espera el nombre exacto tal como se guardó en BD.
+        let grupoParaEnviar = grupoId || "";
+        
+        // Si no es un UUID (largo) y no tiene la palabra GRUPO, se la ponemos
+        if (grupoParaEnviar.length < 10 && !grupoParaEnviar.includes('GRUPO')) {
+            grupoParaEnviar = `GRUPO ${grupoParaEnviar}`;
+        }
+
         await adminService.registrarAlumno({
             matricula: nuevoAlumno.matricula.toUpperCase().trim(),
             nombre: nuevoAlumno.nombre.trim(),
-            grupoId: grupoId || ""
+            grupoId: grupoParaEnviar // <--- Enviamos el nombre corregido
         });
 
         alert(`Alumno ${nuevoAlumno.nombre} agregado exitosamente`);
         handleCerrarModal();
         await cargarAlumnos(); 
     } catch (error: any) {
-        alert(error.response?.data?.message || 'Error al registrar alumno');
+        // Mejor manejo del mensaje de error
+        const mensaje = error.response?.data?.message || 'Error al registrar alumno';
+        alert(`❌ Error: ${mensaje}`);
     }
   };
 
@@ -139,7 +157,8 @@ export const AdminListaAlumnosPage: React.FC = () => {
     <div className="p-8 bg-gray-50 min-h-full font-['Lato']">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b-2 border-gray-300 pb-6 mb-8">
         <h1 className="text-5xl text-black font-['Kaushan_Script'] mb-4 md:mb-0">
-          {grupoId}
+          {/* Mostramos bonito: si dice GRUPO 1A o solo 1A */}
+          Grupo {grupoId?.replace('GRUPO', '').trim()}
         </h1>
         
         <div className="relative w-full md:w-80">
@@ -158,7 +177,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
       <Card variant="flat" className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">
-            Lista de Alumnos - Grupo {grupoId}
+            Lista de Alumnos
           </h2>
           <span className="text-sm text-gray-600">
             {alumnosFiltrados.length} de {alumnos.length} alumnos
@@ -174,7 +193,6 @@ export const AdminListaAlumnosPage: React.FC = () => {
                 <Table.Head>Nombre Completo</Table.Head>
                 <Table.Head>Perfil</Table.Head>
                 <Table.Head>Historial</Table.Head>
-                {/* 1. ENCUEZA DE LA NUEVA COLUMNA */}
                 <Table.Head className="text-center">Eliminar</Table.Head> 
               </Table.Row>
             </Table.Header>
@@ -206,8 +224,6 @@ export const AdminListaAlumnosPage: React.FC = () => {
                       Historial Académico
                     </button>
                   </Table.Cell>
-                  
-                  {/* 2. CELDA DE LA NUEVA COLUMNA CON EL BOTÓN */}
                   <Table.Cell className="text-center">
                     <div className="flex justify-center">
                         <button
@@ -229,7 +245,7 @@ export const AdminListaAlumnosPage: React.FC = () => {
 
       <div className="flex justify-between items-center mt-8">
         <button
-          onClick={() => navigate('/admin/alumnos')}
+          onClick={() => navigate('/admin/grupos')} // Ajustado para volver al dashboard de grupos
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2.5 px-6 rounded-lg transition-colors cursor-pointer"
         >
           ← Volver a Grupos
@@ -252,7 +268,6 @@ export const AdminListaAlumnosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL AGREGAR ALUMNO */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">

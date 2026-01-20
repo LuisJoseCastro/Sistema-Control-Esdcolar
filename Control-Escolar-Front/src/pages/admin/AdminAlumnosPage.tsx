@@ -33,13 +33,11 @@ export const AdminAlumnosPage: React.FC = () => {
       setIsLoading(true);
       const data = await adminService.getGrupos();
       
-      // MAPEO CORREGIDO: 
-      // Vinculamos 'totalAlumnos' del backend con la propiedad 'alumnos' de tu diseño
       const gruposMapeados = data.map((g: any) => ({
         ...g,
         id: g.id,
         nombre: g.nombre,
-        alumnos: g.totalAlumnos ?? 0, // 👈 Aquí se recibe el conteo real del Backend
+        alumnos: g.totalAlumnos ?? 0, 
         grado: g.semestre?.toString() || '1',
         turno: g.turno || 'Matutino'
       }));
@@ -63,12 +61,13 @@ export const AdminAlumnosPage: React.FC = () => {
   });
 
   const handleVerAlumnos = (grupoNombre: string) => {
+    // Extraemos el identificador para la ruta
     const grupoId = grupoNombre.replace('GRUPO ', '').trim();
     navigate(`/admin/alumnos/${grupoId}`);
   };
 
   const abrirModalEdicion = (grupo: Grupo) => {
-    // Intentamos extraer la letra del grupo
+    // Extraemos la letra quitando la palabra GRUPO y el grado
     let letraGrupo = grupo.nombre.replace('GRUPO', '').replace(grupo.grado, '').trim();
     
     setGrupoEditando({
@@ -99,13 +98,14 @@ export const AdminAlumnosPage: React.FC = () => {
         
         const datosParaEnviar = {
             nombre: nombreCompleto,
-            semestre: Number(grupoEditando.grado), // IMPORTANTE: Enviamos número al backend
+            semestre: Number(grupoEditando.grado),
             turno: grupoEditando.turno,
         };
 
-        if (grupoEditando.id === 0) {
+        if (grupoEditando.id === 0 || grupoEditando.id === "0") {
             await adminService.crearGrupo(datosParaEnviar);
         } else {
+            // Llamada al servicio que ya no dará 404 porque el backend ya tiene el @Patch
             await adminService.actualizarGrupo(grupoEditando.id, datosParaEnviar);
         }
         
@@ -177,13 +177,11 @@ export const AdminAlumnosPage: React.FC = () => {
             >
               <div className="w-full h-48 bg-[#D4D8DD] rounded-t-lg mb-4 flex items-center justify-center relative">
                 <div className="text-5xl font-bold text-[#2E4156] opacity-50">
-                  {/* Visualización limpia del número grande */}
                   {grupo.nombre.replace('GRUPO', '').trim()}
                 </div>
               </div>
               
               <div className="p-4">
-                {/* Título limpio: "1C" en lugar de "GRUPO 1C" */}
                 <h3 className="text-xl font-bold text-[#2E4156] mb-2">
                   {grupo.nombre.replace('GRUPO', '').replace('Grupo', '').trim()}
                 </h3>
@@ -240,11 +238,10 @@ export const AdminAlumnosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* MODAL RESTAURADO CON EL DISEÑO COMPLETO */}
       <Modal
         isOpen={modalAbierto}
         onClose={cerrarModalEdicion}
-        title={grupoEditando.id === 0 ? "Nuevo Grupo" : "Editar Grupo"}
+        title={grupoEditando.id === 0 || grupoEditando.id === "0" ? "Nuevo Grupo" : "Editar Grupo"}
         size="md"
       >
         <div className="space-y-4 bg-whiteBg-200 p-2 rounded-xl">
@@ -273,18 +270,16 @@ export const AdminAlumnosPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              {/* Input de alumnos deshabilitado (Diseño original) */}
               <Input
                 label="Número de Alumnos"
                 value={grupoEditando.alumnos.toString()}
-                onChange={(_) => {/* No hacemos nada */}}
+                onChange={(_) => {}}
                 type="number"
                 disabled={true} 
               />
             </div>
             
             <div>
-              {/* Select de Turno (Restaurado) */}
               <label className="block text-gray-700 text-sm font-medium mb-1.5">
                 Turno
               </label>
@@ -299,7 +294,6 @@ export const AdminAlumnosPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Caja de previsualización (Restaurada) */}
           <div className="bg-whiteBg-100 p-3 rounded-lg border border-grayDark-400 hover:bg-whiteBg-50">
             <p className="text-sm text-main-800">
               <strong>Nombre completo del grupo:</strong> GRUPO {grupoEditando.grado}{grupoEditando.nombre}
@@ -326,7 +320,7 @@ export const AdminAlumnosPage: React.FC = () => {
               disabled={!camposCompletos() || isSaving}
             >
               <Save size={18} />
-              {isSaving ? "Guardando..." : (grupoEditando.id === 0 ? "Crear Grupo" : "Guardar Cambios")}
+              {isSaving ? "Guardando..." : (grupoEditando.id === 0 || grupoEditando.id === "0" ? "Crear Grupo" : "Guardar Cambios")}
             </Button>
           </div>
         </div>

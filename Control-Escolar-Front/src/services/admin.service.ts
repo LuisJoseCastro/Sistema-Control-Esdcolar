@@ -1,28 +1,30 @@
-// src/services/admin.service.ts
-import api from './api'; // Asegúrate de que esta ruta apunte a tu configuración de axios
+import api from './api'; 
 import type { User, DocenteProfile } from '../types/models'; 
 
 export const adminService = {
     // === SECCIÓN DOCENTES ===
+    getTeachers: async () => {
+        const { data } = await api.get('/admin/docentes');
+        return data;
+    },
 
-    /**
-     * 1. Obtención real de todos los docentes de la escuela
-     */
     getAllUsersByTenant: async (): Promise<User[]> => {
         const { data } = await api.get('/admin/docentes');
         return data.map((doc: any) => ({
             id: doc.id,
-            nombre: doc.user?.fullName || doc.nombre,
-            email: doc.user?.email || doc.email,
+            nombre: doc.nombre,
+            email: doc.email,
             rol: 'DOCENTE',
-            clave: doc.claveEmpleado || doc.clave,
-            tenantId: doc.user?.school?.id
+            clave: doc.clave,
+            tenantId: doc.tenantId
         }));
     },
 
-    /**
-     * 2. Registro real de un nuevo docente
-     */
+    registrarDocente: async (docenteData: any) => {
+        const { data } = await api.post('/admin/docentes/registrar', docenteData);
+        return data;
+    },
+
     addNewUser: async (newUser: any): Promise<boolean> => {
         try {
             await api.post('/admin/docentes/registrar', {
@@ -39,25 +41,28 @@ export const adminService = {
         }
     },
 
-    /**
-     * 3. Obtener el perfil real de un docente por ID
-     */
+    // ✅ Esta es la función que corregí/agregué para que coincida con tu backend
+    getTeacherProfile: async (docenteId: string): Promise<DocenteProfile | null> => {
+        const { data } = await api.get(`/admin/docentes/${docenteId}/perfil`);
+        return data;
+    },
+
     getDocenteProfileById: async (docenteId: string): Promise<DocenteProfile | null> => {
         const { data } = await api.get(`/admin/docentes/${docenteId}/perfil`);
         return data;
     },
 
-    /**
-     * 4. Actualizar perfil en el Backend real (PATCH)
-     */
     updateDocenteProfile: async (updatedProfile: DocenteProfile): Promise<DocenteProfile> => {
         const { data } = await api.patch(`/admin/docentes/${updatedProfile.id}/perfil`, updatedProfile);
-        console.log("✅ Perfil actualizado en el servidor");
+        return data;
+    },
+
+    deleteDocente: async (id: string) => {
+        const { data } = await api.delete(`/admin/docentes/${id}`);
         return data;
     },
 
     // === SECCIÓN GRUPOS ===
-
     getGrupos: async () => {
         const { data } = await api.get('/admin/grupos'); 
         return data;
@@ -83,124 +88,96 @@ export const adminService = {
         return data;
     },
 
-    // === SECCIÓN ESTADÍSTICAS ===
-
-    getStats: async () => {
-        const { data } = await api.get('/admin/stats');
-        return data;
-    },
-
-    // === GESTIÓN ACADÉMICA (PLANES Y MATERIAS) ===
-
-    getPlanes: async () => {
-        const { data } = await api.get('/admin/planes');
-        return data;
-    },
-
-    crearPlan: async (planData: any) => {
-        const { data } = await api.post('/admin/planes', planData);
-        return data;
-    },
-
-    actualizarPlan: async (id: string | number, planData: any) => {
-        const { data } = await api.patch(`/admin/planes/${id}`, planData);
-        return data;
-    },
-
-    getAsignaturas: async () => {
-        const { data } = await api.get('/admin/asignaturas');
-        return data;
-    },
-
-    crearAsignatura: async (asigData: any) => {
-        const { data } = await api.post('/admin/asignaturas', asigData);
-        return data;
-    },
-
-    actualizarAsignatura: async (id: string | number, asigData: any) => {
-        const { data } = await api.patch(`/admin/asignaturas/${id}`, asigData);
-        return data;
-    },
-
-    // === GESTIÓN DE ALUMNOS (Corrección aquí) ===
-
-    /**
-     * Obtener el historial académico real de un alumno
-     */
-    getHistorialAlumno: async (alumnoId: string) => {
-        const { data } = await api.get(`/admin/alumnos/${alumnoId}/historial`);
-        return data;
-    },
-
-    /**
-     * Registrar un alumno nuevo en un grupo
-     */
+    // === SECCIÓN ALUMNOS ===
     registrarAlumno: async (alumnoData: { matricula: string; nombre: string; grupoId: string }) => {
         const { data } = await api.post('/admin/alumnos', alumnoData);
         return data;
     },
 
-    /**
-     * ✅ ELIMINAR ALUMNO (ESTA ES LA QUE FALTABA)
-     */
-    eliminarAlumno: async (id: string) => {
-        const { data } = await api.delete(`/admin/alumnos/${id}`);
-        return data;
-    },
-
-    /**
-     * Obtener perfil completo del alumno (incluye pagos y solicitudes)
-     */
     getAlumnoFullProfile: async (alumnoId: string) => {
         const { data } = await api.get(`/admin/alumnos/${alumnoId}/perfil-completo`);
         return data;
     },
 
-    /**
-     * Actualizar datos del alumno
-     */
     updateAlumnoPerfil: async (alumnoId: string, datos: any) => {
         const { data } = await api.patch(`/admin/alumnos/${alumnoId}`, datos);
         return data;
     },
 
-    // === COMUNICACIÓN Y REPORTES ===
-
-    /**
-     * Enviar un comunicado global o específico desde administración
-     */
-    enviarMensaje: async (mensajeData: { destinatario: string; asunto: string; cuerpo: string }) => {
-        const { data } = await api.post('/admin/mensajes/enviar', mensajeData);
+    updateStudentProfile: async (alumnoId: string, datos: any) => {
+        const { data } = await api.patch(`/admin/alumnos/${alumnoId}`, datos);
         return data;
     },
 
-    /**
-     * Obtener los filtros disponibles para la página de reportes
-     */
-    getReportFilters: async () => {
-        const { data } = await api.get('/admin/reportes/filtros');
-        return data; 
-    },
-
-    /**
-     * Generar la data del reporte basado en los filtros
-     */
-    generarReporteAcademico: async (payload: any) => {
-        const { data } = await api.post('/admin/reportes/generar', payload);
+    eliminarAlumno: async (id: string) => {
+        const { data } = await api.delete(`/admin/alumnos/${id}`);
         return data;
     },
 
-    /**
-     * Descargar el reporte en formato PDF o Excel
-     */
+    getHistorialAlumno: async (alumnoId: string) => {
+        const { data } = await api.get(`/admin/alumnos/${alumnoId}/historial`);
+        return data;
+    },
+
+    // === SECCIÓN GESTIÓN ACADÉMICA (NUEVO AGREGADO) ===
+    getPlanes: async () => {
+        const { data } = await api.get('/admin/planes-estudio'); 
+        return data;
+    },
+
+    getAsignaturas: async () => {
+        const { data } = await api.get('/admin/materias');
+        return data;
+    },
+
+    crearPlan: async (planData: any) => {
+        const { data } = await api.post('/admin/planes-estudio', planData);
+        return data;
+    },
+
+    actualizarPlan: async (id: string | number, data: any) => {
+        const { data: res } = await api.patch(`/admin/grupos/${id}`, data);
+        return res;
+    },
+
+    crearAsignatura: async (asigData: any) => {
+        const { data } = await api.post('/admin/materias', asigData);
+        return data;
+    },
+
+    actualizarAsignatura: async (id: string | number, data: any) => {
+        const { data: res } = await api.patch(`/admin/materias/${id}`, data);
+        return res;
+    },
+
+    eliminarMateria: async (id: string | number) => {
+        const { data } = await api.delete(`/admin/materias/${id}`);
+        return data;
+    },
+
+    // === SECCIÓN MENSAJES ===
+    enviarMensaje: async (payload: { tipo: string, targetId?: string, asunto: string, cuerpo: string }) => {
+        const { data } = await api.post('/admin/mensajes/enviar', payload);
+        return data;
+    },
+
+    getHistorialMensajes: async () => {
+        const { data } = await api.get('/admin/mensajes/historial');
+        return data;
+    },
+
+    // === REPORTES Y AUXILIARES ===
+    getStats: async () => {
+        const { data } = await api.get('/admin/stats');
+        return data;
+    },
+
     exportarReporte: async (payload: any, formato: 'pdf' | 'xlsx') => {
         const { data } = await api.post(`/admin/reportes/exportar/${formato}`, payload, {
             responseType: 'blob'
         });
         return data;
     },
-
-    // === RECUPERACIÓN DE CONTRASEÑA ===
 
     forgotPassword: async (email: string) => {
         const { data } = await api.post('/auth/forgot-password', { email });
@@ -213,6 +190,9 @@ export const adminService = {
     },
 };
 
-// Exportamos también las funciones individuales para no romper los componentes que las usan así
+// Exportaciones individuales requeridas por tus otros componentes
 export const getDocenteProfileById = adminService.getDocenteProfileById;
 export const updateDocenteProfile = adminService.updateDocenteProfile;
+export const updateStudentProfile = adminService.updateStudentProfile;
+export const enviarMensaje = adminService.enviarMensaje;
+export const getHistorialMensajes = adminService.getHistorialMensajes;
