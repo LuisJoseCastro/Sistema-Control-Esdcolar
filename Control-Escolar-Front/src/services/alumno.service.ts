@@ -8,12 +8,8 @@ import type {
 } from '../types/models';
 import api from './api';
 
-// Utilidad para simular tiempo de espera
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// =========================================================
-// 1. ASIGNATURAS (✅ CONECTADO Y VERIFICADO)
-// =========================================================
 export interface AsignaturaConHorario {
   id: number | string;
   materia: string;
@@ -31,10 +27,6 @@ export const getMisAsignaturas = async (alumnoId: string): Promise<AsignaturaCon
     return [];
   }
 };
-
-// =========================================================
-// 2. CALIFICACIONES (✅ CONECTADO Y VERIFICADO)
-// =========================================================
 export interface BoletaCalificacion {
   materia: string;
   u1: string;
@@ -47,8 +39,6 @@ export interface BoletaCalificacion {
 
 export const getCalificacionesBoleta = async (alumnoId: string, periodo: string): Promise<BoletaCalificacion[]> => {
   try {
-    // Coincide con: @Get('my-grades/:studentId')
-    // El backend espera el query param ?periodo=...
     const url = `/academic/my-grades/${alumnoId}${periodo ? `?periodo=${periodo}` : ''}`;
     const response = await api.get<BoletaCalificacion[]>(url);
     return response.data;
@@ -57,10 +47,6 @@ export const getCalificacionesBoleta = async (alumnoId: string, periodo: string)
     return [];
   }
 };
-
-// =========================================================
-// 3. ASISTENCIA (✅ CONECTADO Y VERIFICADO)
-// =========================================================
 export interface AsistenciaData {
   estadisticas: { asistencia: number; faltas: number; retardos: number };
   fechas: { id: string; fecha: string; materia: string; tipo: 'Falta' | 'Retardo' }[];
@@ -82,19 +68,12 @@ export const getAsistenciaData = async (alumnoId: string): Promise<AsistenciaDat
   }
 };
 
-// =========================================================
-// 4. HISTORIAL ACADÉMICO (⚠️ MOCK - NO HAY ENDPOINT EN BACK)
-// =========================================================
-// Tu AcademicController no tiene un endpoint para historial completo, 
-// solo para calificaciones por periodo. Se mantiene simulado.
 export const getHistorialAcademico = async (alumnoId: string): Promise<HistorialAcademico> => {
   try {
-    // LLAMADA REAL AL BACKEND
     const response = await api.get<HistorialAcademico>(`/academic/my-academic-history/${alumnoId}`);
     return response.data;
   } catch (error) {
     console.error("Error obteniendo historial académico:", error);
-    // Retornamos un objeto vacío seguro en caso de error para no romper la pantalla
     return {
       promedioGeneral: 0,
       asignaturasAprobadas: 0,
@@ -104,24 +83,17 @@ export const getHistorialAcademico = async (alumnoId: string): Promise<Historial
   }
 };
 
-// =========================================================
-// 5. NOTIFICACIONES / MENSAJES (🔄 ADAPTADO AL BACKEND)
-// =========================================================
-
 export const getNotificaciones = async (alumnoId: string): Promise<NotificacionDashboard[]> => {
   try {
-    // CAMBIO: Tu backend usa /academic/messages/inbox y obtiene el ID del token (req.user),
-    // no de la URL. Asumimos que 'api' envía el token Bearer.
     const response = await api.get<any[]>(`/academic/messages/inbox`);
 
-    // Mapeamos la respuesta del backend (InternalMessage) al formato del frontend
     return response.data.map((msg) => ({
       id: msg.id,
-      titulo: msg.asunto, // Backend: asunto -> Frontend: titulo
-      mensaje: msg.cuerpoMensaje, // Backend: cuerpoMensaje -> Frontend: mensaje
+      titulo: msg.asunto,
+      mensaje: msg.cuerpoMensaje,
       fecha: msg.fechaEnvio,
       leida: msg.leido,
-      tipo: 'info' // Valor por defecto
+      tipo: 'info'
     }));
   } catch (error) {
     console.error("Error en getNotificaciones:", error);
@@ -131,81 +103,17 @@ export const getNotificaciones = async (alumnoId: string): Promise<NotificacionD
 
 export const marcarNotificacionComoLeida = async (notificacionId: string): Promise<void> => {
   try {
-    // CAMBIO: Ajustado a la ruta de tu controlador: @Patch('messages/read/:id')
     await api.patch(`/academic/messages/read/${notificacionId}`);
   } catch (error) {
     console.error("Error al marcar notificación:", error);
   }
 };
 
-// =========================================================
-// 6. PERFIL DEL ALUMNO (⚠️ OJO: RUTA FALTANTE EN BACK)
-// =========================================================
-// Tu AcademicController tiene 'getProfile' pero devuelve TeacherProfile.
-// No veo un endpoint para StudentProfile en los archivos que subiste.
-// Se mantiene apuntando a /student/profile por si tienes otro controlador no adjuntado.
-
 export const getAlumnoProfileData = async (alumnoId: string): Promise<AlumnoProfileData> => {
-  try {
-    // Si no tienes un 'StudentController', necesitarás crear uno o agregar 
-    // el endpoint getStudentProfile en AcademicController.
-    const response = await api.get<any>(`/student/profile/${alumnoId}`);
-    const data = response.data;
-
-    const promedioGlobal = 8.5;
-
-    return {
-      resumen: {
-        name: data.nombre || 'Sin Nombre',
-        id: data.matricula || 'S/M',
-        career: 'Ingeniería en Sistemas', // Hardcode o venir de BD
-        semester: data.gradoActual || 'Indefinido',
-        average: promedioGlobal,
-        profileImageUrl: '/images/profile-placeholder.png',
-      },
-      personal: {
-        fullName: data.nombre,
-        id: data.matricula,
-        birthDate: data.fechaNacimiento,
-        gender: data.genero,
-        email: data.email,
-        phone: data.telefono,
-        address: data.direccion,
-        nationality: 'Mexicana',
-        civilStatus: 'Soltero/a',
-        bloodType: data.tipoSangre || 'N/A',
-        disability: 'Ninguna',
-        curp: data.curp || 'No registrada',
-        nss: 'No registrado',
-      },
-      academic: {
-        semester: data.gradoActual,
-        average: promedioGlobal,
-        status: 'Activo',
-        approvedSubjects: 0,
-        admissionDate: '2024-01-01',
-        faculty: 'Ingeniería',
-        studyPlan: '2020',
-        modality: 'Escolarizada',
-        turn: 'Matutino',
-        period: 'Semestral',
-        credits: 0,
-      },
-      payment: {
-        balanceDue: 0.00,
-        lastPaymentDate: '---',
-      }
-    };
-  } catch (error: any) {
-    console.error("Error en getAlumnoProfileData:", error);
-    throw error;
-  }
+  const response = await api.get(`/academic/student-profile/${alumnoId}`);
+  return response.data;
 };
 
-// =========================================================
-// 7. PAGOS Y DOCUMENTOS (SIN CAMBIOS - ENDPOINTS NO ADJUNTADOS)
-// =========================================================
-// Asumo que tienes un FinanceController que no subiste.
 export const getHistorialPagos = async (alumnoId: string): Promise<DocumentoPagado[]> => {
   try {
     const response = await api.get<DocumentoPagado[]>(`/finance/student-history/${alumnoId}`);
@@ -233,13 +141,8 @@ export const getCatalogoDocumentos = async (): Promise<string[]> => {
   }
 };
 
-// =========================================================
-// 8. DASHBOARD (⚠️ OJO: RUTA FALTANTE EN BACK)
-// =========================================================
-
 export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<AlumnoDashboardSummary> => {
   try {
-    // Llamada al nuevo endpoint consolidado
     const response = await api.get<any>(`/academic/dashboard/summary/${alumnoId}`);
     const data = response.data;
 
@@ -247,22 +150,19 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
       promedioGeneral: data.promedioGeneral || 0,
       asistenciaPorcentaje: data.asistenciaPorcentaje || 0,
 
-      // Mapeamos las notificaciones al formato del frontend
-      // NOTA: Aquí resolvemos la diferencia de nombres (asunto -> titulo, leido -> leida)
       notificaciones: Array.isArray(data.notificaciones)
         ? data.notificaciones.map((msg: any) => ({
           id: msg.id,
-          titulo: msg.asunto,          // Backend: asunto
-          mensaje: msg.cuerpoMensaje,  // Backend: cuerpoMensaje
+          titulo: msg.asunto,
+          mensaje: msg.cuerpoMensaje,
           fecha: msg.fechaEnvio,
-          leida: msg.leido,            // Backend: leido -> Frontend: leida (¡Importante!)
+          leida: msg.leido,
           tipo: 'info'
         }))
         : []
     };
   } catch (error) {
     console.error("Error cargando dashboard:", error);
-    // Retorno seguro en caso de error
     return {
       promedioGeneral: 0,
       asistenciaPorcentaje: 0,
@@ -270,10 +170,6 @@ export const getAlumnoDashboardSummary = async (alumnoId: string): Promise<Alumn
     };
   }
 };
-
-// =========================================================
-// 9. DETALLE ASISTENCIAS (✅ CONECTADO Y VERIFICADO)
-// =========================================================
 
 export interface AsistenciaDetalleItem {
   fecha: string;
@@ -284,13 +180,11 @@ export interface AsistenciaDetalleItem {
 export const getDetalleAsistencias = async (alumnoId: string): Promise<AsistenciaDetalleItem[]> => {
   try {
     const response = await api.get<AsistenciaData>(`/academic/my-attendance/${alumnoId}`);
-    const data = response.data; // TypeScript ya sabe que es AsistenciaData
-
-    // La respuesta del back ya trae "materia" y "tipo" mapeados
+    const data = response.data;
     return data.fechas.map((item) => ({
       fecha: item.fecha,
       materia: item.materia,
-      estado: item.tipo // El backend devuelve "Falta" o "Retardo"
+      estado: item.tipo
     }));
 
   } catch (error) {
