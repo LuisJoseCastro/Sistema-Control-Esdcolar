@@ -4,9 +4,8 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input'; 
 import Modal from '../../components/ui/Modal'; 
 import { BarChart3, ChevronDown, Download, User, FileText, FileSpreadsheet } from 'lucide-react'; 
-import { adminService } from '../../services/admin.service'; // 👈 Conexión real
+import { adminService } from '../../services/admin.service';
 
-// --- TIPOS DE DATOS ---
 interface FilterOption {
     value: string;
     label: string;
@@ -22,13 +21,12 @@ const AdminReportesPage: React.FC = () => {
     const [selectedGrupo, setSelectedGrupo] = useState('');
     const [selectedMatricula, setSelectedMatricula] = useState(''); 
     
-    const [reportData, setReportData] = useState<string | null>(null);
+    const [reportData, setReportData] = useState<any | null>(null);
     const [isLoadingReporte, setIsLoadingReporte] = useState(false); 
     const [isLoadingFilters, setIsLoadingFilters] = useState(true); 
 
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-    // 1. CARGA DE FILTROS REALES DESDE EL BACKEND
     useEffect(() => {
         const fetchFilters = async () => {
             try {
@@ -52,7 +50,6 @@ const AdminReportesPage: React.FC = () => {
         fetchFilters();
     }, []); 
 
-    // 2. GENERAR REPORTE (CONECTADO A API)
     const handleGenerarReporte = async () => {
         if (!selectedPeriodo || !selectedAsignatura || !selectedGrupo) {
             alert("Por favor, selecciona un Periodo, Asignatura y Grupo.");
@@ -62,19 +59,16 @@ const AdminReportesPage: React.FC = () => {
         setIsLoadingReporte(true);
         setReportData(null); 
         
-        const payload = {
-            periodo: selectedPeriodo,
-            asignatura: selectedAsignatura,
-            grupo: selectedGrupo,
-            matricula: selectedMatricula || undefined,
-        };
-        
         try {
-            const data = await adminService.generarReporteAcademico(payload);
-            setReportData(JSON.stringify(data, null, 2));
+            const data = await adminService.generarReporteAcademico({
+                periodo: selectedPeriodo,
+                asignatura: selectedAsignatura,
+                grupo: selectedGrupo,
+                matricula: selectedMatricula.trim() || undefined, // ✅ Se envía la matrícula limpia
+            });
+            setReportData(data);
         } catch (error) {
             console.error("Error al generar reporte:", error);
-            setReportData("Error al conectar con el servidor para generar el reporte.");
         } finally {
             setIsLoadingReporte(false);
         }
@@ -84,23 +78,19 @@ const AdminReportesPage: React.FC = () => {
         if (reportData) setIsExportModalOpen(true);
     };
 
-    // 3. EXPORTAR ARCHIVO REAL
     const handleExportSelection = async (format: 'pdf' | 'xlsx') => {
         try {
-            const payload = {
+            const blob = await adminService.exportarReporte({
                 periodo: selectedPeriodo,
                 asignatura: selectedAsignatura,
                 grupo: selectedGrupo,
-                matricula: selectedMatricula
-            };
+                matricula: selectedMatricula.trim()
+            }, format);
             
-            const blob = await adminService.exportarReporte(payload, format);
-            
-            // Lógica de descarga de archivo
             const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `Reporte_${selectedGrupo}_${selectedPeriodo}.${format}`);
+            link.setAttribute('download', `Reporte_${selectedGrupo}.${format}`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -111,7 +101,6 @@ const AdminReportesPage: React.FC = () => {
         }
     }
 
-    // --- RENDERIZADO (DISEÑO INTACTO) ---
     const SelectControl: React.FC<{ label: string; name: string; value: string; options: FilterOption[]; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; disabled: boolean }> = ({ label, name, value, options, onChange, disabled }) => (
         <div>
             <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
@@ -126,7 +115,6 @@ const AdminReportesPage: React.FC = () => {
                     disabled={disabled}
                     className="appearance-none w-full border border-gray-300 rounded-lg p-2.5 shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-800 pr-10 disabled:bg-gray-200 disabled:text-gray-500"
                 >
-                    {options.length === 0 && !isLoadingFilters ? <option value="">Sin opciones</option> : null}
                     {options.map(option => (
                         <option key={option.value} value={option.value}>
                             {option.label}
@@ -151,50 +139,44 @@ const AdminReportesPage: React.FC = () => {
             </header>
 
             <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
-                {/* PANEL DE FILTROS */}
                 <Card className="p-6 bg-white shadow-xl lg:w-1/3 border-2 border-gray-200">
                     <h2 className="text-xl font-semibold mb-6 border-b pb-2">Filtros</h2>
-                    {isLoadingFilters ? (
-                        <div className="text-center py-10 text-blue-500">Cargando filtros...</div>
-                    ) : (
-                        <div className="space-y-6">
-                             <SelectControl
-                                label="Periodo"
-                                name="periodo"
-                                value={selectedPeriodo}
-                                options={periodos} 
-                                onChange={(e) => setSelectedPeriodo(e.target.value)}
-                                disabled={disabledControls}
-                            />
-                             <SelectControl
-                                label="Asignatura"
-                                name="asignatura"
-                                value={selectedAsignatura}
-                                options={asignaturas} 
-                                onChange={(e) => setSelectedAsignatura(e.target.value)}
-                                disabled={disabledControls}
-                            />
+                    <div className="space-y-6">
                             <SelectControl
-                                label="Grupo"
-                                name="grupo"
-                                value={selectedGrupo}
-                                options={grupos} 
-                                onChange={(e) => setSelectedGrupo(e.target.value)}
-                                disabled={disabledControls}
-                            />
-                            <Input 
-                                label="Alumno (opcional)"
-                                name="matricula"
-                                value={selectedMatricula}
-                                onChange={(e) => setSelectedMatricula(e.target.value)}
-                                placeholder="matrícula (ej: 20201234)"
-                                icon={<User size={18} className="text-gray-400"/>}
-                                type="text" 
-                                disabled={disabledControls}
-                            />
-                        </div>
-                    )}
-
+                            label="Periodo"
+                            name="periodo"
+                            value={selectedPeriodo}
+                            options={periodos} 
+                            onChange={(e) => setSelectedPeriodo(e.target.value)}
+                            disabled={disabledControls}
+                        />
+                            <SelectControl
+                            label="Asignatura"
+                            name="asignatura"
+                            value={selectedAsignatura}
+                            options={asignaturas} 
+                            onChange={(e) => setSelectedAsignatura(e.target.value)}
+                            disabled={disabledControls}
+                        />
+                        <SelectControl
+                            label="Grupo"
+                            name="grupo"
+                            value={selectedGrupo}
+                            options={grupos} 
+                            onChange={(e) => setSelectedGrupo(e.target.value)}
+                            disabled={disabledControls}
+                        />
+                        <Input 
+                            label="Alumno (opcional)"
+                            name="matricula"
+                            value={selectedMatricula}
+                            onChange={(e) => setSelectedMatricula(e.target.value)}
+                            placeholder="matrícula (ej: 20201234)"
+                            icon={<User size={18} className="text-gray-400"/>}
+                            type="text" 
+                            disabled={disabledControls}
+                        />
+                    </div>
                     <div className="mt-8">
                         <Button 
                             variant="primary" 
@@ -207,19 +189,56 @@ const AdminReportesPage: React.FC = () => {
                     </div>
                 </Card>
 
-                {/* PANEL DE VISTA PREVIA */}
                 <Card className="p-6 bg-white shadow-xl lg:w-2/3 flex flex-col">
                     <h2 className="text-xl font-semibold mb-6 border-b pb-2">Vista Previa</h2>
                     
-                    <div className="flex-grow min-h-[300px] bg-gray-50 border p-4 overflow-auto rounded-lg mb-6 text-gray-700 whitespace-pre-wrap">
+                    <div className="flex-grow min-h-[300px] bg-white border p-6 overflow-auto rounded-lg mb-6 shadow-inner">
                         {isLoadingReporte ? (
-                            <div className="text-center py-10 text-blue-500">Procesando solicitud...</div>
-                        ) : reportData === null ? (
+                            <div className="text-center py-10 text-blue-500 font-medium">Cargando datos del servidor...</div>
+                        ) : !reportData ? (
                             <div className="text-center py-10 text-gray-500 italic">
                                 Selecciona los filtros y haz clic en "Generar reporte".
                             </div>
                         ) : (
-                            <pre className="text-sm font-mono">{reportData}</pre>
+                            <div className="animate-in fade-in duration-500">
+                                <div className="text-center mb-6 border-b pb-4">
+                                    <h3 className="text-xl font-bold text-gray-800 uppercase">Lista de Calificaciones</h3>
+                                    <p className="text-xs text-gray-500">Fecha de generación: {new Date(reportData.generado).toLocaleDateString()}</p>
+                                </div>
+
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-gray-50 text-gray-600 text-xs uppercase">
+                                            <th className="p-2 border-b">Matrícula</th>
+                                            <th className="p-2 border-b">Nombre</th>
+                                            <th className="p-2 border-b text-center">Estado</th>
+                                            <th className="p-2 border-b text-right">Promedio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reportData.data.length > 0 ? (
+                                            reportData.data.map((item: any, idx: number) => (
+                                                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                                    <td className="p-2 border-b text-sm font-mono text-gray-600">{item.matricula}</td>
+                                                    <td className="p-2 border-b text-sm font-medium text-gray-800">{item.nombre}</td>
+                                                    <td className="p-2 border-b text-center">
+                                                        <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase ${item.estatus === 'ACTIVO' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {item.estatus}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-2 border-b text-right font-bold text-blue-600">{item.promedioParcial}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={4} className="p-10 text-center text-gray-400 italic">
+                                                    No se encontró ningún alumno con esos criterios.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
                     </div>
 
@@ -236,7 +255,6 @@ const AdminReportesPage: React.FC = () => {
                 </Card>
             </div>
 
-            {/* MODAL DE EXPORTACIÓN (DISEÑO INTACTO) */}
             <Modal 
                 isOpen={isExportModalOpen} 
                 onClose={() => setIsExportModalOpen(false)} 

@@ -1,12 +1,10 @@
-// src/AppRouter.tsx
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import type { Role } from '../types/models';
+// ✅ CORREGIDO: Usamos UserRole que es el que tienes en models.ts
+import type { UserRole } from '../types/models'; 
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
-// === Páginas públicas ===
 import { PlansPage } from '../pages/public/PlansPage';
 import { OnboardingPage } from '../pages/public/OnboardingPage';
 import { LoginPageGeneral } from '../pages/public/LoginPageGeneral';
@@ -15,25 +13,19 @@ import { RegisterSchoolProPage } from '../pages/public/RegisterSchoolProPage';
 import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage';
 import { ResetPasswordPage } from '../pages/public/ResetPasswordPage';
 
-// === Layout ===
 import { AppLayout } from '../components/layout/AppLayout';
 
-// === Dashboards y Admin ===
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
 import { AdminAlumnosPage } from '../pages/admin/AdminAlumnosPage';
 import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
 import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
 import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcademicoPage';
 import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
-
-// ✅ CORREGIDO: Importación por defecto (sin llaves)
 import AdminDocenteProfilePage from '../pages/admin/AdminDocenteProfilePage';
-
 import AdminMensajesPage from '../pages/admin/AdminMensajesPage'; 
 import AdminGestionPage from '../pages/admin/AdminGestionPage'; 
 import AdminReportesPage from '../pages/admin/AdminReportesPage'; 
 
-// === Docente ===
 import DocenteDashboardPage from '../pages/docente/DocenteDashboardPage';
 import { DocenteAsistenciaPage } from '../pages/docente/DocenteAsistenciaPage';
 import { DocenteCalificacionesPage } from '../pages/docente/DocenteCalificacionesPage';
@@ -42,7 +34,6 @@ import DocenteGruposPage from '../pages/docente/DocenteGruposPage';
 import DocenteReportesPage from '../pages/docente/DocenteReportesPage';
 import DocentePerfilPage from '../pages/docente/DocentePerfilPage';
 
-// === Alumno ===
 import { AlumnoDashboardPage } from '../pages/alumno/AlumnoDashboardPage';
 import { AlumnoAsignaturasPage } from '../pages/alumno/AlumnoAsignaturasPage';
 import { AlumnoCalificacionesPage } from '../pages/alumno/AlumnoCalificacionesPage';
@@ -53,8 +44,8 @@ import { AlumnoMensajesPage } from '../pages/alumno/AlumnoMensajesPage';
 import { AlumnoPerfilPage } from '../pages/alumno/AlumnoPerfilPage';
 import { AlumnoDocumentosPage } from '../pages/alumno/AlumnoDocumentosPage';
 
-// === PrivateRoute: LÓGICA DE PROTECCIÓN ===
-const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
+// ✅ CORREGIDO: Lógica de protección usando UserRole
+const PrivateRoute: React.FC<{ allowedRoles: UserRole[] }> = ({ allowedRoles }) => {
   const { isLoggedIn, role, isLoading } = useAuth();
   const location = useLocation();
 
@@ -71,7 +62,7 @@ const PrivateRoute: React.FC<{ allowedRoles: Role[] }> = ({ allowedRoles }) => {
     return <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
-  if (!allowedRoles.includes((role ?? 'ALUMNO') as Role)) {
+  if (!allowedRoles.includes((role ?? 'ALUMNO') as UserRole)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <h1 className="text-3xl text-red-600">403 | Acceso Denegado</h1>
@@ -86,42 +77,33 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* --- RUTAS PÚBLICAS --- */}
         <Route path="/" element={<PlansPage />} /> 
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/login" element={<LoginPageGeneral />} />
         <Route path="/register-school" element={<RegisterSchoolPage />} />
         <Route path="/register-school-pro" element={<RegisterSchoolProPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/recovery" element={<ResetPasswordPage />} />
+        
+        {/* ✅ CORREGIDO: Se cambió /recovery por /reset-password para que el link del correo funcione */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        {/* --- REDIRECTS --- */}
         <Route path="/acceso" element={<Navigate to="/login" replace />} />
 
-        {/* --- RUTAS PROTEGIDAS CON LAYOUT --- */}
         <Route element={<AppLayout />}>
-          
-          {/* SECCIÓN ADMINISTRADOR */}
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
-            
             <Route path="/admin/grupos" element={<AdminAlumnosPage />} /> 
             <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/perfil" element={<AdminPerfilAlumnoPage />} />
             <Route path="/admin/alumnos/:grupoId/:alumnoId/historial" element={<AdminHistorialAcademicoPage />} />
-            
-            {/* ✅ Rutas de Docentes */}
             <Route path="/admin/docentes" element={<AdminDocentesPage />} />
             <Route path="/admin/docentes/:id/perfil" element={<AdminDocenteProfilePage />} />
-            
-            {/* ✅ Otras herramientas */}
             <Route path="/admin/mensajes" element={<AdminMensajesPage />} /> 
             <Route path="/admin/plan-estudios" element={<AdminGestionPage />} /> 
             <Route path="/admin/reportes" element={<AdminReportesPage />} /> 
           </Route>
 
-          {/* SECCIÓN DOCENTE */}
           <Route element={<PrivateRoute allowedRoles={['DOCENTE']} />}>
             <Route path="/docente/dashboard" element={<DocenteDashboardPage />} />
             <Route path="/docente/asistencia" element={<DocenteAsistenciaPage />} />
@@ -132,7 +114,6 @@ export const AppRouter: React.FC = () => {
             <Route path="/docente/perfil" element={<DocentePerfilPage />} />
           </Route>
 
-          {/* SECCIÓN ALUMNO */}
           <Route element={<PrivateRoute allowedRoles={['ALUMNO']} />}>
             <Route path="/alumno/dashboard" element={<AlumnoDashboardPage />} />
             <Route path="/alumno/asignaturas" element={<AlumnoAsignaturasPage />} />
@@ -146,7 +127,6 @@ export const AppRouter: React.FC = () => {
           </Route>
         </Route>
 
-        {/* MANEJO DE 404 */}
         <Route path="*" element={
           <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
             <h1 className="text-6xl font-bold text-gray-200 mb-4">404</h1>

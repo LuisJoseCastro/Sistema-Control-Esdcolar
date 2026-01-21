@@ -74,8 +74,6 @@ export const adminService = {
             ...updatedProfile,
             claveEmpleado: updatedProfile.clave 
         };
-        // Cambiamos a PUT y a la ruta de academic para que el backend 
-        // procese el desglose de materias y horas en la tabla 'horarios'
         const { data } = await api.put(`/academic/profile/${updatedProfile.id}`, payload);
         return data;
     },
@@ -193,6 +191,18 @@ export const adminService = {
     },
 
     // === REPORTES Y AUXILIARES ===
+    // ✅ NUEVO: Obtiene filtros para la página de reportes
+    getReportFilters: async () => {
+        const { data } = await api.get('/admin/reportes/filtros');
+        return data;
+    },
+
+    // ✅ NUEVO: Genera la vista previa del reporte
+    generarReporteAcademico: async (payload: any) => {
+        const { data } = await api.post('/admin/reportes/generar', payload);
+        return data;
+    },
+
     getStats: async () => {
         const { data } = await api.get('/admin/stats');
         return data;
