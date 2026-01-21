@@ -1,3 +1,5 @@
+// src/AppRouter.tsx
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -23,7 +25,10 @@ import { AdminListaAlumnosPage } from '../pages/admin/AdminListaAlumnosPage';
 import { AdminPerfilAlumnoPage } from '../pages/admin/AdminPerfilAlumnoPage';
 import { AdminHistorialAcademicoPage } from '../pages/admin/AdminHistorialAcademicoPage';
 import { AdminDocentesPage } from '../pages/admin/AdminDocentesPage';
-import { AdminDocenteProfilePage } from '../pages/admin/AdminDocenteProfilePage';
+
+// ✅ CORREGIDO: Importación por defecto (sin llaves)
+import AdminDocenteProfilePage from '../pages/admin/AdminDocenteProfilePage';
+
 import AdminMensajesPage from '../pages/admin/AdminMensajesPage'; 
 import AdminGestionPage from '../pages/admin/AdminGestionPage'; 
 import AdminReportesPage from '../pages/admin/AdminReportesPage'; 
@@ -100,7 +105,6 @@ export const AppRouter: React.FC = () => {
           <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/dashboard" element={<AdminDashboardPage />} /> 
             
-            {/* ✅ Rutas de Grupos y Alumnos corregidas */}
             <Route path="/admin/grupos" element={<AdminAlumnosPage />} /> 
             <Route path="/admin/alumnos" element={<AdminAlumnosPage />} />
             <Route path="/admin/alumnos/:grupoId" element={<AdminListaAlumnosPage />} />

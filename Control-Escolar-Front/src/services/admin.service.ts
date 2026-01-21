@@ -5,17 +5,20 @@ export const adminService = {
     // === SECCIÓN DOCENTES ===
     getTeachers: async () => {
         const { data } = await api.get('/admin/docentes');
-        return data;
+        return data.map((doc: any) => ({
+            ...doc,
+            clave: doc.claveEmpleado || (doc.id ? doc.id.substring(0, 8).toUpperCase() : 'S/C')
+        }));
     },
 
     getAllUsersByTenant: async (): Promise<User[]> => {
         const { data } = await api.get('/admin/docentes');
         return data.map((doc: any) => ({
             id: doc.id,
-            nombre: doc.nombre,
+            nombre: doc.nombre || doc.user?.fullName,
             email: doc.email,
             rol: 'DOCENTE',
-            clave: doc.clave,
+            clave: doc.claveEmpleado || (doc.id ? doc.id.substring(0, 8).toUpperCase() : 'S/C'),
             tenantId: doc.tenantId
         }));
     },
@@ -41,19 +44,39 @@ export const adminService = {
         }
     },
 
-    // ✅ Esta es la función que corregí/agregué para que coincida con tu backend
     getTeacherProfile: async (docenteId: string): Promise<DocenteProfile | null> => {
         const { data } = await api.get(`/admin/docentes/${docenteId}/perfil`);
-        return data;
+        if (!data) return null;
+        const idCorta = data.id ? data.id.substring(0, 8).toUpperCase() : 'S/C';
+        return {
+            ...data,
+            clave: data.claveEmpleado || data.clave || idCorta,
+            nombre: data.nombre || data.user?.fullName || 'Docente',
+            email: data.email || data.user?.email
+        };
     },
 
     getDocenteProfileById: async (docenteId: string): Promise<DocenteProfile | null> => {
         const { data } = await api.get(`/admin/docentes/${docenteId}/perfil`);
-        return data;
+        if (!data) return null;
+        const idCorta = data.id ? data.id.substring(0, 8).toUpperCase() : 'S/C';
+        return {
+            ...data,
+            clave: data.claveEmpleado || data.clave || idCorta,
+            nombre: data.nombre || data.user?.fullName || 'Docente',
+            email: data.email || data.user?.email
+        };
     },
 
+    // ✅ CORREGIDO PARA GUARDAR EN BASE DE DATOS REAL (TABLA HORARIOS)
     updateDocenteProfile: async (updatedProfile: DocenteProfile): Promise<DocenteProfile> => {
-        const { data } = await api.patch(`/admin/docentes/${updatedProfile.id}/perfil`, updatedProfile);
+        const payload = {
+            ...updatedProfile,
+            claveEmpleado: updatedProfile.clave 
+        };
+        // Cambiamos a PUT y a la ruta de academic para que el backend 
+        // procese el desglose de materias y horas en la tabla 'horarios'
+        const { data } = await api.put(`/academic/profile/${updatedProfile.id}`, payload);
         return data;
     },
 
@@ -70,7 +93,10 @@ export const adminService = {
 
     getAlumnosPorGrupo: async (grupoId: string) => {
         const { data } = await api.get(`/admin/grupos/${grupoId}/alumnos`);
-        return data;
+        return data.map((alu: any) => ({
+            ...alu,
+            clave: alu.matricula || (alu.id ? alu.id.substring(0, 8).toUpperCase() : 'S/M')
+        }));
     },
 
     crearGrupo: async (grupoData: any) => {
@@ -119,7 +145,7 @@ export const adminService = {
         return data;
     },
 
-    // === SECCIÓN GESTIÓN ACADÉMICA (NUEVO AGREGADO) ===
+    // === SECCIÓN GESTIÓN ACADÉMICA ===
     getPlanes: async () => {
         const { data } = await api.get('/admin/planes-estudio'); 
         return data;
@@ -130,17 +156,17 @@ export const adminService = {
         return data;
     },
 
-    crearPlan: async (planData: any) => {
+    crearPlan: async (planData: { nombre: string; id_docente: string }) => {
         const { data } = await api.post('/admin/planes-estudio', planData);
         return data;
     },
 
-    actualizarPlan: async (id: string | number, data: any) => {
-        const { data: res } = await api.patch(`/admin/grupos/${id}`, data);
+    actualizarPlan: async (id: string | number, planData: any) => {
+        const { data: res } = await api.patch(`/admin/planes-estudio/${id}`, planData);
         return res;
     },
 
-    crearAsignatura: async (asigData: any) => {
+    crearAsignatura: async (asigData: { materia: string; codigo: string; creditos: number }) => {
         const { data } = await api.post('/admin/materias', asigData);
         return data;
     },
@@ -190,7 +216,6 @@ export const adminService = {
     },
 };
 
-// Exportaciones individuales requeridas por tus otros componentes
 export const getDocenteProfileById = adminService.getDocenteProfileById;
 export const updateDocenteProfile = adminService.updateDocenteProfile;
 export const updateStudentProfile = adminService.updateStudentProfile;

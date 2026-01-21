@@ -1,146 +1,19 @@
-// src/pages/admin/AdminDocenteProfilePage.tsx
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// ✅ Agregado icono de Home
-import { User, Mail, Phone, Edit, BookOpen, Clock, PlusCircle, Trash2, CheckCircle, Home } from 'lucide-react';
+import { User, Mail, Phone, Edit, Clock, PlusCircle, Trash2, CheckCircle, Home, X, Save } from 'lucide-react';
 
-// Importación de Componentes UI
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 import Modal from '../../components/ui/Modal';
+import Input from '../../components/ui/Input';
 
-// Servicio y Tipos
 import { adminService } from '../../services/admin.service';
-import { type DocenteProfile, type MateriaAsignada, type HorarioType } from '../../types/models';
-
-// Interfaz local para combinar materia con su franja horaria
-interface MateriaHorarioItem extends MateriaAsignada {
-    day?: 'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes';
-    timeStart?: string;
-    timeEnd?: string;
-    scheduleKey: string;
-}
+// ✅ CORREGIDO: Se eliminó 'MateriaAsignada' para que ya no aparezca la advertencia amarilla
+import { type DocenteProfile, type HorarioType } from '../../types/models';
 
 // =========================================================
-// 1. Componente Modal: Datos Personales (DISEÑO INTACTO)
-// =========================================================
-
-interface PersonalDataModalProps {
-    profile: DocenteProfile;
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (newProfile: DocenteProfile) => Promise<void>;
-}
-
-const PersonalDataModal: React.FC<PersonalDataModalProps> = ({ profile, isOpen, onClose, onSave }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-
-    const [clave, setClave] = useState(profile?.clave || '');
-    const [nombre, setNombre] = useState(profile?.nombre || '');
-    const [email, setEmail] = useState(profile?.email || '');
-    const [telefono, setTelefono] = useState(profile?.telefono || '');
-    const [especialidad, setEspecialidad] = useState(profile?.especialidad || '');
-
-    useEffect(() => {
-        if (isOpen && profile) {
-            setClave(profile.clave || '');
-            setNombre(profile.nombre || '');
-            setEmail(profile.email || '');
-            setTelefono(profile.telefono || '');
-            setEspecialidad(profile.especialidad || '');
-            setIsEditing(false);
-        }
-    }, [isOpen, profile]);
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        
-        const updatedProfile: DocenteProfile = {
-            ...profile,
-            clave,
-            nombre,
-            email,
-            telefono,
-            especialidad
-        };
-
-        try {
-            await onSave(updatedProfile);
-            setIsEditing(false);
-            onClose();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const fields = [
-        { label: 'Clave Institucional', value: clave, setter: setClave, key: 'clave', type: 'text', required: true },
-        { label: 'Nombre Completo', value: nombre, setter: setNombre, key: 'nombre', type: 'text', required: true },
-        { label: 'Correo Electrónico', value: email, setter: setEmail, key: 'email', type: 'email', required: true },
-        { label: 'Teléfono', value: telefono, setter: setTelefono, key: 'telefono', type: 'tel', required: false },
-        { label: 'Especialidad', value: especialidad, setter: setEspecialidad, key: 'especialidad', type: 'text', required: false },
-    ];
-
-    const readOnlyInputClasses = "mt-1 block w-full rounded-md p-2 bg-gray-100 text-gray-700 border border-gray-300";
-
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title={isEditing ? "Modificando Datos Personales" : "Vista de Datos Personales"}
-            size="sm"
-        >
-            <form onSubmit={handleSave} className="space-y-4">
-                {fields.map((field) => (
-                    <div key={field.key}>
-                        <label className="block text-sm font-medium text-gray-700">{field.label}</label>
-                        {!isEditing ? (
-                            <p className={`${readOnlyInputClasses} ${field.key === 'clave' ? 'font-mono bg-yellow-50 text-purple-700 border-purple-200' : ''}`}>
-                                {field.value || "No especificado"}
-                            </p>
-                        ) : (
-                            <input
-                                type={field.type}
-                                value={field.value}
-                                onChange={(e) => field.setter?.(e.target.value)}
-                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border ${field.key === 'clave' ? 'font-mono' : ''}`}
-                                required={field.required}
-                                disabled={isSaving}
-                            />
-                        )}
-                    </div>
-                ))}
-
-                <div className="flex justify-end pt-4 border-t gap-3">
-                    {!isEditing && (
-                        <>
-                            <Button type="button" variant="secondary" onClick={onClose}>Cerrar</Button>
-                            <Button type="button" variant="primary" onClick={() => setIsEditing(true)} icon={<Edit size={20} />}>Activar Edición</Button>
-                        </>
-                    )}
-                    {isEditing && (
-                        <>
-                            <Button type="button" variant="secondary" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancelar</Button>
-                            <Button type="submit" variant="primary" isLoading={isSaving} disabled={isSaving}>
-                                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </form>
-        </Modal>
-    );
-};
-
-
-// =========================================================
-// 2. Componente Modal: Materias Asignadas (VINCULACIÓN A GRUPOS)
+// 1. Componente Modal: Administrar Materias y Horario
 // =========================================================
 interface AssignedSubjectsModalProps {
     profile: DocenteProfile;
@@ -150,460 +23,366 @@ interface AssignedSubjectsModalProps {
 }
 
 const AssignedSubjectsModal: React.FC<AssignedSubjectsModalProps> = ({ profile, onSave, isOpen, onClose }) => {
-    const [localSchedule, setLocalSchedule] = useState<MateriaHorarioItem[]>([]);
+    const [localSchedule, setLocalSchedule] = useState<any[]>([]);
     const [isSaving, setIsSaving] = useState(false);
-    const [gruposBD, setGruposBD] = useState<any[]>([]); // Lista de grupos reales
+    const [gruposBD, setGruposBD] = useState<any[]>([]); 
+    const [materiasBD, setMateriasBD] = useState<any[]>([]);
 
-    const [newMateriaNombre, setNewMateriaNombre] = useState('');
+    const [selectedMateriaId, setSelectedMateriaId] = useState('');
     const [newMateriaGrupo, setNewMateriaGrupo] = useState('');
-    const [newDay, setNewDay] = useState<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes'>('Lunes');
+    const [newDay, setNewDay] = useState('Lunes');
     const [newTimeStart, setNewTimeStart] = useState('08:00');
     const [newTimeEnd, setNewTimeEnd] = useState('09:00');
 
     const daysOptions = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
     const timeOptions = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
 
-    const [editingKey, setEditingKey] = useState<string | null>(null);
-
-    // Cargar grupos desde la base de datos al abrir
     useEffect(() => {
-        const fetchGrupos = async () => {
-            try {
-                const data = await adminService.getGrupos();
-                setGruposBD(data);
-                if (data.length > 0) setNewMateriaGrupo(data[0].nombre);
-            } catch (err) {
-                console.error("Error cargando grupos", err);
-            }
-        };
-        if (isOpen) fetchGrupos();
-    }, [isOpen]);
-
-    const rehydrateSchedule = useCallback((p: DocenteProfile) => {
-        const schedule: MateriaHorarioItem[] = [];
-        if (!p?.horario) return;
-        
-        daysOptions.forEach(day => {
-            const dayKey = day as keyof HorarioType;
-            if (p.horario && p.horario[dayKey]) {
-                Object.entries(p.horario[dayKey] || {}).forEach(([timeStart, description]) => {
-                    const fullMatch = description.match(/(.*) \((.*)\) \[(.*)-(.*)\]/);
-                    const simpleMatch = description.match(/(.*) \((.*)\)/);
-                    const match = fullMatch || simpleMatch;
-
+        if (isOpen && profile.horario) {
+            const initial: any[] = [];
+            Object.entries(profile.horario).forEach(([day, slots]) => {
+                Object.entries(slots as Record<string, string>).forEach(([time, desc]) => {
+                    const match = desc.match(/(.*) \((.*)\)/);
                     if (match) {
-                        const nombre = match[1]?.trim() || '';
-                        const grupo = match[2]?.trim() || '';
-                        const start = fullMatch ? fullMatch[3] : timeStart;
-                        const end = fullMatch ? fullMatch[4] : timeOptions[timeOptions.indexOf(start) + 1] || start;
-                        const materiasAsignadasArr = p.materiasAsignadas || [];
-                        const materiaId = materiasAsignadasArr.find(m => m.nombre === nombre && m.grupo === grupo)?.id || `temp-${nombre}-${grupo}`;
-                        const scheduleKey = `${dayKey}-${start}-${materiaId}`;
-
-                        schedule.push({
-                            id: materiaId, nombre, grupo, day: dayKey, timeStart: start, timeEnd: end, scheduleKey
+                        initial.push({
+                            id: Math.random().toString(),
+                            nombre: match[1].trim(),
+                            grupo: match[2].trim(),
+                            day,
+                            timeStart: time,
+                            timeEnd: desc.includes('[') ? desc.split('[')[1].split('-')[1].replace(']', '') : '00:00',
+                            scheduleKey: `${day}-${time}`
                         });
                     }
                 });
-            }
-        });
-        setLocalSchedule(schedule);
-    }, []);
+            });
+            setLocalSchedule(initial);
+        }
+    }, [isOpen, profile.horario]);
 
     useEffect(() => {
-        if (isOpen && profile) {
-            rehydrateSchedule(profile);
-            setEditingKey(null);
-            setNewMateriaNombre('');
-        }
-    }, [isOpen, profile, rehydrateSchedule]);
-
-    const handleUpdateField = (scheduleKey: string, field: 'day' | 'timeStart' | 'timeEnd', value: string) => {
-        setLocalSchedule(prev => prev.map(item =>
-            item.scheduleKey === scheduleKey ? { ...item, [field]: value } : item
-        ));
-    };
-
-    const handleDelete = (scheduleKey: string) => {
-        setLocalSchedule(prev => prev.filter(item => item.scheduleKey !== scheduleKey));
-    };
+        const fetchDatos = async () => {
+            try {
+                const [grupos, materiasRaw] = await Promise.all([adminService.getGrupos(), adminService.getAsignaturas()]);
+                setGruposBD(grupos);
+                setMateriasBD(materiasRaw.map((m: any) => ({ id: m.id, nombre: m.nombre || m.materia })));
+                if (grupos.length > 0) setNewMateriaGrupo(grupos[0].nombre);
+                if (materiasRaw.length > 0) setSelectedMateriaId(materiasRaw[0].id);
+            } catch (err) { console.error(err); }
+        };
+        if (isOpen) fetchDatos();
+    }, [isOpen]);
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validación de existencia del grupo seleccionado
-        if (!gruposBD.some(g => g.nombre === newMateriaGrupo)) {
-            alert('El grupo seleccionado no es válido o no existe.');
-            return;
-        }
-
-        if (!newMateriaNombre.trim() || !newMateriaGrupo.trim() || !newTimeStart || !newTimeEnd) return;
-        if (newTimeStart >= newTimeEnd) {
-            alert('La hora de inicio debe ser anterior a la hora de fin.');
-            return;
-        }
-
-        const newMateriaId = 'm-' + Date.now();
-        const newItem: MateriaHorarioItem = {
-            id: newMateriaId,
-            nombre: newMateriaNombre.trim(),
-            grupo: newMateriaGrupo.trim(),
-            day: newDay,
-            timeStart: newTimeStart,
-            timeEnd: newTimeEnd,
-            scheduleKey: `${newDay}-${newTimeStart}-${newMateriaId}`
-        };
-
-        if (localSchedule.some(item => item.day === newDay && item.timeStart === newTimeStart)) {
-            alert(`¡Conflicto! Ya hay clase el ${newDay} a las ${newTimeStart}.`);
-            return;
-        }
-
-        setLocalSchedule(prev => [...prev, newItem]);
-        setNewMateriaNombre('');
+        const materiaObj = materiasBD.find(m => m.id === selectedMateriaId);
+        if (!materiaObj) return;
+        setLocalSchedule(prev => [...prev, {
+            id: selectedMateriaId, nombre: materiaObj.nombre, grupo: newMateriaGrupo,
+            day: newDay, timeStart: newTimeStart, timeEnd: newTimeEnd,
+            scheduleKey: `${newDay}-${newTimeStart}`
+        }]);
     };
 
     const handleSave = async () => {
-        if (editingKey) {
-            alert('Por favor, termine la edición del horario actual antes de guardar.');
-            return;
-        }
-
         setIsSaving(true);
-        const uniqueMateriasMap = new Map<string, MateriaAsignada>();
-        const newHorario: Record<string, Record<string, string>> = {
-            'Lunes': {}, 'Martes': {}, 'Miercoles': {}, 'Jueves': {}, 'Viernes': {}
-        };
-
+        const newHorario: any = { 'Lunes': {}, 'Martes': {}, 'Miercoles': {}, 'Jueves': {}, 'Viernes': {} };
+        const uniqueMaterias = new Map();
         localSchedule.forEach(item => {
-            if (item.day && item.timeStart && item.timeEnd) {
-                uniqueMateriasMap.set(`${item.nombre}-${item.grupo}`, { id: item.id, nombre: item.nombre, grupo: item.grupo });
-                newHorario[item.day][item.timeStart] = `${item.nombre} (${item.grupo}) [${item.timeStart}-${item.timeEnd}]`;
-            }
+            uniqueMaterias.set(`${item.nombre}-${item.grupo}`, { id: item.id, nombre: item.nombre, grupo: item.grupo });
+            newHorario[item.day][item.timeStart] = `${item.nombre} (${item.grupo}) [${item.timeStart}-${item.timeEnd}]`;
         });
-
-        const updatedProfile: DocenteProfile = {
-            ...profile,
-            materiasAsignadas: Array.from(uniqueMateriasMap.values()),
-            horario: newHorario as DocenteProfile['horario'],
-        };
-
         try {
-            await onSave(updatedProfile);
+            await onSave({ ...profile, materiasAsignadas: Array.from(uniqueMaterias.values()), horario: newHorario });
             onClose();
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsSaving(false);
-        }
+        } catch (error) { console.error(error); }
+        finally { setIsSaving(false); }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Administrar Materias y Horario" size="lg">
-            <div className="space-y-6">
-                <Card header="Asignar Nueva Clase" variant="flat" className='bg-whiteBg-100'>
-                    <form onSubmit={handleAdd} className="grid grid-cols-6 gap-3 items-end">
-                        <div className="col-span-2">
-                            <label className="block text-sm font-medium text-gray-700">Materia</label>
-                            <input type="text" value={newMateriaNombre} onChange={(e) => setNewMateriaNombre(e.target.value)} required
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border" placeholder="Ej: Bases de Datos" />
-                        </div>
-                        <div className="w-20 col-span-1">
-                            <label className="block text-sm font-medium text-gray-700">Grupo</label>
-                            {/* ✅ SELECT DINÁMICO VINCULADO A LA BD */}
-                            <select 
-                                value={newMateriaGrupo} 
-                                onChange={(e) => setNewMateriaGrupo(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                            >
-                                {gruposBD.map(g => (
-                                    <option key={g.id} value={g.nombre}>{g.nombre.replace('GRUPO ', '')}</option>
-                                ))}
+            <div className="p-6 space-y-8 bg-[#f8fafc]">
+                <div className="bg-[#F1F5F9] p-6 rounded-2xl border border-gray-200">
+                    <h3 className="text-gray-800 font-bold mb-4 text-lg">Asignar Nueva Clase</h3>
+                    <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3 w-full">
+                        <div className="flex-grow min-w-[200px]">
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Materia</label>
+                            <select value={selectedMateriaId} onChange={(e) => setSelectedMateriaId(e.target.value)} className="w-full border-gray-300 border p-2 rounded-lg bg-white text-sm outline-none">
+                                {materiasBD.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Día</label>
-                            <select value={newDay} onChange={(e) => setNewDay(e.target.value as any)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                                {daysOptions.map(day => <option key={day} value={day}>{day}</option>)}
+                        <div className="w-24">
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Grupo</label>
+                            <select value={newMateriaGrupo} onChange={(e) => setNewMateriaGrupo(e.target.value)} className="w-full border-gray-300 border p-2 rounded-lg bg-white text-sm outline-none">
+                                {gruposBD.map(g => <option key={g.id} value={g.nombre}>{g.nombre}</option>)}
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Inicio</label>
-                            <select value={newTimeStart} onChange={(e) => setNewTimeStart(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                                {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
+                        <div className="w-28">
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Día</label>
+                            <select value={newDay} onChange={(e) => setNewDay(e.target.value)} className="w-full border-gray-300 border p-2 rounded-lg bg-white text-sm outline-none">
+                                {daysOptions.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Fin</label>
-                            <select value={newTimeEnd} onChange={(e) => setNewTimeEnd(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
-                                {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
+                        <div className="w-20">
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Inicio</label>
+                            <select value={newTimeStart} onChange={(e) => setNewTimeStart(e.target.value)} className="w-full border-gray-300 border p-2 rounded-lg bg-white text-sm outline-none">
+                                {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
-                        <Button type="submit" variant="primary" className="h-[42px] col-span-6 md:col-span-1" icon={<PlusCircle size={20} />}>
-                            Asignar
-                        </Button>
+                        <div className="w-20">
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Fin</label>
+                            <select value={newTimeEnd} onChange={(e) => setNewTimeEnd(e.target.value)} className="w-full border-gray-300 border p-2 rounded-lg bg-white text-sm outline-none">
+                                {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                        <button type="submit" className="bg-[#2C445A] text-white px-4 py-2 rounded-lg flex items-center gap-2 font-bold text-sm h-[38px] hover:bg-[#1E2F3E]">
+                            <PlusCircle size={18} /> Add
+                        </button>
                     </form>
-                </Card>
+                </div>
 
-                <div className="bg-whiteBg-100 p-4">
-                    <h3 className="text-xl font-bold border-b mb-4 text-main-800">Horario Asignado</h3>
-                    <div className="overflow-x-auto border border-grayDark-300 rounded-lg max-h-64 overflow-y-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-whiteBg-200 sticky top-0">
+                <div className="bg-[#F1F5F9] p-6 rounded-2xl border border-gray-200">
+                    <h3 className="text-gray-800 font-bold mb-4 text-lg">Horario Asignado</h3>
+                    <div className="bg-white rounded-xl border border-gray-300 overflow-hidden shadow-sm">
+                        <table className="w-full text-left">
+                            <thead className="bg-[#E2E8F0] border-b border-gray-300">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">DÍA</th>
-                                    <th className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">HORA</th>
-                                    <th className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">MATERIA (GRUPO)</th>
-                                    <th className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">ACCIÓN</th>
+                                    <th className="p-3 text-[10px] font-bold text-gray-600 uppercase">Día</th>
+                                    <th className="p-3 text-[10px] font-bold text-gray-600 uppercase">Hora</th>
+                                    <th className="p-3 text-[10px] font-bold text-gray-600 uppercase">Materia (Grupo)</th>
+                                    <th className="p-3 text-[10px] font-bold text-gray-600 uppercase text-center">Acción</th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-whiteBg-50 divide-y divide-gray-100">
-                                {localSchedule && localSchedule.length > 0 ? (
-                                    daysOptions.flatMap(day =>
-                                        localSchedule.filter(item => item.day === day)
-                                            .sort((a, b) => (a.timeStart || '00:00').localeCompare(b.timeStart || '00:00'))
-                                            .map(item => (
-                                                <tr key={item.scheduleKey} className="hover:bg-whiteBg-100 transition duration-150">
-                                                    <td className="p-3 text-sm font-mono text-gray-800">
-                                                        {editingKey === item.scheduleKey ? (
-                                                            <select value={item.day} onChange={(e) => handleUpdateField(item.scheduleKey, 'day', e.target.value as any)} className="border rounded p-1 w-24">
-                                                                {daysOptions.map(d => <option key={d} value={d}>{d}</option>)}
-                                                            </select>
-                                                        ) : item.day}
-                                                    </td>
-                                                    <td className="p-3 text-sm font-mono text-main-800">
-                                                        {editingKey === item.scheduleKey ? (
-                                                            <div className="flex gap-1">
-                                                                <select value={item.timeStart} onChange={(e) => handleUpdateField(item.scheduleKey, 'timeStart', e.target.value)} className="border rounded p-1 w-14">
-                                                                    {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
-                                                                </select>
-                                                                -
-                                                                <select value={item.timeEnd} onChange={(e) => handleUpdateField(item.scheduleKey, 'timeEnd', e.target.value)} className="border rounded p-1 w-14">
-                                                                    {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
-                                                                </select>
-                                                            </div>
-                                                        ) : `${item.timeStart} - ${item.timeEnd}`}
-                                                    </td>
-                                                    <td className="p-3 text-sm text-gray-700 font-medium">
-                                                        {item.nombre} ({item.grupo})
-                                                    </td>
-                                                    <td className="p-3 text-right space-x-2 flex">
-                                                        {editingKey === item.scheduleKey ? (
-                                                            <Button type="button" variant="primary" className="p-1 px-2 text-sm" onClick={() => setEditingKey(null)}>OK</Button>
-                                                        ) : (
-                                                            <>
-                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => setEditingKey(item.scheduleKey)}><Edit size={18} /></Button>
-                                                                <Button type="button" variant="ghost" className="p-1" onClick={() => handleDelete(item.scheduleKey)}><Trash2 size={18} /></Button>
-                                                            </>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))
-                                    )
-                                ) : (
-                                    <tr><td colSpan={4} className="text-center p-4 text-gray-500">No hay clases asignadas.</td></tr>
-                                )}
+                            <tbody className="divide-y divide-gray-200">
+                                {localSchedule.map((item, idx) => (
+                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-3 text-sm text-gray-700 font-medium">{item.day}</td>
+                                        <td className="p-3 text-sm font-mono text-[#2C445A] font-bold">{item.timeStart} - {item.timeEnd}</td>
+                                        <td className="p-3 text-sm text-gray-700">{item.nombre} ({item.grupo})</td>
+                                        <td className="p-3 text-center">
+                                            <button onClick={() => setLocalSchedule(prev => prev.filter((_, i) => i !== idx))} className="text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                                                <Trash2 size={18}/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
-            <div className="flex justify-end pt-4 border-t mt-6 gap-3">
-                <Button variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-                <Button variant="primary" onClick={handleSave} isLoading={isSaving} disabled={isSaving || !!editingKey}>
-                    {isSaving ? 'Guardando...' : 'Guardar Asignaciones'}
-                </Button>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                    <button onClick={onClose} disabled={isSaving} className="bg-[#4F6D8C] text-white px-8 py-2.5 rounded-xl font-bold shadow-md">Cancelar</button>
+                    <button onClick={handleSave} disabled={isSaving} className="bg-[#1E2F3E] text-white px-8 py-2.5 rounded-xl font-bold shadow-md">
+                        {isSaving ? 'Guardando...' : 'Guardar Todo'}
+                    </button>
+                </div>
             </div>
         </Modal>
     );
 };
 
 // =========================================================
-// 3. Componente Principal AdminDocenteProfilePage (CONECTADO)
+// 2. Componente Principal
 // =========================================================
-export const AdminDocenteProfilePage: React.FC = () => {
+const AdminDocenteProfilePage: React.FC = () => {
     const { id: docenteId } = useParams<{ id: string }>();
     const navigate = useNavigate();
-
     const [profile, setProfile] = useState<DocenteProfile | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
-
-    const [isPersonalModalOpen, setPersonalModalOpen] = useState(false);
+    
     const [isMateriasModalOpen, setMateriasModalOpen] = useState(false);
+    const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
+    const [datosEditados, setDatosEditados] = useState<any>(null);
 
-    const handleProfileUpdate = useCallback(async (updatedProfile: DocenteProfile) => {
-        try {
-            await adminService.updateDocenteProfile(updatedProfile);
-            setProfile(updatedProfile);
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
-        } catch (err) {
-            console.error("Error al guardar:", err);
-            alert("No se pudieron guardar los cambios. Intente de nuevo.");
-            throw err;
-        }
-    }, []);
+const handleProfileUpdate = useCallback(async (updatedProfile: DocenteProfile) => {
+    try {
+        // updatedProfile.id es el UUID que el AdminController espera recibir en el @Param('id')
+        await adminService.updateDocenteProfile(updatedProfile);
+        setProfile(updatedProfile);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) { 
+        console.error(err);
+        alert("Error al guardar"); 
+    }
+}, []);
 
     useEffect(() => {
-        if (!docenteId) {
-            setError('ID de docente no proporcionado.');
-            setLoading(false);
-            return;
-        }
-
         const fetchProfile = async () => {
-            setLoading(true);
+            if (!docenteId) return;
             try {
                 const data = await adminService.getDocenteProfileById(docenteId);
-                if (data) setProfile(data);
-                else setError('Perfil de Docente no encontrado.');
-            } catch (err) {
-                setError('Error al cargar el perfil.');
-            } finally {
-                setLoading(false);
-            }
+                if (data) {
+                    data.clave = data.clave || (data as any).claveEmpleado || docenteId.substring(0, 8).toUpperCase();
+                }
+                setProfile(data);
+                setDatosEditados(data);
+            } catch (err) { console.error(err); }
+            finally { setLoading(false); }
         };
-
         fetchProfile();
     }, [docenteId]);
 
-    const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes'];
+    const handleEditarPerfil = () => {
+        setDatosEditados({ ...profile });
+        setMostrarModalEditar(true);
+    };
 
-    // ✅ TIME SLOTS DINÁMICOS BASADOS EN EL HORARIO
-    const timeSlots = useMemo(() => {
-        if (!profile || !profile.horario) return [];
-        const slots = new Set<string>();
-        days.forEach(day => {
-            const dayKey = day as keyof HorarioType;
-            if (profile.horario?.[dayKey]) {
-                Object.keys(profile.horario[dayKey]).forEach(time => slots.add(time));
-            }
-        });
-        return Array.from(slots).sort();
-    }, [profile]);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setDatosEditados((prev: any) => ({ ...prev, [name]: value }));
+    };
 
-    // ✅ VALIDACIÓN PARA MOSTRAR EN LA TABLA
-    const isMateriaAssigned = useCallback((materiaDescription: string) => {
-        if (!profile || !profile.materiasAsignadas) return false;
-        const match = materiaDescription.match(/(.*) \((.*)\)/);
-        if (!match) return false;
-        return profile.materiasAsignadas.some(m => 
-            m.nombre.trim() === match[1].trim() && m.grupo.trim() === match[2].trim()
-        );
-    }, [profile]);
+    const handleGuardarDatosPersonales = async () => {
+        try {
+            await handleProfileUpdate(datosEditados);
+            setMostrarModalEditar(false);
+        } catch (error) { console.error(error); }
+    };
 
-    if (loading) return <div className="p-8 flex justify-center items-center h-[calc(100vh-100px)]"><LoadingSpinner className="w-12 h-12 text-teal-600 mb-4" /></div>;
-    if (error || !profile) return <div className="p-8 text-center"><h1 className="text-3xl text-red-600">Error</h1><p>{error}</p><Button onClick={() => navigate('/admin/docentes')} className="mt-4">Volver</Button></div>;
+    const days = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+    const timeSlots = profile?.horario ? Array.from(new Set(Object.values(profile.horario).flatMap(d => Object.keys(d)))).sort() : [];
+
+    if (loading) return <div className="p-8 flex justify-center items-center h-screen"><LoadingSpinner className="w-12 h-12 text-teal-600" /></div>;
+    if (!profile) return <div className="p-8 text-center text-xl text-gray-500 italic">No encontrado. <Button onClick={() => navigate('/admin/docentes')}>Volver</Button></div>;
 
     return (
-        <div className="p-8 bg-white min-h-full font-sans relative">
+        <div className="p-8 bg-white min-h-screen relative font-sans">
             {showSuccess && (
                 <div className="fixed top-20 right-8 bg-green-600 text-white px-6 py-3 rounded-lg shadow-2xl flex items-center gap-2 z-50 animate-bounce">
-                    <CheckCircle size={20} />
-                    ¡Cambios guardados correctamente!
+                    <CheckCircle size={20} /> ¡Cambios guardados!
                 </div>
             )}
 
-            <header className="mb-8 flex justify-between items-center border-b border-gray-400 pb-2">
-                <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
-                    perfil docente
-                </h1>
-                {/* ✅ Botón agregado para regresar al dashboard */}
-                <Button 
-                    variant="ghost" 
-                    onClick={() => navigate('/admin/dashboard')} 
-                    className="flex items-center gap-2 text-main-800 hover:bg-gray-100"
-                    icon={<Home size={24} />}
-                >
-                    Volver al Dashboard
-                </Button>
+            <header className="mb-6 flex justify-between items-center border-b border-gray-400 pb-2">
+                <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>perfil docente</h1>
+                <Button variant="ghost" onClick={() => navigate('/admin/dashboard')} icon={<Home size={22} />} className="text-[#2C445A]">Volver</Button>
             </header>
 
-            <div className="flex items-center gap-6 mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-                <div className="w-20 h-20 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
-                    <User size={40} />
-                </div>
-                <div className="flex flex-col text-gray-700">
-                    <p className="text-2xl font-bold">{profile?.nombre}</p>
-                    <p className="text-lg mt-1">Clave: <span className="font-mono text-purple-600 font-bold">{profile?.clave || 'Cargando...'}</span></p>
-                    <p className="text-md">Especialidad: <strong>{profile?.especialidad}</strong></p>
+            <div className="flex items-center gap-6 mb-8 p-6 bg-[#F8FAFC] rounded-2xl border border-gray-200 shadow-sm">
+                <div className="w-24 h-24 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 shadow-inner"><User size={48} /></div>
+                <div className="flex flex-col flex-1">
+                    <p className="text-3xl font-bold text-gray-800">{profile.nombre}</p>
+                    <p className="text-xl mt-1 text-gray-600">Clave: <span className="font-mono text-purple-700 font-bold bg-purple-50 px-2 rounded border border-purple-100">{profile.clave}</span></p>
+                    <p className="text-md mt-1 text-gray-500 italic">Especialidad: <strong>{profile.especialidad}</strong></p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <Card header={<span className="font-bold flex items-center gap-2">Datos Personales</span>} className="relative bg-grayDark-200">
-                    <button className="absolute top-4 right-4 font-bold text-main-700 hover:text-main-800 cursor-pointer" onClick={() => setPersonalModalOpen(true)}>
-                        <Edit size={20} />
-                    </button>
-                    <p className="flex items-center gap-3 text-gray-700">
-                        <Mail size={20} className="text-main-800" /><span className="font-semibold">correo:</span> {profile?.email}
-                    </p>
-                    <p className="flex items-center gap-3 mt-2 text-gray-700">
-                        <Phone size={20} className="text-main-800" /><span className="font-semibold">Tel:</span> {profile?.telefono || 'No disponible'}
-                    </p>
+                {/* DATOS PERSONALES CARD */}
+                <Card 
+                    header={
+                        <div className="flex justify-between items-center w-full">
+                            <span className="font-bold text-[#2C445A]">Datos Personales</span>
+                            <button onClick={handleEditarPerfil} className="text-[#2C445A] hover:bg-gray-200 p-2 rounded-full transition-all">
+                                <Edit size={18} />
+                            </button>
+                        </div>
+                    } 
+                    className="bg-[#F1F5F9] border-none shadow-none rounded-2xl p-4"
+                >
+                    <div className="space-y-3 py-2">
+                        <p className="flex items-center gap-3 text-gray-600"><Mail size={20} className="text-[#4F6D8C]" />{profile.email}</p>
+                        <p className="flex items-center gap-3 text-gray-600"><Phone size={20} className="text-[#4F6D8C]" />{profile.telefono || 'S/N'}</p>
+                    </div>
                 </Card>
 
-                <Card header={<span className="font-bold flex items-center gap-2">Materias Asignadas</span>} className="relative bg-grayDark-200">
-                    <button className="absolute top-4 right-4 font-bold text-main-700 hover:text-main-800 cursor-pointer" onClick={() => setMateriasModalOpen(true)}>
-                        <Edit size={20} />
-                    </button>
-                    {profile?.materiasAsignadas && profile.materiasAsignadas.length > 0 ? (
-                        <ul className="list-disc pl-5 space-y-2">
-                            {profile.materiasAsignadas.slice(0, 3).map((materia) => (
-                                <li key={materia.id} className="text-gray-700">
-                                    <BookOpen size={16} className="inline mr-2 text-teal-600" />
-                                    {materia.nombre} (# Grupo: <strong>{materia.grupo}</strong>)
-                                </li>
-                            ))}
-                            {profile.materiasAsignadas.length > 3 && (
-                                <li className="text-blue-600 cursor-pointer" onClick={() => setMateriasModalOpen(true)}>... ver más.</li>
-                            )}
-                        </ul>
-                    ) : <p className="text-gray-500">No hay materias asignadas.</p>}
+                {/* MATERIAS CARD */}
+                <Card 
+                    header={
+                        <div className="flex justify-between items-center w-full">
+                            <span className="font-bold text-[#2C445A]">Materias Asignadas</span>
+                            <button onClick={() => setMateriasModalOpen(true)} className="text-[#2C445A] hover:bg-gray-200 p-2 rounded-full transition-all">
+                                <Edit size={18} />
+                            </button>
+                        </div>
+                    } 
+                    className="bg-[#F1F5F9] border-none shadow-none rounded-2xl p-4"
+                >
+                    <div className="space-y-2 py-2">
+                        {profile.materiasAsignadas?.length > 0 ? profile.materiasAsignadas.map((m, idx) => (
+                            <p key={idx} className="flex items-center gap-2 text-gray-700 font-medium text-sm">
+                                <span className="w-2 h-2 rounded-full bg-teal-500 inline-block"></span>
+                                {m.nombre} (Grupo: <span className="font-bold text-teal-700">{m.grupo}</span>)
+                            </p>
+                        )) : <p className="text-xs text-gray-400 italic">No hay materias asignadas.</p>}
+                    </div>
                 </Card>
             </div>
 
-            <Card header={<span className="font-bold flex items-center gap-2"><Clock size={20} /> Horario</span>} className="overflow-x-auto bg-grayDark-50 shadow-2xs shadow-grayDark-300 border border-t-10">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                        <tr className="bg-whiteBg-200">
-                            <th className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">Hrs</th>
-                            {days.map(day => <th key={day} className="px-4 py-2 text-left text-sm font-bold text-gray-700 uppercase">{day}</th>)}
+            <Card header={<span className="font-bold flex items-center gap-2 text-[#2C445A]"><Clock size={18} /> Horario Semanal</span>} className="overflow-x-auto bg-[#F8FAFC] border-t-[6px] border-[#2C445A] rounded-2xl shadow-sm">
+                <table className="min-w-full text-center divide-y divide-gray-200">
+                    <thead className="bg-[#E2E8F0]">
+                        <tr>
+                            <th className="px-3 py-4 text-[11px] font-bold text-gray-600 uppercase">Hrs</th>
+                            {days.map(day => <th key={day} className="px-3 py-4 text-[11px] font-bold text-gray-600 uppercase">{day}</th>)}
                         </tr>
                     </thead>
-                    <tbody className="bg-whiteBg-50 divide-y divide-grayLight-300">
-                        {timeSlots && timeSlots.length > 0 ? (
-                            timeSlots.map(time => (
-                                <tr key={time} className="hover:bg-grayLight-100">
-                                    <td className="p-3 text-sm font-mono text-gray-800 border-b border-gray-100">{time}</td>
-                                    {days.map(day => {
-                                        const lesson = profile?.horario?.[day as keyof typeof profile.horario]?.[time];
-                                        const showLesson = lesson && isMateriaAssigned(lesson);
-                                        const timeMatch = lesson ? lesson.match(/\[(\d{2}:\d{2}-\d{2}:\d{2})\]/) : null;
-                                        return (
-                                            <td key={day} className={`p-3 text-sm border-b border-gray-100 ${showLesson ? 'bg-teal-50 font-medium text-gray-700' : 'text-gray-400'}`}>
-                                                {showLesson ? lesson.replace(/\[.*\]/, timeMatch ? timeMatch[1] : time) : '-'}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            ))
-                        ) : <tr><td colSpan={6} className="text-center p-4 text-gray-500">No hay horarios definidos.</td></tr>}
+                    <tbody className="bg-white divide-y divide-gray-100">
+                        {timeSlots.map(time => (
+                            <tr key={time} className="hover:bg-gray-50 transition-colors">
+                                <td className="p-3 text-[11px] font-mono text-gray-500 bg-[#F8FAFC] border-r border-gray-100">{time}</td>
+                                {days.map(day => {
+                                    const lesson = profile.horario?.[day.charAt(0) + day.slice(1).toLowerCase() as keyof HorarioType]?.[time];
+                                    return (
+                                        <td key={day} className={`p-3 text-xs border-r border-gray-100 ${lesson ? 'bg-teal-50 font-bold text-teal-800' : 'text-gray-300'}`}>
+                                            {lesson ? lesson.split('[')[0] : '-'}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </Card>
 
-            <div className="mt-8 text-right">
-                <Button variant="secondary" onClick={() => navigate('/admin/docentes')}>Volver a Docentes</Button>
-            </div>
+            <div className="mt-8 text-right"><Button variant="secondary" onClick={() => navigate('/admin/docentes')} className="px-10 py-2.5 rounded-xl shadow-md font-bold">Cerrar Perfil</Button></div>
 
-            <PersonalDataModal profile={profile} isOpen={isPersonalModalOpen} onClose={() => setPersonalModalOpen(false)} onSave={handleProfileUpdate} />
             <AssignedSubjectsModal profile={profile} onSave={handleProfileUpdate} isOpen={isMateriasModalOpen} onClose={() => setMateriasModalOpen(false)} />
+
+            {/* MODAL EDITAR PERFIL */}
+            {mostrarModalEditar && datosEditados && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white">
+                            <h3 className="text-2xl font-bold text-gray-800">Editar Perfil Docente</h3>
+                            <button onClick={() => setMostrarModalEditar(false)} className="text-gray-500 hover:text-gray-700 transition-colors"><X size={24} /></button>
+                        </div>
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label>
+                                        <Input name="nombre" value={datosEditados.nombre} onChange={handleInputChange} required className="w-full" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Especialidad *</label>
+                                        <Input name="especialidad" value={datosEditados.especialidad} onChange={handleInputChange} required className="w-full" />
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                                        <Input name="email" value={datosEditados.email} onChange={handleInputChange} type="email" className="w-full" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                                        <Input name="telefono" value={datosEditados.telefono} onChange={handleInputChange} className="w-full" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 mt-8 pt-6 border-t">
+                                <button onClick={() => setMostrarModalEditar(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg transition-colors">Cancelar</button>
+                                <button onClick={handleGuardarDatosPersonales} className="flex-1 flex items-center justify-center gap-2 bg-[#2C445A] hover:bg-[#1E2F3E] text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all"><Save size={18} /> Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
+export default AdminDocenteProfilePage;

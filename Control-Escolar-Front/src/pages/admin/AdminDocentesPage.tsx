@@ -1,5 +1,3 @@
-// src/pages/admin/AdminDocentesPage.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Search, Trash2, Briefcase, Eye, Home } from 'lucide-react';
@@ -16,7 +14,6 @@ import { DocenteFormModal } from '../../components/admin/DocenteFormModal';
 
 // Hooks y Servicios
 import { useTenant } from '../../contexts/TenantContext';
-// 🛑 IMPORTAMOS el objeto adminService unificado
 import { adminService } from '../../services/admin.service'; 
 
 export const AdminDocentesPage: React.FC = () => {
@@ -30,14 +27,26 @@ export const AdminDocentesPage: React.FC = () => {
     
     const [isNewDocenteModalOpen, setIsNewDocenteModalOpen] = useState(false);
 
-    // 1. Carga de datos usando el nuevo endpoint de docentes
+    // 1. Carga de datos con generación de clave automática (Igual que alumnos)
     const fetchDocentes = async () => {
         setLoading(true);
         try {
-            // Cambiamos a la función específica que creamos en el backend
             const data = await adminService.getTeachers(); 
-            setDocentes(data);
-            setFilteredDocentes(data);
+            
+            // ✅ PROCESAMIENTO: Si no hay clave, cortamos el ID (UUID) a 8 caracteres
+            // Esto garantiza que NUNCA aparezca vacío o "S/C"
+            const dataConClave = data.map((doc: any) => {
+                const idBase = doc.id || '';
+                const claveAuto = idBase.substring(0, 8).toUpperCase();
+                return {
+                    ...doc,
+                    // Prioridad: claveEmpleado > clave > Recorte de ID
+                    displayClave: doc.claveEmpleado || doc.clave || claveAuto || 'S/C'
+                };
+            });
+
+            setDocentes(dataConClave);
+            setFilteredDocentes(dataConClave);
         } catch (error) {
             console.error("Error al cargar docentes:", error);
         } finally {
@@ -49,25 +58,24 @@ export const AdminDocentesPage: React.FC = () => {
         fetchDocentes();
     }, [config]);
 
-    // 2. Lógica de búsqueda (MANTENIENDO TU DISEÑO)
+    // 2. Lógica de búsqueda
     useEffect(() => {
         const lowerCaseSearch = searchTerm.toLowerCase();
         const results = docentes.filter(docente =>
             docente.nombre?.toLowerCase().includes(lowerCaseSearch) ||
             docente.email?.toLowerCase().includes(lowerCaseSearch) ||
-            docente.clave?.toLowerCase().includes(lowerCaseSearch)
+            docente.displayClave?.toLowerCase().includes(lowerCaseSearch)
         );
         setFilteredDocentes(results);
     }, [searchTerm, docentes]);
     
-    // --- Handlers de acciones ---
+    // --- Handlers ---
     const handleNewDocente = () => {
         setIsNewDocenteModalOpen(true);
     };
 
     const handleSaveNewDocente = async (data: any) => {
         try {
-            // Usamos la ruta corregida del backend
             await adminService.registrarDocente({
                 nombre: data.nombre,
                 email: data.email,
@@ -75,12 +83,10 @@ export const AdminDocentesPage: React.FC = () => {
                 especialidad: data.especialidad,
                 telefono: data.telefono
             });
-
             await fetchDocentes(); 
             setIsNewDocenteModalOpen(false);
         } catch (error) {
             console.error("Error saving docente:", error);
-            alert("Error al registrar docente");
         }
     };
 
@@ -106,7 +112,6 @@ export const AdminDocentesPage: React.FC = () => {
                     <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                         Docentes
                     </h1>
-                    {/* ✅ Botón agregado para regresar al dashboard */}
                     <Button 
                         variant="ghost" 
                         onClick={() => navigate('/admin/dashboard')} 
@@ -130,7 +135,7 @@ export const AdminDocentesPage: React.FC = () => {
                 <div className="md:w-1/3 w-full max-w-sm">
                     <Input
                         type="text"
-                        placeholder="Buscar por nombre, email, clave o especialidad..."
+                        placeholder="Buscar por nombre, email o clave..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         endIcon={Search} 
@@ -165,8 +170,10 @@ export const AdminDocentesPage: React.FC = () => {
                                 {filteredDocentes.map((docente) => (
                                     <TableRow key={docente.id}>
                                         <TableCell className="font-mono text-gray-600 font-bold">
-                                            {/* ✅ Muestra el ID corto generado por el backend */}
-                                            {docente.clave} 
+                                            {/* ✅ Usamos displayClave (8 dígitos del ID) */}
+                                            <span className="bg-purple-50 text-purple-700 px-2 py-1 rounded border border-purple-100">
+                                                {docente.displayClave}
+                                            </span>
                                         </TableCell> 
                                         <TableCell className="font-medium text-gray-800">{docente.nombre}</TableCell>
                                         <TableCell>{docente.email}</TableCell>
@@ -185,7 +192,6 @@ export const AdminDocentesPage: React.FC = () => {
                                                 variant="ghost"
                                                 onClick={() => handleDelete(docente.id, docente.nombre)}
                                                 className="px-2 py-1 hover:bg-red-50 text-red-500"
-                                                title={`Eliminar a ${docente.nombre}`}
                                             >
                                                 <Trash2 size={20} />
                                             </Button>
