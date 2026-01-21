@@ -1,16 +1,14 @@
-// src/pages/alumno/AlumnoAsistenciaPage.tsx (CÓDIGO FINAL CORREGIDO DE ERRORES Y UNIFICADO)
+// src/pages/alumno/AlumnoAsistenciaPage.tsx
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
-import { ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react"; // Quitamos Bell porque ya no se usa
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 
-// 🛑 IMPORTACIONES DE UI UNIFICADA (Añadidas y necesarias)
-import { Card } from "../../components/ui/Card";        // Nombrada
-import Button from "../../components/ui/Button";        // Por defecto
+import { Card } from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
 
-// Hooks y Servicios
 import { useAuth } from "../../hooks/useAuth";
 import { getAsistenciaData } from "../../services/alumno.service";
 import type { AsistenciaData } from "../../services/alumno.service";
@@ -39,11 +37,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
         fetchData();
     }, [user]);
 
-    // Estilo base para los recordatorios
-    // 🛑 Usamos bg-gray-100 para limpieza del linter
-    const reminderCardStyle = "rounded-full py-4 px-8 flex items-center gap-6 shadow-sm w-full bg-grayDark-100";
-
-    // Función auxiliar para saber si un día específico (1, 2... 31) tiene evento
+    // Función auxiliar para saber si un día específico tiene evento
     const getEventoDia = (day: number) => {
         if (!data) return null;
         return data.fechas.find(f => parseInt(f.fecha.split('-')[2]) === day);
@@ -58,9 +52,8 @@ export const AlumnoAsistenciaPage: React.FC = () => {
     }
 
     const stats = data?.estadisticas || { asistencia: 0, faltas: 0, retardos: 0 };
-    const reminders = data?.recordatorios || [];
 
-    // 🛑 Componente para las tarjetas de estadísticas (KPIs) usando Card
+    // Componente para las tarjetas de estadísticas (KPIs)
     const StatCard: React.FC<{ title: string; value: string | number }> = ({ title, value }) => (
         <Card
             className="w-56 h-40 flex flex-col items-center justify-center transition-transform hover:scale-105 bg-grayLight-200 rounded-2xl shadow-md"
@@ -104,9 +97,7 @@ export const AlumnoAsistenciaPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Grid Días (Encabezados) */
-                            /* CORRECCIÓN DEL ERROR DE TESTING (SE REPETIAN LAS 'KEY' PARA EL MÉTODO '.map' "T" y "S")*/
-                        }
+                        {/* Grid Días (Encabezados) */}
                         <div className="grid grid-cols-7 text-center text-xs font-bold text-gray-400 mb-4 uppercase tracking-wide">
                             {["D", "M", "T", "W", "J", "F", "S"].map(d => <div key={d}>{d}</div>)}
                         </div>
@@ -165,47 +156,15 @@ export const AlumnoAsistenciaPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* SECCIÓN INFERIOR: RECORDATORIOS Y BOTÓN */}
-                <div className="flex">
-                    <div className="flex-2 w-80">
-                        <h3 className="text-3xl font-bold text-gray-800 mb-6">Recordatorios</h3>
-
-                        <div className="flex flex-col xl:flex-row gap-12 items-end">
-
-                            {/* Lista de Recordatorios Dinámica */}
-                            <div className="space-y-5 w-full">
-                                {/* 🛑 CORRECCIÓN DE SINTAXIS EN MAP: Añadir llaves {} a la función de map */}
-                                {reminders.length > 0 ? (
-                                    reminders.map((rem, idx) => (
-                                        /* 🛑 Usamos Card para cada recordatorio y key={idx} */
-                                        <Card key={idx} variant="flat" className={`${reminderCardStyle} border-gray-300`}>
-                                            <Bell size={28} className="text-gray-500" />
-                                            <div className="flex-1 flex items-center gap-4 text-gray-500 text-sm md:text-base font-medium overflow-hidden whitespace-nowrap">
-                                                <span className="hidden md:inline text-gray-300">--------------------</span>
-                                                <span className="truncate">{rem}</span>
-                                                <span className="hidden md:inline text-gray-300 w-full">----------------------------------------</span>
-                                            </div>
-                                        </Card>
-                                    ))
-                                ) : (
-                                    <p className="text-gray-400 italic">No hay recordatorios pendientes.</p>
-                                )}
-                            </div>
-
-                        </div>
-                    </div>
-                    {/* Botón Detalles */}
-                    <div className="flex-1 flex items-center justify-center w-20">
-                        <Button
-                            onClick={() => navigate("/alumno/asistencia/detalles")}
-                            variant="primary"
-                            // Usamos clases canónicas para el botón (reemplazando el hex code y las clases nativas)
-                            className="w-100% h-15 bg-grayDark-400 hover:bg-gray-700 text-white font-bold py-4 px-10 rounded-2xl shadow-md hover:shadow-lg transition-all text-lg mb-2 shrink-0"
-                        >
-                            Detalles de Asistencia
-                        </Button>
-
-                    </div>
+                {/* SECCIÓN INFERIOR: BOTÓN (Recordatorios Eliminados) */}
+                <div className="flex justify-center mt-12 w-full">
+                    <Button
+                        onClick={() => navigate("/alumno/asistencia/detalles")}
+                        variant="primary"
+                        className="bg-grayDark-400 hover:bg-gray-700 text-white font-bold py-4 px-12 rounded-2xl shadow-lg hover:shadow-xl transition-all text-lg"
+                    >
+                        Ver Detalles Completos de Asistencia
+                    </Button>
                 </div>
 
             </div>

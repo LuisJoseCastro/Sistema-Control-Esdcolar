@@ -3,57 +3,75 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { UserHeaderIcons } from "../../components/layout/UserHeaderIcons";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, AlertCircle } from 'lucide-react';
 
-// 🛑 IMPORTACIONES DE UI UNIFICADA
-import { Card } from '../../components/ui/Card'; // Nombrada
-// Importamos Table por defecto, y los subcomponentes nombrados
+import { Card } from '../../components/ui/Card';
 import Table, { TableHead, TableRow, TableCell } from '../../components/ui/Table';
 
-// Importamos Hooks y Servicio
 import { useAuth } from "../../hooks/useAuth";
-import { getCalificacionesBoleta } from "../../services/alumno.service";
+import { getCalificacionesBoleta, getPeriodosAlumno } from "../../services/alumno.service"; // <--- Importamos getPeriodosAlumno
 import type { BoletaCalificacion } from "../../services/alumno.service";
 
 export const AlumnoCalificacionesPage: React.FC = () => {
   const { user } = useAuth();
 
   // Estados
-  const periodosDisponibles = useMemo(() => ['2025-1', '2024-2', '2024-1'], []);
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(periodosDisponibles[0]);
+  const [periodosDisponibles, setPeriodosDisponibles] = useState<string[]>([]);
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
   const [calificaciones, setCalificaciones] = useState<BoletaCalificacion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingGrades, setLoadingGrades] = useState(false);
 
-  // Función para cargar datos (se envuelve en useCallback)
-  const fetchData = useCallback(async (periodo: string) => {
-    if (!user?.id) return;
-    setLoading(true);
-    try {
-      // **IMPORTANTE:** Pasamos el periodo a la función de servicio
-      const data = await getCalificacionesBoleta(user.id, periodo);
-      setCalificaciones(data);
-    } catch (error) {
-      console.error("Error cargando calificaciones:", error);
-    } finally {
-      setLoading(false);
-    }
+  // 1. Cargar Periodos al montar
+  useEffect(() => {
+    const init = async () => {
+      if (!user?.id) return;
+      try {
+        const periodos = await getPeriodosAlumno(user.id);
+        if (periodos.length > 0) {
+          setPeriodosDisponibles(periodos);
+          setPeriodoSeleccionado(periodos[0]); // Seleccionar el más reciente por defecto
+        } else {
+          // Fallback si no hay periodos
+          setPeriodosDisponibles(['2025-1']);
+          setPeriodoSeleccionado('2025-1');
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, [user]);
 
-  // useEffect inicial y para cambio de periodo
+  // 2. Cargar Calificaciones cuando cambia el periodo
   useEffect(() => {
-    fetchData(periodoSeleccionado);
-  }, [periodoSeleccionado, fetchData]);
+    const fetchGrades = async () => {
+      if (!user?.id || !periodoSeleccionado) return;
+      setLoadingGrades(true);
+      try {
+        const data = await getCalificacionesBoleta(user.id, periodoSeleccionado);
+        setCalificaciones(data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoadingGrades(false);
+      }
+    };
+    fetchGrades();
+  }, [user, periodoSeleccionado]);
 
   // Handler para el cambio en el dropdown
   const handlePeriodoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setPeriodoSeleccionado(e.target.value);
   };
 
-  // Cálculo del promedio (simulado)
+  // Cálculo del promedio
   const promedioCalculado = useMemo(() => {
     const notasFinales = calificaciones
       .map(c => parseFloat(c.final))
-      .filter(n => !isNaN(n));
+      .filter(n => !isNaN(n) && n > 0); // Solo contamos notas > 0
 
     if (notasFinales.length === 0) return '---';
 
@@ -61,42 +79,31 @@ export const AlumnoCalificacionesPage: React.FC = () => {
     return (suma / notasFinales.length).toFixed(1);
   }, [calificaciones]);
 
-
-  // Si está cargando, mostramos spinner
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-white">
-        <LoadingSpinner text="Obteniendo boleta..." />
-      </div>
-    );
+    return <div className="flex justify-center mt-20"><LoadingSpinner text="Cargando ciclos escolares..." /></div>;
   }
 
   return (
     <div className="p-8 bg-white min-h-full font-sans">
 
-      {/* 1. ENCABEZADO */}
       <header className="flex justify-between items-end border-b-2 border-gray-400 pb-2 mb-10">
         <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
           Mis Calificaciones
         </h1>
-        <div className="mb-2">
-          <UserHeaderIcons />
-        </div>
+        <div className="mb-2"><UserHeaderIcons /></div>
       </header>
 
-      {/* 2. CONTENIDO PRINCIPAL */}
       <div className="flex flex-col lg:flex-row gap-12 items-start">
 
         {/* LADO IZQUIERDO: Filtro y Tabla */}
         <div className="flex-1 w-full">
 
-          {/* Dropdown (Periodo) - DINÁMICO */}
+          {/* Dropdown DINÁMICO */}
           <div className="mb-6 relative w-48">
             <select
-              className="w-full appearance-none border border-gray-300 bg-white text-gray-500 rounded-lg px-4 py-2 shadow-sm focus:outline-none cursor-pointer"
+              className="w-full appearance-none border border-gray-300 bg-white text-gray-700 font-medium rounded-lg px-4 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               value={periodoSeleccionado}
               onChange={handlePeriodoChange}
-              disabled={loading}
             >
               {periodosDisponibles.map(p => (
                 <option key={p} value={p}>{p}</option>
@@ -107,70 +114,63 @@ export const AlumnoCalificacionesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* CONTENEDOR GRIS CON SOMBRA FUERTE */}
-          <Card
-            className="bg-[#eff3f6] p-8 rounded-[3rem] shadow-[0_15px_35px_rgba(0,0,0,0.2)] overflow-x-auto"
-            variant="default" // Usamos default para la sombra y redondeo general
-          >
+          <Card className="bg-[#eff3f6] p-8 rounded-[3rem] shadow-[0_15px_35px_rgba(0,0,0,0.2)] overflow-x-auto" variant="default">
             <div className="min-w-[700px]">
+              {loadingGrades ? (
+                <div className="py-10 flex justify-center"><LoadingSpinner text="Consultando boleta..." /></div>
+              ) : (
+                <Table className="min-w-full">
+                  <Table.Header>
+                    <Table.Row>
+                      <TableHead colSpan={2} className="text-left pl-4 w-2/5 text-gray-600 font-bold uppercase text-sm">Materia</TableHead>
+                      <TableHead className="text-center text-gray-600 font-bold uppercase text-sm">P1</TableHead>
+                      <TableHead className="text-center text-gray-600 font-bold uppercase text-sm">P2</TableHead>
+                      <TableHead className="text-center text-gray-600 font-bold uppercase text-sm">P3</TableHead>
+                      <TableHead className="text-center text-gray-400 font-normal uppercase text-xs">EXTRA</TableHead>
+                      <TableHead className="text-center text-black font-extrabold uppercase text-sm bg-gray-200 rounded-t-lg">Final</TableHead>
+                    </Table.Row>
+                  </Table.Header>
 
-              {/* 🛑 APLICACIÓN DEL COMPONENTE TABLE */}
-              <Table className="min-w-full">
-
-                {/* ENCABEZADOS DE LA TABLA */}
-                {/* CORRECCIÓN DEL ERROR DE TESTING (Table.Row)*/}
-                <Table.Header>
-                  <Table.Row> 
-                    <TableHead colSpan={2} className="text-left pl-4 w-2/5">Materia</TableHead>
-                    <TableHead className="text-center">U1</TableHead>
-                    <TableHead className="text-center">U2</TableHead>
-                    <TableHead className="text-center">U3</TableHead>
-                    <TableHead className="text-center">U4</TableHead>
-                    <TableHead className="text-center">U5</TableHead>
-                    <TableHead className="text-center">Final</TableHead>
-                  </Table.Row>
-                </Table.Header>
-
-                {/* FILAS DE DATOS DESDE EL SERVICIO */}
-                <Table.Body>
-                  {calificaciones.length > 0 ? (
-                    calificaciones.map((fila, index) => (
-                      <Table.Row
-                        key={index}
-                        className="bg-white hover:bg-gray-50"
-                      >
-                        {/* Materia ocupa 2 columnas */}
-                        <TableCell colSpan={2} className="font-bold text-gray-800 pl-4 truncate w-2/5">
-                          {fila.materia}
+                  <Table.Body>
+                    {calificaciones.length > 0 ? (
+                      calificaciones.map((fila, index) => (
+                        <Table.Row key={index} className="bg-white hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+                          <TableCell colSpan={2} className="font-bold text-gray-700 pl-4 py-4 w-2/5">
+                            {fila.materia}
+                          </TableCell>
+                          <TableCell className="text-center text-gray-600">{fila.u1}</TableCell>
+                          <TableCell className="text-center text-gray-600">{fila.u2}</TableCell>
+                          <TableCell className="text-center text-gray-600">{fila.u3}</TableCell>
+                          <TableCell className="text-center text-gray-400">-</TableCell>
+                          <TableCell className="text-center font-black text-lg text-black bg-gray-50 border-l border-gray-200">
+                            {fila.final}
+                          </TableCell>
+                        </Table.Row>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center text-gray-400 gap-2">
+                            <AlertCircle size={32} />
+                            <p className="font-medium">No hay calificaciones registradas para {periodoSeleccionado}.</p>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-center">{fila.u1}</TableCell>
-                        <TableCell className="text-center">{fila.u2}</TableCell>
-                        <TableCell className="text-center">{fila.u3}</TableCell>
-                        <TableCell className="text-center">{fila.u4}</TableCell>
-                        <TableCell className="text-center">{fila.u5}</TableCell>
-                        {/* Celda Final con color negrita */}
-                        <TableCell className="text-center font-bold text-black">{fila.final}</TableCell>
-                      </Table.Row>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        <p className="text-gray-400 font-medium">No hay calificaciones registradas para el periodo **{periodoSeleccionado}**.</p>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </Table.Body>
-              </Table>
-
+                      </TableRow>
+                    )}
+                  </Table.Body>
+                </Table>
+              )}
             </div>
-          </Card> {/* Cierre del Card */}
+          </Card>
         </div>
 
-        {/* LADO DERECHO: PROMEDIO (Tarjeta) */}
-        {/* 🛑 REFACTORIZADO: Usamos Card para el promedio flotante */}
-        <Card className="lg:w-48 flex flex-col items-center justify-center pt-8 bg-[#f4f6f8]" variant="elevated">
-          <h2 className="text-2xl font-bold text-gray-700 mb-1">Promedio</h2>
-          <span className="text-7xl font-black text-black tracking-tighter">{promedioCalculado}</span>
+        {/* LADO DERECHO: PROMEDIO */}
+        <Card className="lg:w-48 flex flex-col items-center justify-center pt-8 pb-8 bg-[#f4f6f8]" variant="elevated">
+          <h2 className="text-2xl font-bold text-gray-600 mb-2">Promedio</h2>
+          <span className={`text-6xl font-black tracking-tighter ${Number(promedioCalculado) >= 8 || promedioCalculado === '---' ? 'text-gray-800' : 'text-orange-500'}`}>
+            {promedioCalculado}
+          </span>
+          <p className="text-xs text-gray-400 mt-2">del periodo</p>
         </Card>
 
       </div>

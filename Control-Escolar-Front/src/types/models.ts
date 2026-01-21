@@ -10,6 +10,8 @@ export interface MateriaAsignada {
     grupo: string;
 }
 
+
+
 export interface TenantConfig {
     id: string;
     nombre: string;
@@ -52,15 +54,15 @@ export type HorarioType = Record<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | '
 // con los que usas tú (horario, materiasAsignadas, clave)
 export interface DocenteProfile extends User {
     // Campos tuyos necesarios para el Frontend
-    clave: string;           
-    nombre?: string;         
-    
+    clave: string;
+    nombre?: string;
+
     // Campos del equipo / Base de datos
-    claveEmpleado?: string;  
+    claveEmpleado?: string;
     especialidad?: string;
     telefono?: string;
 
     // Relaciones complejas (Fusión)
-    materiasAsignadas?: MateriaAsignada[]; 
-    horario?: HorarioType;   
+    materiasAsignadas?: MateriaAsignada[];
+    horario?: HorarioType;
 }

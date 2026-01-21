@@ -14,6 +14,7 @@ export interface AsignaturaConHorario {
   id: number | string;
   materia: string;
   profesor: string;
+  semestre: number;
   horarios: { dia: string; hora: string }[];
 }
 
@@ -189,6 +190,16 @@ export const getDetalleAsistencias = async (alumnoId: string): Promise<Asistenci
 
   } catch (error) {
     console.error("Error en getDetalleAsistencias:", error);
+    return [];
+  }
+};
+
+export const getPeriodosAlumno = async (alumnoId: string): Promise<string[]> => {
+  try {
+    const response = await api.get<string[]>(`/academic/my-periods/${alumnoId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error obteniendo periodos:", error);
     return [];
   }
 };

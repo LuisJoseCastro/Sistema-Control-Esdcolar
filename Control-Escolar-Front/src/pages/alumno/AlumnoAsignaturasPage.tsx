@@ -1,31 +1,30 @@
-// src/pages/alumno/AlumnoAsignaturasPage.tsx (CÓDIGO FINAL CORREGIDO)
+// src/pages/alumno/AlumnoAsignaturasPage.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UserHeaderIcons } from '../../components/layout/UserHeaderIcons';
 import { Search, CalendarDays, Clock, User } from 'lucide-react';
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
 
-// 🛑 Importaciones de UI unificada: Input y Modal por defecto, Card y LoadingSpinner nombradas
-import Input from '../../components/ui/Input'; 
-import { Card } from '../../components/ui/Card'; 
-// Importaciones de servicio (asumo que existen en tu proyecto)
+import Input from '../../components/ui/Input';
+import { Card } from '../../components/ui/Card';
+
 import { useAuth } from '../../hooks/useAuth';
 import { getMisAsignaturas } from '../../services/alumno.service';
 import type { AsignaturaConHorario } from '../../services/alumno.service';
 
 export const AlumnoAsignaturasPage: React.FC = () => {
     const { user } = useAuth();
-    
-    // Estados para datos y carga
+
+    // Estados
     const [asignaturas, setAsignaturas] = useState<AsignaturaConHorario[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSemestre, setSelectedSemestre] = useState<string>(''); // Estado para el filtro
 
-    // Efecto para cargar los datos desde el servicio
+    // Carga de datos
     useEffect(() => {
         const fetchData = async () => {
             if (!user?.id) return;
-            
             try {
                 const data = await getMisAsignaturas(user.id);
                 setAsignaturas(data);
@@ -35,9 +34,22 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                 setLoading(false);
             }
         };
-
         fetchData();
     }, [user]);
+
+    // 1. Calcular semestres únicos disponibles (Ej: [1, 3, 5])
+    const availableSemesters = useMemo(() => {
+        const semestres = asignaturas.map(a => a.semestre); // Extraer semestres
+        const unique = Array.from(new Set(semestres));      // Eliminar duplicados
+        return unique.sort((a, b) => a - b);                // Ordenar ascendente
+    }, [asignaturas]);
+
+    // 2. Lógica de Filtrado (Nombre + Semestre)
+    const filteredAsignaturas = asignaturas.filter(item => {
+        const matchesSearch = item.materia.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSemestre = selectedSemestre === '' || item.semestre.toString() === selectedSemestre;
+        return matchesSearch && matchesSemestre;
+    });
 
     if (loading) {
         return (
@@ -47,50 +59,48 @@ export const AlumnoAsignaturasPage: React.FC = () => {
         );
     }
 
-    // Filtramos las asignaturas según el buscador
-    const filteredAsignaturas = asignaturas.filter(item => 
-        item.materia.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <div className="p-8 bg-whiteBg-50 min-h-full font-sans">
-            
+
             <header className="flex justify-between items-end border-b-2 border-black pb-2 mb-8">
                 <h1 className="text-5xl text-black" style={{ fontFamily: '"Kaushan Script", cursive' }}>
                     Mis Asignaturas
                 </h1>
-                <div className="mb-2">
-                    <UserHeaderIcons />
-                </div>
+                <div className="mb-2"><UserHeaderIcons /></div>
             </header>
 
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 px-4">
-                <div className="relative w-full md:w-80 mb-4 md:mb-0 bg-whiteBg-50">
-                    {/* Usamos el componente Input unificado */}
-                    <Input 
-                        type="text" 
-                        placeholder="Buscar asignatura..." 
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 px-4 gap-4">
+                <div className="relative w-full md:w-80 bg-whiteBg-50">
+                    <Input
+                        type="text"
+                        placeholder="Buscar asignatura..."
                         className="w-full p-4 rounded-xl border border-gray-200 shadow-xl focus:ring-2 focus:ring-gray-200 text-gray-600"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        icon={<Search size={20} className="text-gray-400" />}
                     />
                 </div>
+
+                {/* SELECT DINÁMICO DE SEMESTRES */}
                 <div>
-                    {/* Mantenemos el select nativo del diseño original */}
-                    <select className="border border-gray-200 rounded-lg px-4 py-2 text-gray-500 bg-white shadow-sm focus:outline-none cursor-pointer w-40">
-                        <option>Semestre</option>
-                        <option>1°</option>
-                        <option>2°</option>
+                    <select
+                        className="border border-gray-200 rounded-lg px-4 py-3 text-gray-600 bg-white shadow-md focus:outline-none cursor-pointer w-48 font-medium"
+                        value={selectedSemestre}
+                        onChange={(e) => setSelectedSemestre(e.target.value)}
+                    >
+                        <option value="">Todos los semestres</option>
+                        {availableSemesters.map(sem => (
+                            <option key={sem} value={sem}>{sem}° Semestre</option>
+                        ))}
                     </select>
                 </div>
             </div>
 
-            {/* CONTENEDOR PRINCIPAL GRIS (DIV) */}
             <div className="bg-grayLight-100 p-8 rounded-[3rem] shadow-[0_20px_40px_rgba(0,0,0,0.15)] min-h-[500px]">
-                
-                {/* Encabezados de la tabla (ocultos en móvil) */}
-                <div className="bg-grayDark-200  w-full h-auto p-2 rounded-xl hidden md:grid grid-cols-4 g1ap-4 px-8 mb-4 text-main-800 font-bold text-sm uppercase tracking-wider">
-                    <div className="text-left pl-2">Materia</div>
+
+                {/* Encabezados PC */}
+                <div className="hidden md:grid grid-cols-5 gap-4 px-8 mb-4 text-main-800 font-bold text-sm uppercase tracking-wider opacity-70">
+                    <div className="pl-2 col-span-2">Materia</div>
                     <div className="text-center col-span-2">Horario</div>
                     <div className="text-right pr-4">Profesor</div>
                 </div>
@@ -98,58 +108,58 @@ export const AlumnoAsignaturasPage: React.FC = () => {
                 <div className="space-y-4">
                     {filteredAsignaturas.length > 0 ? (
                         filteredAsignaturas.map((item) => (
-                            /* CARD para CADA FILA (Asegura fondo blanco y sombra individual) */
                             <Card
                                 key={item.id}
-                                // Reaplicamos el grid y el estilo visual de la fila
-                                className="bg-whiteBg-200 grid grid-cols-1 md:grid-cols-4 gap-4 py-4 px-8 items-center text-sm md:text-base text-gray-600 hover:shadow-md transition-all hover:-translate-y-1 duration-200"
-                                variant="default" // Asegura el fondo blanco y la sombra ligera por defecto
+                                className="bg-whiteBg-200 grid grid-cols-1 md:grid-cols-5 gap-4 py-5 px-8 items-center text-sm md:text-base text-gray-600 hover:shadow-lg transition-all hover:-translate-y-1 duration-200 border-l-4 border-transparent hover:border-blue-500"
+                                variant="default"
                             >
-                                {/* COLUMNA 1: Materia */}
-                                <div className="font-bold text-gray-800 truncate text-lg">
-                                    {item.materia}
+                                {/* Materia + Badge Semestre */}
+                                <div className="col-span-2 flex flex-col justify-center">
+                                    <span className="font-bold text-gray-800 text-lg leading-tight">{item.materia}</span>
+                                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md w-fit mt-1">
+                                        {item.semestre}° Semestre
+                                    </span>
                                 </div>
-                                
-                                {/* COLUMNA 2 y 3: Horarios Multiples */}
+
+                                {/* Horarios */}
                                 <div className="md:col-span-2 flex flex-col items-center gap-2">
-                                    {item.horarios.map((horario, index) => (
-                                        <div key={index} className="flex items-center gap-3 bg-whiteBg-50 px-4 py-1.5 rounded-full border border-gray-100 w-fit">
-                                            {/* Día */}
-                                            <div className="flex items-center gap-2 text-blue-600 font-semibold w-24 justify-end">
-                                                <span>{horario.dia}</span>
-                                                <CalendarDays size={14} />
+                                    {item.horarios.length > 0 ? item.horarios.map((horario, index) => (
+                                        <div key={index} className="flex items-center gap-3 bg-whiteBg-50 px-4 py-1.5 rounded-full border border-gray-100 w-full md:w-auto justify-center shadow-sm">
+                                            <div className="flex items-center gap-1 text-blue-600 font-bold w-16 justify-end uppercase text-xs">
+                                                <span>{horario.dia.substring(0, 3)}</span>
+                                                <CalendarDays size={12} />
                                             </div>
-                                            
-                                            {/* Separador */}
                                             <div className="w-px h-3 bg-gray-300"></div>
-                                            
-                                            {/* Hora */}
-                                            <div className="flex items-center gap-2 text-gray-500 text-sm w-28">
-                                                <Clock size={14} />
+                                            <div className="flex items-center gap-1 text-gray-500 text-xs w-24">
+                                                <Clock size={12} />
                                                 <span>{horario.hora}</span>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <span className="text-xs text-gray-400 italic">Sin horario asignado</span>
+                                    )}
                                 </div>
 
-                                {/* COLUMNA 4: Profesor */}
-                                <div className="flex justify-end items-center gap-2 text-gray-600 font-medium truncate">
-                                    <span className="truncate">{item.profesor}</span>
-                                    <div className="p-1.5 bg-gray-100 rounded-full">
-                                        <User size={16} className="text-gray-400"/>
+                                {/* Profesor */}
+                                <div className="flex justify-end items-center gap-3 text-gray-600 font-medium truncate">
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-400 uppercase">Docente</p>
+                                        <span className="truncate block max-w-[120px]">{item.profesor}</span>
+                                    </div>
+                                    <div className="p-2 bg-gray-100 rounded-full shadow-inner">
+                                        <User size={18} className="text-gray-500" />
                                     </div>
                                 </div>
                             </Card>
                         ))
                     ) : (
-                        <div className="text-center py-10 text-gray-500">
-                            No se encontraron asignaturas.
+                        <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-4">
+                            <Search size={48} className="opacity-20" />
+                            <p>No se encontraron asignaturas para el filtro seleccionado.</p>
                         </div>
                     )}
                 </div>
-
-            </div> {/* Cierre del DIV gris */}
-
+            </div>
         </div>
     );
 };
