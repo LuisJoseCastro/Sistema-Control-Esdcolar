@@ -9,12 +9,12 @@ import { Card } from '../../components/ui/Card';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-type AsistenciaStatus = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADA' | 'RETARDO';
+type AsistenciaStatusUI = 'PRESENTE' | 'AUSENTE' | 'JUSTIFICADA' | 'RETARDO';
 
 interface AlumnoAsistencia {
     id: string; 
     nombre: string;
-    status: AsistenciaStatus;
+    status: AsistenciaStatusUI;
 }
 
 interface Grupo {
@@ -31,14 +31,14 @@ interface ApiEnrollment {
     }
 }
 
-const STATUS_BADGE_VARIANT: Record<AsistenciaStatus, string> = {
+const STATUS_BADGE_VARIANT: Record<AsistenciaStatusUI, string> = {
     PRESENTE: 'text-green-800',
     AUSENTE: 'text-red-800',
     JUSTIFICADA: 'text-yellow-800',
     RETARDO: 'text-blue-800',
 };
 
-const STATUS_LABELS: Record<AsistenciaStatus, string> = {
+const STATUS_LABELS: Record<AsistenciaStatusUI, string> = {
     PRESENTE: 'Presente',
     AUSENTE: 'Ausente',
     JUSTIFICADA: 'Falta Justificada',
@@ -47,9 +47,9 @@ const STATUS_LABELS: Record<AsistenciaStatus, string> = {
 
 const AlumnoAsistenciaRow: React.FC<{
     alumno: AlumnoAsistencia;
-    onUpdateStatus: (id: string, status: AsistenciaStatus) => void;
+    onUpdateStatus: (id: string, status: AsistenciaStatusUI) => void;
 }> = ({ alumno, onUpdateStatus }) => {
-    const statusOptions = (Object.keys(STATUS_LABELS) as AsistenciaStatus[]).map(status => ({
+    const statusOptions = (Object.keys(STATUS_LABELS) as AsistenciaStatusUI[]).map(status => ({
         value: status,
         label: STATUS_LABELS[status],
     }));
@@ -60,7 +60,7 @@ const AlumnoAsistenciaRow: React.FC<{
             <TableCell className="w-[180px]">
                 <Select
                     value={alumno.status}
-                    onChange={(e) => onUpdateStatus(alumno.id, e.target.value as AsistenciaStatus)}
+                    onChange={(e) => onUpdateStatus(alumno.id, e.target.value as AsistenciaStatusUI)}
                     selectClassName={`bg-white border-gray-300 py-1 px-2 rounded-full text-sm font-semibold text-center ${STATUS_BADGE_VARIANT[alumno.status]}`}
                     className="p-0 m-0 w-full"
                     options={statusOptions}
@@ -132,7 +132,7 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 const mappedAlumnos = data.map((enrollment: ApiEnrollment) => ({
                     id: enrollment.id,
                     nombre: enrollment.student.user?.fullName || "Sin Nombre Registrado",
-                    status: 'PRESENTE' as AsistenciaStatus
+                    status: 'PRESENTE' as AsistenciaStatusUI
                 }));
                 setAlumnos(mappedAlumnos);
             } else {
@@ -166,18 +166,32 @@ export const DocenteAsistenciaPage: React.FC = () => {
         setViewDate(newDate);
     };
 
-    const handleUpdateStatus = useCallback((id: string, status: AsistenciaStatus) => {
+    const handleUpdateStatus = useCallback((id: string, status: AsistenciaStatusUI) => {
         setAlumnos(prev => prev.map(a => a.id === id ? { ...a, status } : a));
     }, []);
+
+    const mapToBackendStatus = (status: AsistenciaStatusUI): string => {
+        switch (status) {
+            case 'PRESENTE': return 'ASISTENCIA';
+            case 'AUSENTE': return 'FALTA';
+            case 'RETARDO': return 'RETARDO';
+            case 'JUSTIFICADA': return 'JUSTIFICADO';
+            default: return 'ASISTENCIA';
+        }
+    };
 
     const handleGuardarAsistencia = async () => {
         if (!selectedGrupo || !token) return;
         setIsLoading(true);
         const fechaStr = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.toString().padStart(2, '0')}`;
+        
         const payload = {
             grupoId: selectedGrupo,
             fecha: fechaStr,
-            asistencias: alumnos.map(a => ({ studentId: a.id, status: a.status }))
+            asistencias: alumnos.map(a => ({ 
+                studentId: a.id, 
+                status: mapToBackendStatus(a.status) 
+            }))
         };
 
         try {
@@ -186,9 +200,18 @@ export const DocenteAsistenciaPage: React.FC = () => {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
             });
-            if (res.ok) alert('Asistencia guardada');
-            else alert('Error al guardar asistencia');
-        } catch { alert('Error de red'); } 
+            
+            if (res.ok) {
+                alert('Asistencia guardada correctamente.');
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                console.error("Error servidor:", errorData);
+                alert(`Error al guardar: ${errorData.message || 'Error desconocido'}`);
+            }
+        } catch (e) { 
+            console.error(e);
+            alert('Error de red al intentar guardar.'); 
+        } 
         finally { setIsLoading(false); }
     };
 

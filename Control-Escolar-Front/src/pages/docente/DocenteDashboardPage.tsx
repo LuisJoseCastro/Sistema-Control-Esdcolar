@@ -50,7 +50,16 @@ const HorarioSlot: React.FC<{ timeRange: string, content: ClaseUI[] }> = ({ time
             
             <div className="flex-1 grid grid-cols-7">
                 {days.map(day => {
-                    const classes = content.filter(c => c.dia === day);
+                    // Filter content for this specific day
+                    // Normalize strings to ensure robust matching (remove accents, lowercase)
+                    const dayName = day.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                    
+                    const classes = content.filter(c => {
+                        if (!c.dia) return false;
+                        const classDay = c.dia.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                        return classDay === dayName;
+                    });
+
                     return (
                         <div 
                             key={day} 
@@ -140,8 +149,18 @@ const DocenteDashboardPage: React.FC = () => {
     ], []);
 
     const getClasesForSlot = useCallback((slot: string): ClaseUI[] => {
-        const slotHour = slot.split(':')[0];
-        return horario.filter(clase => clase.horaInicio && clase.horaInicio.startsWith(slotHour));
+        // Safe check for format "HH:00 - HH:00"
+        if (!slot.includes(':')) return [];
+        
+        // Extract the hour part (e.g. "07" from "07:00")
+        const slotStartHour = parseInt(slot.split(':')[0], 10);
+
+        return horario.filter(clase => {
+            if (!clase.horaInicio) return false;
+            // Parse "07:00:00" or "07:00" to extract 7
+            const classStartHour = parseInt(clase.horaInicio.split(':')[0], 10);
+            return classStartHour === slotStartHour;
+        });
     }, [horario]);
 
     const daysHeader = useMemo(() => ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'], []);

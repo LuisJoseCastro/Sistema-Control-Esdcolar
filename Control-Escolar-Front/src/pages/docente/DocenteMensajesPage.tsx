@@ -34,8 +34,8 @@ interface ApiMessage {
     urlAdjunto?: string;
     leido: boolean;
     fechaEnvio: string;
-    remitente: ApiUser;
-    destinatario: ApiUser;
+    remitente?: ApiUser;
+    destinatario?: ApiUser;
 }
 
 const MensajeRow: React.FC<{ mensaje: Mensaje; isSelected: boolean; onClick: (id: string) => void; }> = ({ mensaje, isSelected, onClick }) => {
@@ -50,7 +50,7 @@ const MensajeRow: React.FC<{ mensaje: Mensaje; isSelected: boolean; onClick: (id
     return (
         <div className={`${baseClasses} ${selectedClasses}`} onClick={() => onClick(mensaje.id)}>
             <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4 
-                ${mensaje.read ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white'}`}>
+                ${mensaje.read ? 'bg-gray-200 text-gray-500' : 'bg-blue-50 text-white'}`}>
                 <User className="w-5 h-5" />
             </div>
             <div className="grow min-w-0">
@@ -89,12 +89,9 @@ export const DocenteMensajesPage: React.FC = () => {
         const d = new Date(isoDate);
         const now = new Date();
         const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        
         const time = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
         let date = d.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' });
-        
         if (isToday) date = "Hoy"; 
-        
         return { date, time };
     };
 
@@ -110,17 +107,25 @@ export const DocenteMensajesPage: React.FC = () => {
             if (Array.isArray(data)) {
                 const mappedMessages: Mensaje[] = data.map((msg: ApiMessage) => {
                     const { date, time } = formatDateForUI(msg.fechaEnvio);
-                    const displaySender = activeTab === 'INBOX' 
-                        ? (msg.remitente?.fullName || msg.remitente?.email || "Desconocido")
-                        : (msg.destinatario?.fullName || msg.destinatario?.email || "Desconocido");
+                    
+                    // MEJORA: Lógica de selección de nombre con prioridades
+                    let displayUser = "Usuario Desconocido";
+                    
+                    if (activeTab === 'INBOX') {
+                        // En Recibidos, buscamos quién lo envió
+                        displayUser = msg.remitente?.fullName || msg.remitente?.email || "Remitente sin nombre";
+                    } else {
+                        // En Enviados, buscamos a quién se lo mandamos
+                        displayUser = msg.destinatario?.fullName || msg.destinatario?.email || "Destinatario sin nombre";
+                    }
 
                     return {
                         id: msg.id,
-                        sender: displaySender,
+                        sender: displayUser,
                         subject: msg.asunto,
                         fullContent: msg.cuerpoMensaje,
-                        date: date,
-                        time: time,
+                        date,
+                        time,
                         read: activeTab === 'SENT' ? true : msg.leido,
                         status: activeTab
                     };
@@ -147,7 +152,9 @@ export const DocenteMensajesPage: React.FC = () => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
-            } catch (e) { console.error(e); }
+            } catch (error) {
+                console.error("Error al marcar como leído", error);
+            }
         }
     }, [messages, activeTab, token]);
 
@@ -172,12 +179,8 @@ export const DocenteMensajesPage: React.FC = () => {
     }, [to, subject, messageBody]);
 
     const handleSendMessage = useCallback(async () => {
-        if (!validateFields()) {
-            return;
-        }
-
+        if (!validateFields()) return;
         setIsSending(true);
-
         try {
             const res = await fetch(`${API_URL}/academic/messages/send`, {
                 method: 'POST',
@@ -185,20 +188,13 @@ export const DocenteMensajesPage: React.FC = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    to: to,
-                    subject: subject,
-                    message: messageBody
-                })
+                body: JSON.stringify({ to, subject, message: messageBody })
             });
 
             if (res.ok) {
                 alert('Mensaje enviado exitosamente.');
                 setIsNewMessageOpen(false);
-                setTo('');
-                setSubject('');
-                setMessageBody('');
-                setErrors({});
+                handleClearForm();
                 if (activeTab === 'SENT') fetchMessages(); 
             } else {
                 alert('Error: Verifica el correo del destinatario.');
@@ -224,10 +220,8 @@ export const DocenteMensajesPage: React.FC = () => {
     };
 
     const filteredMessages = messages.filter(msg => {
-        const matchesSearch =
-            msg.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            msg.subject.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesSearch;
+        return msg.sender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               msg.subject.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const selectedMessageDetail = messages.find(m => m.id === selectedMessageId);
@@ -239,71 +233,28 @@ export const DocenteMensajesPage: React.FC = () => {
                     <Mail className="w-7 h-7 mr-3 text-main-900" />
                     Buzón de Mensajes
                 </h1>
-                <Button
-                    variant='primary'
-                    onClick={() => setIsNewMessageOpen(true)}
-                    icon={<Plus className="w-5 h-5" />}
-                >
-                    Nuevo Mensaje
-                </Button>
+                <Button variant='primary' onClick={() => setIsNewMessageOpen(true)} icon={<Plus className="w-5 h-5" />}>Nuevo Mensaje</Button>
             </header>
 
             <Card className="p-0">
                 <div className="p-6 pb-0">
                     <div className="flex border-b border-gray-200">
-                        <button
-                            className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 
-                                ${activeTab === 'INBOX'
-                                    ? 'border-b-4 border-grayDark-500 text-main-800'
-                                    : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            onClick={() => {
-                                setActiveTab('INBOX');
-                                setSelectedMessageId(null);
-                            }}
-                        >
-                            Bandeja de Entrada
-                        </button>
-                        <button
-                            className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 
-                                ${activeTab === 'SENT'
-                                    ? 'border-b-4 border-grayDark-500 text-main-800'
-                                    : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            onClick={() => {
-                                setActiveTab('SENT');
-                                setSelectedMessageId(null);
-                            }}
-                        >
-                            Enviados
-                        </button>
+                        <button className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 ${activeTab === 'INBOX' ? 'border-b-4 border-grayDark-500 text-main-800' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => { setActiveTab('INBOX'); setSelectedMessageId(null); }}>Bandeja de Entrada</button>
+                        <button className={`py-2 px-4 text-lg font-semibold transition-colors duration-200 ${activeTab === 'SENT' ? 'border-b-4 border-grayDark-500 text-main-800' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => { setActiveTab('SENT'); setSelectedMessageId(null); }}>Enviados</button>
                     </div>
                 </div>
 
                 <div className="p-6 pb-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por remitente o asunto..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full py-2.5 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-main-700 focus:ring-1 focus:ring-main-800 transition duration-150 placeholder:text-gray-500"
-                        />
+                        <input type="text" placeholder="Buscar por remitente o asunto..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full py-2.5 pl-10 pr-4 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 focus:border-main-700 focus:ring-1 focus:ring-main-800 transition duration-150 placeholder:text-gray-500" />
                     </div>
                 </div>
 
                 <div className="space-y-3 p-6 pt-0 max-h-[60vh] overflow-y-auto">
-                    {filteredMessages.length > 0 ? (
-                        filteredMessages.map(mensaje => (
-                            <MensajeRow
-                                key={mensaje.id}
-                                mensaje={mensaje}
-                                isSelected={mensaje.id === selectedMessageId}
-                                onClick={handleMessageClick}
-                            />
-                        ))
-                    ) : (
+                    {filteredMessages.length > 0 ? filteredMessages.map(mensaje => (
+                        <MensajeRow key={mensaje.id} mensaje={mensaje} isSelected={mensaje.id === selectedMessageId} onClick={handleMessageClick} />
+                    )) : (
                         <div className="text-center py-12 text-gray-500 border border-dashed border-gray-300 rounded-lg">
                             <Send className="w-8 h-8 mx-auto mb-3 text-gray-400" />
                             <p className="font-medium">No hay mensajes en esta bandeja.</p>
@@ -312,91 +263,33 @@ export const DocenteMensajesPage: React.FC = () => {
                 </div>
             </Card>
 
-            <Modal
-                isOpen={isNewMessageOpen}
-                onClose={handleCloseModal}
-                title="Nuevo Mensaje"
-                size="sm"
-            >
+            <Modal isOpen={isNewMessageOpen} onClose={handleCloseModal} title="Nuevo Mensaje" size="sm">
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm text-gray-600 mb-2">Para (Email):</label>
-                        <Input
-                            placeholder="Destinatario (ejemplo: director@escuela.edu)"
-                            value={to}
-                            onChange={(e) => {
-                                setTo(e.target.value);
-                                if (errors.to) setErrors(prev => ({ ...prev, to: undefined }));
-                            }}
-                            className={`bg-whiteBg-300 ${errors.to ? 'border-red-500' : ''}`}
-                        />
-                        {errors.to && (
-                            <p className="mt-1 text-xs text-red-500">{errors.to}</p>
-                        )}
+                        <Input placeholder="Destinatario (ejemplo: director@escuela.edu)" value={to} onChange={(e) => { setTo(e.target.value); if (errors.to) setErrors(prev => ({ ...prev, to: undefined })); }} className={`bg-whiteBg-300 ${errors.to ? 'border-red-500' : ''}`} />
+                        {errors.to && <p className="mt-1 text-xs text-red-500">{errors.to}</p>}
                     </div>
 
                     <div>
                         <label className="block text-sm text-gray-600 mb-2">Asunto:</label>
-                        <Input
-                            placeholder="Asunto del mensaje"
-                            value={subject}
-                            onChange={(e) => {
-                                setSubject(e.target.value);
-                                if (errors.subject) setErrors(prev => ({ ...prev, subject: undefined }));
-                            }}
-                            className={`bg-whiteBg-300 ${errors.subject ? 'border-red-500' : ''}`}
-                        />
-                        {errors.subject && (
-                            <p className="mt-1 text-xs text-red-500">{errors.subject}</p>
-                        )}
+                        <Input placeholder="Asunto del mensaje" value={subject} onChange={(e) => { setSubject(e.target.value); if (errors.subject) setErrors(prev => ({ ...prev, subject: undefined })); }} className={`bg-whiteBg-300 ${errors.subject ? 'border-red-500' : ''}`} />
+                        {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject}</p>}
                     </div>
 
                     <div className="relative">
                         <label className="block text-sm text-gray-600 mb-2">Mensaje:</label>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            style={{ display: 'none' }}
-                        />
-                        <textarea
-                            placeholder="Escribe tu mensaje aquí..."
-                            value={messageBody}
-                            onChange={(e) => {
-                                setMessageBody(e.target.value);
-                                if (errors.messageBody) setErrors(prev => ({ ...prev, messageBody: undefined }));
-                            }}
-                            className={`w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500 ${errors.messageBody ? 'border-red-500' : ''}`}
-                        />
-                        <div className="absolute right-3 top-8 text-gray-500">
-                            <button
-                                type="button"
-                                className="p-1 rounded-md hover:bg-whiteBg-400 transition"
-                                onClick={handleClipClick}
-                            >
-                                <Paperclip className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
+                        <textarea placeholder="Escribe tu mensaje aquí..." value={messageBody} onChange={(e) => { setMessageBody(e.target.value); if (errors.messageBody) setErrors(prev => ({ ...prev, messageBody: undefined })); }} className={`w-full h-40 p-4 bg-whiteBg-300 border border-gray-300 rounded-lg resize-none text-gray-800 placeholder-gray-500 ${errors.messageBody ? 'border-red-500' : ''}`} />
+                        <div className="absolute right-3 top-8 text-gray-500"><button type="button" className="p-1 rounded-md hover:bg-whiteBg-400 transition" onClick={handleClipClick}><Paperclip className="w-5 h-5" /></button></div>
                         {errors.messageBody && <p className="mt-1 text-xs text-red-500">{errors.messageBody}</p>}
                     </div>
 
                     <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                        <div>
-                            <Button variant="secondary" onClick={handleClearForm} className="px-4 py-2 rounded-full">
-                                Limpiar
-                            </Button>
-                        </div>
+                        <Button variant="secondary" onClick={handleClearForm} className="px-4 py-2 rounded-full">Limpiar</Button>
                         <div className="flex items-center space-x-3">
                             <span className="w-auto text-sm text-gray-500 ms-8 me-2">Adjuntar archivos (opcional)</span>
-                            <Button
-                                variant="primary"
-                                onClick={handleSendMessage}
-                                disabled={isSending}
-                                icon={isSending ? null : <Send className="w-4 h-4" />}
-                                className="px-4 py-2 rounded-full"
-                            >
-                                {isSending ? 'Enviando...' : 'Enviar'}
-                            </Button>
+                            <Button variant="primary" onClick={handleSendMessage} disabled={isSending} icon={isSending ? null : <Send className="w-4 h-4" />} className="px-4 py-2 rounded-full">{isSending ? 'Enviando...' : 'Enviar'}</Button>
                         </div>
                     </div>
                 </div>
@@ -405,21 +298,15 @@ export const DocenteMensajesPage: React.FC = () => {
             {selectedMessageDetail && (
                 <div className="mt-8">
                     <Card header="Detalle del Mensaje" className="border-l-4 border-main-800">
-                        <p className="text-sm text-gray-500 mb-2">
-                            {activeTab === 'INBOX' ? 'De:' : 'Para:'} <span className="font-semibold text-gray-800">{selectedMessageDetail.sender}</span>
-                        </p>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Fecha: <span className="font-semibold text-gray-800">{selectedMessageDetail.date} a las {selectedMessageDetail.time}</span>
-                        </p>
-                        <p className="text-lg font-bold text-gray-800 mb-4">
-                            {selectedMessageDetail.subject}
-                        </p>
-                        <div className="border-t border-gray-100 pt-4 text-gray-800 font-medium whitespace-pre-wrap">
-                            <p>{selectedMessageDetail.fullContent}</p>
-                        </div>
+                        <p className="text-sm text-gray-500 mb-2">{activeTab === 'INBOX' ? 'De:' : 'Para:'} <span className="font-semibold text-gray-800">{selectedMessageDetail.sender}</span></p>
+                        <p className="text-sm text-gray-500 mb-4">Fecha: <span className="font-semibold text-gray-800">{selectedMessageDetail.date} a las {selectedMessageDetail.time}</span></p>
+                        <p className="text-lg font-bold text-gray-800 mb-4">{selectedMessageDetail.subject}</p>
+                        <div className="border-t border-gray-100 pt-4 text-gray-800 font-medium whitespace-pre-wrap"><p>{selectedMessageDetail.fullContent}</p></div>
                     </Card>
                 </div>
             )}
         </div>
     );
 };
+
+export default DocenteMensajesPage;

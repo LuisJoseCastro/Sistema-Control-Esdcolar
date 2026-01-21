@@ -58,7 +58,7 @@ const DocentePerfilPage: React.FC = () => {
                 const cleanData: DocenteProfileData = {
                     nombreCompleto: data.user?.fullName || "Docente",
                     id: data.id || "N/A",
-                    claveEmpleado: data.claveEmpleado || "S/N",
+                    claveEmpleado: data.claveEmpleado || "",
                     especialidad: data.especialidad || "",
                     fechaNacimiento: "1980-01-01", 
                     genero: "Masculino",
@@ -99,13 +99,25 @@ const DocentePerfilPage: React.FC = () => {
     const handleSave = async () => {
         setLoading(true);
         try {
+            // FIX: Only send editable fields to the backend
+            // The backend likely expects a DTO and fails if we send read-only user fields
+            const payload = {
+                especialidad: tempData.especialidad,
+                telefono: tempData.telefono,
+                ciudad: tempData.ciudad,
+                direccion: tempData.direccion,
+                habilidades: tempData.habilidades,
+                tituloAcademico: tempData.tituloAcademico,
+                claveEmpleado: tempData.claveEmpleado
+            };
+
             const response = await fetch(`${API_URL}/academic/profile`, {
                 method: 'PUT',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(tempData)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
@@ -113,9 +125,11 @@ const DocentePerfilPage: React.FC = () => {
                 setIsEditing(false);
                 setNotificacion({ mensaje: "Cambios guardados correctamente", tipo: 'success' });
             } else {
-                throw new Error('Error al guardar');
+                const errData = await response.json();
+                throw new Error(errData.message || 'Error al guardar');
             }
-        } catch {
+        } catch (error) {
+            console.error("Save error:", error);
             setNotificacion({ mensaje: "Error al guardar los cambios", tipo: 'error' });
         } finally {
             setLoading(false);
