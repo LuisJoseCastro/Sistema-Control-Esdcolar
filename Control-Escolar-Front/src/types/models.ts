@@ -1,19 +1,6 @@
-export type Role = 'ADMIN' | 'DOCENTE' | 'ALUMNO';
-
-export interface User {
-    id: string;
-    nombre: string;
-    email: string;
-    rol: Role;
-    tenantId: string;
-    school?: {
-        id: string;
-        nombreEscuela: string;
-    };
-}
-
+// --- LO TUYO (Autenticación y Materias) ---
 export interface AuthResponse {
-    access_token: string;
+    token: string;
     user: User;
 }
 
@@ -23,150 +10,57 @@ export interface MateriaAsignada {
     grupo: string;
 }
 
-export type HorarioType = Record<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes', Record<string, string>>;
-
-<<<<<<< Updated upstream
-
-export interface DocenteProfile extends User {
-    clave: string;
-=======
-/**
- * Perfil completo del Docente. 
- * Se añaden campos opcionales para evitar errores de mapeo entre Backend y Frontend.
- */
-export interface DocenteProfile extends User {
-    clave: string;           // Clave que usa el diseño (recuadro morado)
-    claveEmpleado?: string;  // Nombre que viene del Backend (opcional para compatibilidad)
->>>>>>> Stashed changes
-    especialidad: string;
-    telefono: string;
-    materiasAsignadas: MateriaAsignada[];
-    horario: HorarioType;
-}
-
 export interface TenantConfig {
     id: string;
     nombre: string;
-    logoUrl?: string;
-    colorPrimario?: string;
 }
 
-export interface RendimientoMateria {
-    materia: string;
-    promedio: number;
-}
+// --- COMÚN / EQUIPO (Roles y Usuario Base) ---
+export type UserRole = 'ADMIN' | 'DOCENTE' | 'ALUMNO';
 
-export interface ReporteSummary {
-    promedioFinalGrupo: number;
-    asistenciaPromedio: number;
-    tasaAprobacion: number;
-    rendimientoMateria: RendimientoMateria[];
-}
-
-export interface CalificacionDetalle {
-    alumnoId: string;
-    nombre: string;
-    parcial1: number | 'NA';
-    parcial2: number | 'NA';
-    final: number | 'NA';
-    parcial3?: number | 'NA';
-    extraordinario?: string | 'NA';
-}
-
-export interface Asignatura {
+export interface User {
     id: string;
-    nombre: string;
-    docente: string;
-    promedio: number;
-}
-
-export interface CalificacionHistorial {
-    asignatura: string;
-    promedio: number;
-    periodo: string;
-}
-
-export interface DocumentoAcademico {
-    nombre: string;
-    url: string;
-}
-
-export interface HistorialAcademico {
-    promedioGeneral: number;
-    asignaturasAprobadas: number;
-    calificacionesDetalle: CalificacionHistorial[];
-    documentosDisponibles: DocumentoAcademico[];
-}
-
-export interface NotificacionDashboard {
-    id: string;
-    mensaje: string;
-    leida: boolean;
-    fecha: string;
-
-    titulo?: string;
-    tipo?: string;
-}
-
-export interface AlumnoDashboardSummary {
-    promedioGeneral: number;
-    asistenciaPorcentaje: number;
-    notificaciones: NotificacionDashboard[];
-}
-
-export interface StudentProfileSummary {
-    name: string;
-    id: string;
-    career: string;
-    semester: string;
-    average: number;
-    profileImageUrl: string;
-}
-
-export interface PersonalInfoType {
-    fullName: string;
-    id: string;
-    birthDate: string;
-    gender: string;
     email: string;
-    phone: string;
-    address: string;
-    curp: string;
+    fullName: string;
+    rol: UserRole;
+    tenantId?: string; // Agregado para soportar tu lógica multitenant
+    schoolId?: string;
 }
 
-export interface AcademicInfoType {
-    semester: string;
-    average: number;
-    status: string;
-    approvedSubjects: number;
+// --- EQUIPO (Perfil Alumno y Grupos) ---
+export interface StudentProfile {
+    id: string;
+    matricula: string;
+    nombreCompleto: string;
+    gradoActual: string;
+    grupoId?: string;
+    user?: User;
 }
 
-export interface PaymentInfo {
-    balanceDue: number;
+export interface Grupo {
+    id: string;
+    nombre: string;
+    semestre: number;
+    totalAlumnos?: number;
 }
 
-export interface AlumnoProfileData {
-    resumen: {
-        name: string;
-        id: string;
-        career: string;
-        semester: string;
-        average: number;
-    };
-    personal: PersonalInfoType;
-    academic: AcademicInfoType;
-    payment: PaymentInfo;
-}
+// --- EQUIPO (Definición de Horario) ---
+export type HorarioType = Record<'Lunes' | 'Martes' | 'Miercoles' | 'Jueves' | 'Viernes', Record<string, string>>;
 
-export interface DocumentoPagado {
-    fecha: string;
-    concepto: string;
-    monto: number;
-    estado: 'Pagado' | 'Pendiente' | 'Cancelado';
-}
+// --- FUSIÓN CRÍTICA (Perfil Docente) ---
+// Aquí juntamos los campos que usa tu equipo (especialidad, telefono)
+// con los que usas tú (horario, materiasAsignadas, clave)
+export interface DocenteProfile extends User {
+    // Campos tuyos necesarios para el Frontend
+    clave: string;           
+    nombre?: string;         
+    
+    // Campos del equipo / Base de datos
+    claveEmpleado?: string;  
+    especialidad?: string;
+    telefono?: string;
 
-export interface DocumentoSolicitado {
-    fecha: string;
-    concepto: string;
-    pago: number | '---';
+    // Relaciones complejas (Fusión)
+    materiasAsignadas?: MateriaAsignada[]; 
+    horario?: HorarioType;   
 }
